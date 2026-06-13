@@ -5,7 +5,7 @@ import SideNavBar from "@/src/components/SideNavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["sans-serif"],
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
