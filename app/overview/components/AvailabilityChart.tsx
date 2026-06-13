@@ -40,7 +40,7 @@ export default function AvailabilityChart({ availabilityPercent, presentCount }:
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold text-primary">{availabilityPercent}%</span>
-          <span className="text-[10px] text-secondary">{t('activeText')}</span>
+          <span className="text-sm text-secondary">{t('activeText')}</span>
         </div>
       </div>
       <p className="text-sm text-center mt-4 text-on-surface-variant font-medium">

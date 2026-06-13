@@ -75,7 +75,7 @@ export default function CalendarView() {
         <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
           <div className="grid grid-cols-7 border-b border-outline-variant bg-surface-container-low">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day) => (
-              <div key={day} className="p-4 text-center border-r last:border-r-0 border-outline-variant font-label-caps text-xs text-on-surface-variant font-semibold tracking-wider">
+              <div key={day} className="p-4 text-center border-r last:border-r-0 border-outline-variant text-base text-secondary font-bold">
                 {day}
               </div>
             ))}

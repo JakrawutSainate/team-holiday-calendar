@@ -52,12 +52,12 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
       <div className="flex justify-between items-start mb-2">
         <span className={`text-base ${dayNumberClass}`}>{day}</span>
         {holidayEvent ? (
-          <span className="font-label-caps text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md shadow-xs">
+          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md shadow-xs">
             {t('publicHoliday')}
           </span>
         ) : (
           capacityLabel && (
-            <div className={`flex items-center gap-1 font-label-caps text-[10px] ${capacityClass}`}>
+            <div className={`flex items-center gap-1 text-xs ${capacityClass}`}>
               <span>👥 {capacityLabel}</span>
               {(isFull || maxAllowed === 0) && !isMuted && (
                 <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -70,7 +70,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
       </div>
 
       {holidayName && (
-        <div className="my-1.5 px-2.5 py-1.5 bg-indigo-50/90 text-indigo-700 border border-indigo-100/60 rounded-xl text-[10px] font-semibold leading-tight shadow-xs">
+        <div className="my-1.5 px-2.5 py-1.5 bg-indigo-50/90 text-indigo-700 border border-indigo-100/60 rounded-xl text-xs font-semibold leading-tight shadow-xs">
           🎉 {holidayName}
         </div>
       )}
@@ -82,14 +82,14 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
           return (
             <div
               key={e.id}
-              className={`px-2 py-0.5 rounded-md text-[10px] font-medium flex items-center gap-1 shadow-sm border ${
+              className={`px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 shadow-sm border ${
                 theme === 'amber'
                   ? 'bg-[#fffbeb] text-[#92400e] border-[#fde68a]'
                   : 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]'
               }`}
             >
               {e.userName.split(' ')[0]}{' '}
-              <span className="opacity-70 text-[8px]">
+              <span className="opacity-70 text-[10px]">
                 {isOff ? 'OFF' : '+1 🚗'}
               </span>
             </div>

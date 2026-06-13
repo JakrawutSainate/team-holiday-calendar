@@ -4,12 +4,12 @@
 @source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 
 @theme {
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  --color-background: #fcfcfc;
+  --color-foreground: #09090b;
   
   --color-surface: #ffffff;
-  --color-on-surface: #0f172a;
-  --color-on-surface-variant: #475569;
+  --color-on-surface: #09090b;
+  --color-on-surface-variant: #52525b;
   
   --color-outline: #94a3b8;
   --color-outline-variant: #e2e8f0;
@@ -49,8 +49,8 @@
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #fcfcfc;
+  --foreground: #09090b;
 }
 
 body {

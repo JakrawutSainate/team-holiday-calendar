@@ -22,77 +22,83 @@ export default function BalanceView() {
   };
 
   return (
-    <div className="grow flex flex-col min-h-screen ml-64">
+    <div className="grow flex flex-col min-h-screen ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchTransactions')} />
 
       <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-[1280px] mx-auto space-y-12">
+        <div className="max-w-[1280px] mx-auto space-y-8">
           {/* Header */}
-          <section>
-            <p className="font-label-caps text-xs text-on-surface-variant mb-2 uppercase tracking-wider font-bold">
+          <section className="space-y-2">
+            <p className="text-sm text-zinc-500 font-medium">
               {t('accountOverview')}
             </p>
-            <h2 className="text-4xl font-bold tracking-tight text-primary">{t('tokenBalance')}</h2>
+            <h2 className="text-4xl font-bold tracking-tight text-zinc-900">{t('tokenBalance')}</h2>
           </section>
 
           {/* Cards Grid */}
           <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 lg:col-span-8 bg-white border border-outline-variant rounded-2xl p-8 flex flex-col justify-between min-h-[280px] shadow-sm">
+            <div className="col-span-12 lg:col-span-8 bg-white border border-zinc-100/80 rounded-2xl p-8 flex flex-col justify-between min-h-[300px] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
               <div>
-                <span className="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-label-caps text-[10px] font-bold">
+                <span className="px-3.5 py-1.5 bg-zinc-50 text-zinc-800 border border-zinc-100 rounded-full text-sm font-semibold">
                   {t('activeBalance')}
                 </span>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-8xl font-bold leading-none tracking-tighter text-primary">3</span>
-                  <span className="text-xl font-bold text-secondary">{t('tokens')}</span>
+                <div className="mt-6 flex items-baseline gap-1.5">
+                  <span className="text-8xl font-bold leading-none tracking-tighter text-zinc-900">3</span>
+                  <span className="text-lg font-semibold text-zinc-500">{t('tokens')}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-6 border-t border-outline-variant/30">
-                <p className="text-sm text-secondary">{t('readyForUse')}</p>
-                <button onClick={handleRedeem} className="px-6 py-3 bg-primary text-on-primary rounded-full font-label-caps text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer">
+              <div className="flex items-center justify-between pt-6 border-t border-zinc-100/80">
+                <p className="text-base text-zinc-500">{t('readyForUse')}</p>
+                <button onClick={handleRedeem} className="px-7 py-3.5 bg-zinc-900 text-white rounded-xl text-sm font-semibold hover:bg-zinc-800 active:scale-98 transition-all cursor-pointer shadow-sm">
                   {t('requestLeave')}
                 </button>
               </div>
             </div>
 
-            <div className="col-span-12 lg:col-span-4 bg-white border border-outline-variant text-on-surface rounded-2xl p-8 flex flex-col justify-between shadow-sm">
+            <div className="col-span-12 lg:col-span-4 bg-white border border-zinc-100/80 rounded-2xl p-8 flex flex-col justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
               <div className="space-y-4">
-                <h3 className="font-label-caps text-xs tracking-widest font-bold text-primary">{t('howItWorks')}</h3>
-                <div className="space-y-2 text-sm text-secondary">
-                  <p><strong>01</strong> {t('earnDaily')}: {t('earnDailyDesc')}</p>
-                  <p><strong>02</strong> {t('redeemLeave')}: {t('redeemLeaveDesc')}</p>
+                <h3 className="text-base font-semibold text-zinc-900">{t('howItWorks')}</h3>
+                <div className="space-y-3 text-base text-zinc-600">
+                  <p className="leading-relaxed"><strong>01</strong> {t('earnDaily')}: {t('earnDailyDesc')}</p>
+                  <p className="leading-relaxed"><strong>02</strong> {t('redeemLeave')}: {t('redeemLeaveDesc')}</p>
                 </div>
               </div>
-              <div className="mt-6 p-3 bg-surface-container rounded-xl text-xs border border-outline-variant text-secondary">
+              <div className="mt-6 p-4 bg-zinc-50/50 rounded-xl text-sm border border-zinc-100/60 text-zinc-500">
                 <p className="italic">"{t('balanceResets')}"</p>
               </div>
             </div>
           </div>
 
           {/* History */}
-          <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-8 py-4 border-b border-outline-variant flex items-center justify-between">
-              <h3 className="font-label-caps text-xs text-primary font-bold tracking-wider">{t('transactionHistory')}</h3>
+          <div className="bg-white border border-zinc-100/80 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <div className="px-8 py-5 border-b border-zinc-100">
+              <h3 className="text-base font-semibold text-zinc-900">{t('transactionHistory')}</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container-low/50 border-b border-outline-variant">
-                    <th className="px-8 py-4 font-label-caps text-[10px] text-secondary tracking-widest">{t('tableDate')}</th>
-                    <th className="px-8 py-4 font-label-caps text-[10px] text-secondary tracking-widest">{t('tableType')}</th>
-                    <th className="px-8 py-4 font-label-caps text-[10px] text-secondary tracking-widest">{t('tableDesc')}</th>
-                    <th className="px-8 py-4 font-label-caps text-[10px] text-secondary tracking-widest">{t('tableStatus')}</th>
-                    <th className="px-8 py-4 font-label-caps text-[10px] text-secondary text-right tracking-widest">{t('tableAmount')}</th>
+                  <tr className="bg-zinc-50/50 border-b border-zinc-100">
+                    <th className="px-8 py-4 text-sm font-medium text-zinc-400">{t('tableDate')}</th>
+                    <th className="px-8 py-4 text-sm font-medium text-zinc-400">{t('tableType')}</th>
+                    <th className="px-8 py-4 text-sm font-medium text-zinc-400">{t('tableDesc')}</th>
+                    <th className="px-8 py-4 text-sm font-medium text-zinc-400">{t('tableStatus')}</th>
+                    <th className="px-8 py-4 text-sm font-medium text-zinc-400 text-right">{t('tableAmount')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-outline-variant/30">
+                <tbody className="divide-y divide-zinc-100">
                   {transactions.map((tx, idx) => (
-                    <tr key={idx} className="hover:bg-surface-container-low/30 text-sm">
-                      <td className="px-8 py-4">{tx.date}</td>
-                      <td className="px-8 py-4 font-semibold text-primary">{tx.type}</td>
-                      <td className="px-8 py-4">{tx.description}</td>
-                      <td className="px-8 py-4">{tx.status}</td>
-                      <td className="px-8 py-4 text-right font-bold">{tx.amount}</td>
+                    <tr key={idx} className="hover:bg-zinc-50/30 text-base text-zinc-800 transition-colors">
+                      <td className="px-8 py-4.5">{tx.date}</td>
+                      <td className="px-8 py-4.5 font-semibold text-zinc-900">{tx.type}</td>
+                      <td className="px-8 py-4.5 text-zinc-600">{tx.description}</td>
+                      <td className="px-8 py-4.5">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          tx.status === 'Approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4.5 text-right font-bold text-zinc-900">{tx.amount}</td>
                     </tr>
                   ))}
                 </tbody>
