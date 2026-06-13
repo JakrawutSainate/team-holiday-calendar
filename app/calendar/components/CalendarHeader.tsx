@@ -1,0 +1,104 @@
+'use client';
+
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useTranslation } from '@/src/components/LanguageContext';
+import { exportCalendarExcel } from '../actions';
+
+interface CalendarHeaderProps {
+  year: number;
+  month: number;
+}
+
+export default function CalendarHeader({ year, month }: CalendarHeaderProps) {
+  const { t, language } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Month names in English
+  const monthNamesEn = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Month names in Thai
+  const monthNamesTh = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+
+  const getMonthName = (mIndex: number) => {
+    return language === 'en' ? monthNamesEn[mIndex] : monthNamesTh[mIndex];
+  };
+
+  const navigateToMonth = (newYear: number, newMonth: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('year', newYear.toString());
+    params.set('month', newMonth.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handlePrevMonth = () => {
+    if (month === 1) {
+      navigateToMonth(year - 1, 12);
+    } else {
+      navigateToMonth(year, month - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (month === 12) {
+      navigateToMonth(year + 1, 1);
+    } else {
+      navigateToMonth(year, month + 1);
+    }
+  };
+
+  const handleExport = async () => {
+    const res = await exportCalendarExcel(year, month);
+    if (res.success) {
+      alert(`Excel exported! File location: ${res.downloadUrl}`);
+    }
+  };
+
+  return (
+    <section className="flex flex-col md:flex-row items-end justify-between gap-6 mb-8">
+      <div>
+        <h2 className="text-4xl font-bold tracking-tight mb-2 text-primary">
+          📅 {t('shiftCalendar')}
+        </h2>
+        <div className="flex items-center gap-4 text-on-surface-variant">
+          <button
+            onClick={handlePrevMonth}
+            className="p-2 hover:bg-surface-container rounded-full transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+          <span className="text-xl font-bold text-primary">
+            {getMonthName(month - 1)} {year}
+          </span>
+          <button
+            onClick={handleNextMonth}
+            className="p-2 hover:bg-surface-container rounded-full transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="px-5 py-3 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl border border-tertiary-fixed-dim shadow-sm flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">{t('availableTokens')}</span>
+            <span className="text-xl font-bold leading-none">3 {t('tokens')}</span>
+          </div>
+          <span className="material-symbols-outlined text-[32px]">confirmation_number</span>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
+          <span className="material-symbols-outlined">download</span>
+          {t('exportExcel')}
+        </button>
+      </div>
+    </section>
+  );
+}

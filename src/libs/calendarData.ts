@@ -186,6 +186,35 @@ const generateMockEvents = (): CalendarEvent[] => {
   return events;
 };
 
+export interface BOHoliday {
+  date: string;
+  nameEn: string;
+  nameTh: string;
+}
+
+export const botHolidays2026: BOHoliday[] = [
+  { date: '2026-01-01', nameEn: "New Year's Day", nameTh: 'วันขึ้นปีใหม่' },
+  { date: '2026-01-02', nameEn: 'Additional special holiday', nameTh: 'วันหยุดพิเศษเพิ่มเติม' },
+  { date: '2026-03-03', nameEn: 'Makha Bucha Day', nameTh: 'วันมาฆบูชา' },
+  { date: '2026-04-06', nameEn: 'Chakri Memorial Day', nameTh: 'วันพระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราชและวันที่ระลึกมหาจักรีบรมราชวงศ์' },
+  { date: '2026-04-13', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+  { date: '2026-04-14', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+  { date: '2026-04-15', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+  { date: '2026-05-01', nameEn: 'National Labour Day', nameTh: 'วันแรงงานแห่งชาติ' },
+  { date: '2026-05-04', nameEn: 'Coronation Day', nameTh: 'วันฉัตรมงคล' },
+  { date: '2026-06-01', nameEn: 'Substitution for Visakha Bucha Day', nameTh: 'วันหยุดชดเชยวันวิสาขบูชา' },
+  { date: '2026-06-03', nameEn: "H.M. Queen Suthida Bajrasudhabimalalakshana's Birthday", nameTh: 'วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี' },
+  { date: '2026-07-28', nameEn: "H.M. King Maha Vajiralongkorn's Birthday", nameTh: 'วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว' },
+  { date: '2026-07-29', nameEn: 'Asarnha Bucha Day', nameTh: 'วันอาสาฬหบูชา' },
+  { date: '2026-08-12', nameEn: "H.M. Queen Sirikit The Queen Mother's Birthday / Mother's Day", nameTh: 'วันเฉลิมพระชนมพรรษาสมเด็จพระบรมราชชนนีพันปีหลวงและวันแม่แห่งชาติ' },
+  { date: '2026-10-13', nameEn: "H.M. King Bhumibol Adulyadej The Great Memorial Day", nameTh: 'วันคล้ายวันสวรรคตพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร' },
+  { date: '2026-10-16', nameEn: 'Additional special holiday (Bangkok only)', nameTh: 'วันหยุดพิเศษเพิ่มเติม (เฉพาะกรุงเทพมหานคร)' },
+  { date: '2026-10-23', nameEn: "H.M. King Chulalongkorn the Great Memorial Day", nameTh: 'วันปิยมหาราช' },
+  { date: '2026-12-07', nameEn: "Substitution for H.M. King Bhumibol Adulyadej's Birthday, National Day, and Father's Day", nameTh: 'วันหยุดชดเชยวันคล้ายวันพระบรมราชสมภพพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร วันชาติ และวันพ่อแห่งชาติ' },
+  { date: '2026-12-10', nameEn: 'Constitution Day', nameTh: 'วันรัฐธรรมนูญ' },
+  { date: '2026-12-31', nameEn: "New Year's Eve", nameTh: 'วันสิ้นปี' }
+];
+
 export const mockCalendarEvents: CalendarEvent[] = generateMockEvents();
 
 // Abstract Asynchronous Getters
@@ -201,7 +230,19 @@ export const getCalendarEvents = async (year: number, month: number): Promise<Ca
       // Filter events by year and month
       const prefix = `${year}-${month.toString().padStart(2, '0')}`;
       const filtered = mockCalendarEvents.filter(e => e.date.startsWith(prefix));
-      resolve(filtered);
+
+      // Inject public holidays
+      const monthHolidays = botHolidays2026.filter(h => h.date.startsWith(prefix));
+      const holidayEvents: CalendarEvent[] = monthHolidays.map((h, i) => ({
+        id: `holiday-${h.date}-${i}`,
+        userId: 'system-holiday',
+        userName: 'Holiday',
+        date: h.date,
+        status: 'PUBLIC_HOLIDAY',
+        details: JSON.stringify({ en: h.nameEn, th: h.nameTh })
+      }));
+
+      resolve([...filtered, ...holidayEvents]);
     }, 50);
   });
 };
@@ -209,6 +250,18 @@ export const getCalendarEvents = async (year: number, month: number): Promise<Ca
 export const getDayCapacitySetting = async (dateString: string): Promise<CapacitySetting> => {
   return new Promise((resolve) => {
     setTimeout(() => {
+      // 0. Check if it is a Bank of Thailand holiday
+      const isHoliday = botHolidays2026.some(h => h.date === dateString);
+      if (isHoliday) {
+        resolve({
+          id: `holiday-capacity-${dateString}`,
+          date: dateString,
+          maxOffAllowed: 0,
+          description: 'Bank of Thailand Holiday'
+        });
+        return;
+      }
+
       // Resolve limit: Specific Date -> Day-of-Week -> Global Default
       const dateObj = new Date(dateString);
       const dayOfWeek = dateObj.getDay();

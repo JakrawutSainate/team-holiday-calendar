@@ -4,73 +4,53 @@
 @source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 
 @theme {
-  --color-error-container: #ffdad6;
-  --color-primary-fixed-dim: #bec6e0;
-  --color-surface-container-highest: #e4e2e4;
-  --color-tertiary-fixed-dim: #dec29a;
-  --color-surface-container-low: #f6f3f5;
-  --color-outline-variant: #c6c6cd;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  
+  --color-surface: #ffffff;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  
+  --color-outline: #94a3b8;
+  --color-outline-variant: #e2e8f0;
+  
+  --color-primary: #0f172a;
   --color-on-primary: #ffffff;
-  --color-surface-container: #f0edef;
-  --color-on-primary-container: #7c839b;
-  --color-inverse-on-surface: #f3f0f2;
-  --color-on-tertiary: #ffffff;
-  --color-on-background: #1b1b1d;
-  --color-secondary: #5c5f61;
-  --color-secondary-container: #e0e3e5;
+  --color-primary-container: #f1f5f9;
+  --color-on-primary-container: #0f172a;
+  
+  --color-secondary: #475569;
+  --color-secondary-container: #f1f5f9;
+  --color-on-secondary-container: #0f172a;
+  
+  --color-tertiary: #4f46e5;
+  --color-tertiary-container: #e0e7ff;
+  --color-on-tertiary-container: #4f46e5;
+  --color-tertiary-fixed: #e0f2fe;
+  --color-on-tertiary-fixed: #0369a1;
+  --color-tertiary-fixed-dim: #bae6fd;
+  
+  --color-error: #ef4444;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
+  
   --color-surface-container-lowest: #ffffff;
-  --color-inverse-primary: #bec6e0;
-  --color-primary-container: #131b2e;
-  --color-on-tertiary-fixed: #271901;
-  --color-on-primary-fixed: #131b2e;
-  --color-surface-container-high: #eae7e9;
-  --color-surface-dim: #dcd9db;
-  --color-surface-tint: #565e74;
-  --color-primary: #18181b;
-  --color-error: #ba1a1a;
-  --color-secondary-fixed-dim: #c4c7c9;
-  --color-surface: #fcf8fa;
-  --color-surface-variant: #e4e2e4;
-  --color-tertiary-container: #271901;
-  --color-on-tertiary-fixed-variant: #574425;
-  --color-on-secondary: #ffffff;
-  --color-surface-bright: #fcf8fa;
-  --color-on-primary-fixed-variant: #3f465c;
-  --color-secondary-fixed: #e0e3e5;
-  --color-primary-fixed: #dae2fd;
-  --color-on-tertiary-container: #98805d;
-  --color-on-secondary-fixed-variant: #444749;
-  --color-inverse-surface: #303032;
-  --color-background: #fcf8fa;
-  --color-on-error-container: #93000a;
-  --color-on-surface: #1b1b1d;
-  --color-on-secondary-container: #626567;
-  --color-tertiary-fixed: #fcdeb5;
-  --color-on-surface-variant: #45464d;
-  --color-on-secondary-fixed: #191c1e;
-  --color-outline: #76777d;
-  --color-tertiary: #000000;
-  --color-on-error: #ffffff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container: #f1f5f9;
+  --color-surface-container-high: #e2e8f0;
+  --color-surface-container-highest: #cbd5e1;
+  
+  --color-surface-bright: #ffffff;
+  --color-surface-dim: #f1f5f9;
+  --color-inverse-surface: #0f172a;
+  --color-inverse-on-surface: #f8fafc;
 
   --font-sans: "Geist", "Inter", sans-serif;
 }
 
 :root {
-  --background: #fcf8fa;
-  --foreground: #1b1b1d;
-}
-
-html.dark {
-  --background: #0d0e12;
-  --foreground: #e3e2e7;
-  
-  --color-surface: #16171d;
-  --color-surface-container-low: #1c1d24;
-  --color-surface-container-lowest: #0d0e12;
-  --color-outline-variant: #2d2f39;
-  --color-on-surface: #e3e2e7;
-  --color-on-surface-variant: #c6c5d7;
-  --color-primary: #ffffff;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 body {
@@ -80,28 +60,22 @@ body {
 }
 
 .cell-locked-pattern {
-  background-color: #f0edef;
-  background-image: radial-gradient(#c6c6cd 0.5px, transparent 0.5px);
-  background-size: 8px 8px;
-}
-
-html.dark .cell-locked-pattern {
-  background-color: #1a1b20;
-  background-image: radial-gradient(#454655 0.5px, transparent 0.5px);
+  background-color: #f8fafc;
+  background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px);
   background-size: 8px 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e4e2e4;
+  background: #cbd5e1;
   border-radius: 10px;
 }
-
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #2d2f39;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
