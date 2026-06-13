@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "@heroui/styles";
+
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 
 @theme {
   --color-error-container: #ffdad6;
@@ -57,6 +60,19 @@
   --foreground: #1b1b1d;
 }
 
+html.dark {
+  --background: #0d0e12;
+  --foreground: #e3e2e7;
+  
+  --color-surface: #16171d;
+  --color-surface-container-low: #1c1d24;
+  --color-surface-container-lowest: #0d0e12;
+  --color-outline-variant: #2d2f39;
+  --color-on-surface: #e3e2e7;
+  --color-on-surface-variant: #c6c5d7;
+  --color-primary: #ffffff;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -69,6 +85,12 @@ body {
   background-size: 8px 8px;
 }
 
+html.dark .cell-locked-pattern {
+  background-color: #1a1b20;
+  background-image: radial-gradient(#454655 0.5px, transparent 0.5px);
+  background-size: 8px 8px;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -78,4 +100,8 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #e4e2e4;
   border-radius: 10px;
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2d2f39;
 }

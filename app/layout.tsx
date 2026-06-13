@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SideNavBar from "@/src/components/SideNavBar";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +27,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased light`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <link
@@ -34,11 +36,13 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex bg-background text-on-surface custom-scrollbar">
-        <SideNavBar />
-        <div className="flex-1 flex flex-col min-h-screen">
-          {children}
-        </div>
+      <body className="min-h-full flex bg-background text-on-surface custom-scrollbar transition-colors duration-200">
+        <Providers>
+          <SideNavBar />
+          <div className="flex-1 flex flex-col min-h-screen">
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );

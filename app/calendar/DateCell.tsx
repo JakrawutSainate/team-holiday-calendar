@@ -24,13 +24,13 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
   }
 
   const cellClass = `
-    relative min-h-[140px] p-3 border-r border-b border-outline-variant transition-all flex flex-col justify-between
-    ${isMuted ? 'bg-surface-container-low opacity-40' : 'bg-white'}
-    ${isFull || (maxAllowed === 0 && !isMuted) ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-surface-container-lowest cursor-pointer'}
+    relative min-h-[140px] p-3 border-r border-b border-outline-variant dark:border-[#2d2f39] transition-all flex flex-col justify-between
+    ${isMuted ? 'bg-surface-container-low dark:bg-[#1c1d24]/50 opacity-40' : 'bg-white dark:bg-[#16171d]'}
+    ${isFull || (maxAllowed === 0 && !isMuted) ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-surface-container-lowest dark:hover:bg-[#1c1d24] cursor-pointer'}
   `;
 
-  const dayNumberClass = isMuted ? 'text-outline' : 'text-on-surface font-semibold';
-  const capacityClass = isFull || (maxAllowed === 0 && !isMuted) ? 'text-error font-bold' : 'text-on-surface-variant';
+  const dayNumberClass = isMuted ? 'text-outline dark:text-outline/40' : 'text-on-surface dark:text-white font-semibold';
+  const capacityClass = isFull || (maxAllowed === 0 && !isMuted) ? 'text-error dark:text-red-400 font-bold' : 'text-on-surface-variant dark:text-outline';
 
   return (
     <div className={cellClass}>
@@ -57,8 +57,8 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
               key={e.id}
               className={`px-2 py-0.5 rounded-md text-[10px] font-medium flex items-center gap-1 shadow-sm border ${
                 theme === 'amber'
-                  ? 'bg-[#fffbeb] text-[#92400e] border-[#fde68a]'
-                  : 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]'
+                  ? 'bg-[#fffbeb] text-[#92400e] border-[#fde68a] dark:bg-[#92400e]/20 dark:text-[#fde68a] dark:border-[#92400e]/40'
+                  : 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0] dark:bg-[#166534]/20 dark:text-[#bbf7d0] dark:border-[#166534]/40'
               }`}
             >
               {e.userName.split(' ')[0]}{' '}
@@ -71,8 +71,8 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
       </div>
 
       {isFull && !isMuted && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/60 backdrop-blur-[1px]">
-          <span className="bg-inverse-surface text-inverse-on-surface px-3 py-1 rounded-full text-xs font-medium">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/60 dark:bg-black/60 backdrop-blur-[1px]">
+          <span className="bg-inverse-surface dark:bg-white text-inverse-on-surface dark:text-black px-3 py-1 rounded-full text-xs font-medium">
             Capacity Reached
           </span>
         </div>
