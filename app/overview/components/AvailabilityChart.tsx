@@ -14,7 +14,7 @@ export default function AvailabilityChart({ availabilityPercent, presentCount }:
   const strokeDashoffset = circumference - (availabilityPercent / 100) * circumference;
 
   return (
-    <div className="flex-grow flex flex-col justify-center items-center">
+    <div className="grow flex flex-col justify-center items-center">
       <div className="relative w-32 h-32">
         <svg className="w-full h-full transform -rotate-90">
           <circle

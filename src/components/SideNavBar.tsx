@@ -23,7 +23,7 @@ export default function SideNavBar() {
         <p className="text-sm text-secondary">{t('teamManagement')}</p>
       </div>
 
-      <nav className="flex flex-col gap-2 flex-grow">
+      <nav className="flex flex-col gap-2 grow">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (

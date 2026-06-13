@@ -64,7 +64,7 @@ export default function TeamView() {
   const managementMembers = members.filter(m => m.department === 'Management');
 
   return (
-    <div className="flex-grow flex flex-col min-h-screen ml-64">
+    <div className="grow flex flex-col min-h-screen ml-64">
       <TopNavBar placeholder={t('searchTeamMembers')} onSearch={handleSearch} />
 
       <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
