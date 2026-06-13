@@ -79,34 +79,34 @@ export default function BalancePage() {
             </div>
 
             {/* How it Works Card */}
-            <div className="col-span-12 lg:col-span-4 bg-primary dark:bg-[#16171d] border dark:border-[#2d2f39] text-on-primary dark:text-white rounded-2xl p-8 flex flex-col justify-between transition-all hover:scale-[1.01]">
+            <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest dark:bg-[#16171d] border border-outline-variant dark:border-[#2d2f39] text-on-surface dark:text-white rounded-2xl p-8 flex flex-col justify-between transition-all hover:scale-[1.01]">
               <div>
                 <div className="flex items-center gap-2 mb-6">
-                  <span className="material-symbols-outlined text-on-primary/60 dark:text-outline">info</span>
-                  <h3 className="font-label-caps text-xs tracking-widest font-bold">HOW IT WORKS</h3>
+                  <span className="material-symbols-outlined text-secondary dark:text-outline">info</span>
+                  <h3 className="font-label-caps text-xs tracking-widest font-bold text-primary dark:text-white">HOW IT WORKS</h3>
                 </div>
                 <div className="space-y-4 py-2">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full border border-on-primary/20 dark:border-[#2d2f39] flex items-center justify-center shrink-0 text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full border border-outline-variant dark:border-[#2d2f39] flex items-center justify-center shrink-0 text-xs font-bold text-primary dark:text-white">
                       01
                     </div>
                     <div>
-                      <p className="text-base font-bold mb-1">Earn Daily</p>
-                      <p className="text-xs text-on-primary/70 dark:text-outline/70">Work a weekend shift to automatically earn 1 Token.</p>
+                      <p className="text-base font-bold mb-1 text-primary dark:text-white">Earn Daily</p>
+                      <p className="text-xs text-secondary dark:text-outline/70">Work a weekend shift to automatically earn 1 Token.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full border border-on-primary/20 dark:border-[#2d2f39] flex items-center justify-center shrink-0 text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full border border-outline-variant dark:border-[#2d2f39] flex items-center justify-center shrink-0 text-xs font-bold text-primary dark:text-white">
                       02
                     </div>
                     <div>
-                      <p className="text-base font-bold mb-1">Redeem Leave</p>
-                      <p className="text-xs text-on-primary/70 dark:text-outline/70">Redeem 3 Tokens to claim a Friday/Monday leave.</p>
+                      <p className="text-base font-bold mb-1 text-primary dark:text-white">Redeem Leave</p>
+                      <p className="text-xs text-secondary dark:text-outline/70">Redeem 3 Tokens to claim a Friday/Monday leave.</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="mt-6 p-3 bg-on-primary/10 dark:bg-white/5 rounded-xl border border-on-primary/10 dark:border-[#2d2f39]">
+              <div className="mt-6 p-3 bg-surface-container dark:bg-white/5 rounded-xl border border-outline-variant dark:border-[#2d2f39] text-secondary dark:text-outline/80">
                 <p className="text-xs italic opacity-85">"Balance resets annually on Jan 1st."</p>
               </div>
             </div>

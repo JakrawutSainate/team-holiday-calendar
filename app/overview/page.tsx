@@ -134,21 +134,21 @@ export default function OverviewPage() {
             </div>
 
             {/* Your Token Balance */}
-            <div className="bg-primary dark:bg-[#16171d] text-on-primary dark:text-white rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group border dark:border-[#2d2f39]">
-              <div className="absolute -right-8 -bottom-8 opacity-10 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                <span className="material-symbols-outlined text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="bg-surface-container-lowest dark:bg-[#16171d] border border-outline-variant dark:border-[#2d2f39] text-on-surface dark:text-white rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary dark:hover:border-white transition-colors duration-300">
+              <div className="absolute -right-8 -bottom-8 opacity-5 dark:opacity-10 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                <span className="material-symbols-outlined text-[120px] text-primary dark:text-white" style={{ fontVariationSettings: "'FILL' 1" }}>
                   wallet
                 </span>
               </div>
               <div className="relative z-10 flex justify-between items-start">
-                <span className="font-label-caps text-xs text-on-primary/60 dark:text-outline/65 font-semibold uppercase tracking-widest">Your Token Balance</span>
-                <span className="material-symbols-outlined">stars</span>
+                <span className="font-label-caps text-xs text-secondary dark:text-outline font-semibold uppercase tracking-widest">Your Token Balance</span>
+                <span className="material-symbols-outlined text-secondary dark:text-outline">stars</span>
               </div>
               <div className="relative z-10 mt-8">
-                <h3 className="text-6xl font-bold leading-none tracking-tighter">3</h3>
-                <p className="text-sm text-on-primary/80 dark:text-outline/80 mt-2">Personal Leave Tokens Remaining</p>
+                <h3 className="text-6xl font-bold leading-none tracking-tighter text-primary dark:text-white">3</h3>
+                <p className="text-sm text-secondary dark:text-outline/80 mt-2">Personal Leave Tokens Remaining</p>
               </div>
-              <button className="relative z-10 mt-6 border border-on-primary/20 dark:border-[#2d2f39] bg-white/10 dark:bg-white/5 hover:bg-white/20 active:scale-95 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-center cursor-pointer">
+              <button className="relative z-10 mt-6 border border-outline-variant dark:border-[#2d2f39] bg-surface dark:bg-white/5 hover:bg-surface-container dark:hover:bg-white/10 active:scale-95 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-center cursor-pointer text-primary dark:text-white">
                 Redeem for Carry Over
               </button>
             </div>
