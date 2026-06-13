@@ -64,18 +64,18 @@ export default function TeamView() {
   const managementMembers = members.filter(m => m.department === 'Management');
 
   return (
-    <div className="grow flex flex-col min-h-screen ml-64 bg-[#fcfcfc]">
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchTeamMembers')} onSearch={handleSearch} />
 
-      <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-7xl mx-auto space-y-12">
           {/* Page Header Section */}
-          <section className="flex justify-between items-end">
+          <section className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-end">
             <div className="space-y-2">
               <h2 className="text-4xl font-bold tracking-tight text-zinc-900">{t('teamDirectory')}</h2>
               <p className="text-lg text-zinc-500">{t('teamDirectoryDesc')}</p>
             </div>
-            <button onClick={handleAddMember} className="border border-zinc-200 bg-white text-zinc-900 px-6 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-zinc-50 transition-all cursor-pointer shadow-sm">
+            <button onClick={handleAddMember} className="border border-zinc-200 bg-white text-zinc-900 px-6 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-zinc-50 transition-all cursor-pointer shadow-sm w-full sm:w-auto justify-center">
               <span className="material-symbols-outlined text-base">person_add</span>
               <span>{t('addMember')}</span>
             </button>
@@ -145,8 +145,8 @@ export default function TeamView() {
           )}
 
           {/* Quick Actions / Bottom Navigation Alternative */}
-          <section className="mt-12 pt-8 border-t border-zinc-100 flex justify-between items-center text-zinc-500">
-            <div className="flex gap-12">
+          <section className="mt-12 pt-8 border-t border-zinc-100 flex flex-col md:flex-row gap-6 md:justify-between md:items-center text-zinc-500">
+            <div className="flex gap-12 justify-between md:justify-start">
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm text-zinc-500 font-medium">{t('totalTeamMembers')}</span>
                 <span className="text-2xl font-bold text-zinc-900">{members.length}</span>
@@ -156,11 +156,11 @@ export default function TeamView() {
                 <span className="text-2xl font-bold text-zinc-900">05</span>
               </div>
             </div>
-            <div className="flex gap-4">
-              <button onClick={handleDownloadReport} className="px-5 py-3 text-zinc-900 text-sm font-semibold hover:bg-zinc-50 border border-zinc-200 bg-white rounded-xl transition-all shadow-sm cursor-pointer">
+            <div className="flex gap-4 w-full md:w-auto">
+              <button onClick={handleDownloadReport} className="flex-1 md:flex-none px-5 py-3 text-zinc-900 text-sm font-semibold hover:bg-zinc-50 border border-zinc-200 bg-white rounded-xl transition-all shadow-sm cursor-pointer text-center">
                 {t('downloadReport')}
               </button>
-              <button className="px-5 py-3 text-zinc-900 text-sm font-semibold hover:bg-zinc-50 border border-zinc-200 bg-white rounded-xl transition-all shadow-sm cursor-pointer">
+              <button className="flex-1 md:flex-none px-5 py-3 text-zinc-900 text-sm font-semibold hover:bg-zinc-50 border border-zinc-200 bg-white rounded-xl transition-all shadow-sm cursor-pointer text-center">
                 {t('roleSettings')}
               </button>
             </div>

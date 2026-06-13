@@ -66,14 +66,15 @@ export default function CalendarView() {
   }, [year, month]);
 
   return (
-    <div className="grow flex flex-col min-h-screen ml-64">
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchTeamOrDates')} />
 
-      <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <CalendarHeader year={year} month={month} />
 
-        <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 border-b border-outline-variant bg-surface-container-low">
+        <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
+          <div className="min-w-[768px] lg:min-w-0">
+            <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50/50">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day) => (
               <div key={day} className="p-4 text-center border-r last:border-r-0 border-outline-variant text-base text-secondary font-bold">
                 {day}
@@ -99,6 +100,7 @@ export default function CalendarView() {
               ))}
             </div>
           )}
+          </div>
         </div>
       </main>
     </div>

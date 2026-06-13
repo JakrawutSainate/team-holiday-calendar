@@ -22,10 +22,10 @@ export default function SettingsView() {
   };
 
   return (
-    <div className="grow flex flex-col min-h-screen ml-64 bg-[#fcfcfc]">
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchSettings')} />
 
-      <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl mx-auto space-y-8">
           <div>
             <h2 className="text-4xl font-bold tracking-tight text-zinc-900 mb-2">{t('settings')}</h2>
@@ -76,7 +76,7 @@ export default function SettingsView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-semibold text-zinc-500 block mb-2">{t('fullName')}</label>
                   <input

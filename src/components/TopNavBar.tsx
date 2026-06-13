@@ -15,7 +15,7 @@ export default function TopNavBar({ onSearch, placeholder }: TopNavBarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between px-12 w-full h-16 border-b border-zinc-100 bg-white/85 backdrop-blur-md transition-colors duration-200">
+    <header className="sticky top-0 z-40 flex items-center justify-between px-6 lg:px-12 w-full h-16 border-b border-zinc-100 bg-white/85 backdrop-blur-md transition-colors duration-200">
       <div className="flex items-center gap-6 flex-1">
         {/* Removed search input and navigation links (Dashboard, Team, Policy, Insights) */}
       </div>

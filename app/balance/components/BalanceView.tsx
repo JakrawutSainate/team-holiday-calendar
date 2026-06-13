@@ -22,10 +22,10 @@ export default function BalanceView() {
   };
 
   return (
-    <div className="grow flex flex-col min-h-screen ml-64 bg-[#fcfcfc]">
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchTransactions')} />
 
-      <main className="flex-1 p-12 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-[1280px] mx-auto space-y-8">
           {/* Header */}
           <section className="space-y-2">
