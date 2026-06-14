@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from './LanguageContext';
+import { useRole } from './RoleContext';
 
 export default function SideNavBar() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { role, setRole } = useRole();
 
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
@@ -56,35 +58,54 @@ export default function SideNavBar() {
             className="w-10 h-10 rounded-full object-cover border border-zinc-100"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO"
           />
-          <div className="overflow-hidden">
+          <div className="overflow-hidden w-full flex flex-col gap-1">
             <p className="text-sm font-semibold text-zinc-900 truncate">Takahashi S.</p>
-            <p className="text-xs text-zinc-500">{t('teamLead')}</p>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
+              className="text-xs bg-zinc-50 border border-zinc-200 text-zinc-600 rounded px-1 py-0.5 outline-none font-medium cursor-pointer"
+            >
+              <option value="ADMIN">Admin Mode</option>
+              <option value="USER">User Mode</option>
+            </select>
           </div>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100/80 px-4 py-2 flex justify-around items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 py-1 px-3 transition-colors ${
-                isActive ? 'text-zinc-900 font-semibold' : 'text-zinc-400'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined text-2xl"
-                style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100/80 px-4 py-2 flex justify-between items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+        <div className="flex justify-around items-center flex-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center gap-1 py-1 px-3 transition-colors ${
+                  isActive ? 'text-zinc-900 font-semibold' : 'text-zinc-400'
+                }`}
               >
-                {item.icon}
-              </span>
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
+                <span
+                  className="material-symbols-outlined text-2xl"
+                  style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                >
+                  {item.icon}
+                </span>
+                <span className="text-[10px]">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+        <div className="border-l border-zinc-100 pl-3 flex items-center">
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
+            className="text-[10px] bg-zinc-50 border border-zinc-200 text-zinc-600 rounded p-1 outline-none font-bold cursor-pointer"
+          >
+            <option value="ADMIN">Admin</option>
+            <option value="USER">User</option>
+          </select>
+        </div>
       </nav>
     </>
   );

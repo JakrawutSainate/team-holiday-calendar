@@ -14,11 +14,20 @@ export default function OverviewView() {
   const [stats, setStats] = useState({ presentCount: 0, availabilityPercent: 100 });
   const [burnoutRisk, setBurnoutRisk] = useState<number[]>([]);
 
+  const [tokens, setTokens] = useState(3);
+
   useEffect(() => {
     const manager = new HolidayHQManager();
     setActivities(manager.getRecentActivities());
     setStats(manager.getAvailabilityStats());
     setBurnoutRisk(manager.getBurnoutRiskIndex());
+
+    const savedTokens = localStorage.getItem('holidayhq_tokens');
+    if (savedTokens) {
+      setTokens(parseFloat(savedTokens));
+    } else {
+      localStorage.setItem('holidayhq_tokens', '3');
+    }
   }, []);
 
   const handleSync = async () => {
@@ -66,7 +75,7 @@ export default function OverviewView() {
               <div>
                 <h3 className="text-base font-semibold text-zinc-900 mb-4">{t('yourTokenBalance')}</h3>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-6xl font-bold text-zinc-900">3</span>
+                  <span className="text-6xl font-bold text-zinc-900">{tokens}</span>
                   <span className="text-sm font-medium text-zinc-500">{t('tokens')}</span>
                 </div>
                 <p className="text-sm text-zinc-500">{t('personalTokensRemaining')}</p>

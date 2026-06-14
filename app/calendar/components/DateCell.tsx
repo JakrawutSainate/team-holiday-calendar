@@ -2,6 +2,7 @@
 
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useRole } from '@/src/components/RoleContext';
 
 interface DateCellProps {
   day: number;
@@ -9,10 +10,17 @@ interface DateCellProps {
   dateString: string;
   events: CalendarEvent[];
   capacity: CapacitySetting;
+  onClick?: () => void;
 }
 
-export default function DateCell({ day, isMuted, dateString, events, capacity }: DateCellProps) {
+export default function DateCell({ day, isMuted, dateString, events, capacity, onClick }: DateCellProps) {
   const { language, t } = useTranslation();
+  const { role } = useRole();
+
+  const dateObj = new Date(dateString);
+  const dayOfWeek = dateObj.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
   const approvedLeavesCount = events.filter(e => e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL').length;
   const maxAllowed = capacity.maxOffAllowed;
   const isFull = maxAllowed > 0 && approvedLeavesCount >= maxAllowed;
@@ -28,27 +36,31 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
     }
   }
 
-  // Capacity label (e.g., "2/2 Locked" or "0/2" or "1/2")
+  // Check if weekend work is claimed for this date
+  const weekendWorkEvent = events.find(e => e.status === 'WEEKEND_WORK');
+
+  // Capacity label
   let capacityLabel = '';
-  if (maxAllowed > 0) {
+  if (maxAllowed > 0 && !isWeekend) {
     capacityLabel = isFull ? `${approvedLeavesCount}/${maxAllowed} Locked` : `${approvedLeavesCount}/${maxAllowed}`;
-  } else if (maxAllowed === 0 && !isMuted) {
+  } else if (maxAllowed === 0 && !isMuted && !isWeekend) {
     capacityLabel = 'Locked';
   }
 
-  const isLockedDay = isFull || (maxAllowed === 0 && !isMuted) || !!holidayEvent;
+  const isLockedDay = !isWeekend && (isFull || (maxAllowed === 0 && !isMuted) || !!holidayEvent);
 
   const cellClass = `
-    relative min-h-[140px] p-3 border-r border-b border-outline-variant transition-all flex flex-col justify-between
-    ${isMuted ? 'bg-surface-container-low opacity-40' : 'bg-white'}
-    ${isLockedDay ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-surface-container-lowest cursor-pointer'}
+    relative min-h-[140px] p-4 border-r border-b border-zinc-100 transition-all flex flex-col justify-between
+    ${isMuted ? 'bg-zinc-50/40 opacity-30' : 'bg-white'}
+    ${isLockedDay ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-zinc-50/50 cursor-pointer'}
+    ${isWeekend && !isMuted ? 'bg-zinc-50/30' : ''}
   `;
 
-  const dayNumberClass = isMuted ? 'text-outline' : 'text-on-surface font-semibold';
-  const capacityClass = isLockedDay ? 'text-error font-bold' : 'text-on-surface-variant';
+  const dayNumberClass = isMuted ? 'text-zinc-300' : isWeekend ? 'text-zinc-900 font-bold' : 'text-zinc-800 font-semibold';
+  const capacityClass = isLockedDay ? 'text-red-500 font-bold' : 'text-zinc-500';
 
   return (
-    <div className={cellClass}>
+    <div className={cellClass} onClick={(!isMuted && !isLockedDay) ? onClick : undefined}>
       <div className="flex justify-between items-start mb-2">
         <span className={`text-base ${dayNumberClass}`}>{day}</span>
         {holidayEvent ? (
@@ -75,8 +87,27 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
         </div>
       )}
 
+      {/* Claim Weekend Work Button / Badge */}
+      {isWeekend && !isMuted && !holidayEvent && (
+        <div className="my-1">
+          {weekendWorkEvent ? (
+            <div className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
+              <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
+              <span>Claimed (+1.5x)</span>
+            </div>
+          ) : (
+            role === 'USER' && (
+              <button className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">add_circle</span>
+                <span>Claim Shift</span>
+              </button>
+            )
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-1.5 mt-auto">
-        {events.filter(e => e.status !== 'PUBLIC_HOLIDAY').map((e) => {
+        {events.filter(e => e.status !== 'PUBLIC_HOLIDAY' && e.status !== 'WEEKEND_WORK').map((e) => {
           const isOff = e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL';
           const theme = isOff ? 'amber' : 'green';
           return (
@@ -84,8 +115,8 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
               key={e.id}
               className={`px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 shadow-sm border ${
                 theme === 'amber'
-                  ? 'bg-[#fffbeb] text-[#92400e] border-[#fde68a]'
-                  : 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-green-50 text-green-800 border-green-200'
               }`}
             >
               {e.userName.split(' ')[0]}{' '}
@@ -99,7 +130,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity }:
 
       {isLockedDay && !isMuted && (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/65 backdrop-blur-[1px]">
-          <span className="bg-inverse-surface text-inverse-on-surface px-3 py-1 rounded-full text-xs font-medium">
+          <span className="bg-zinc-900 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-md">
             {holidayEvent ? t('publicHoliday') : 'Capacity Reached'}
           </span>
         </div>

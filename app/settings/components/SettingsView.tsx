@@ -1,15 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { saveProfileSettings } from '../actions';
+import { saveProfileSettings, saveWorkspaceSettings } from '../actions';
 
 export default function SettingsView() {
   const { t } = useTranslation();
+  const { role } = useRole();
+
   const [fullName, setFullName] = useState('Alex Rivera');
   const [emailAddress, setEmailAddress] = useState('alex.rivera@holidayhq.com');
+  const [capacity, setCapacity] = useState(25);
+  const [earnRate, setEarnRate] = useState('1.5x');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    // Load capacity and earn rate
+    const savedCapacity = localStorage.getItem('holidayhq_capacity');
+    if (savedCapacity) setCapacity(parseInt(savedCapacity));
+    
+    const savedEarnRate = localStorage.getItem('holidayhq_earn_rate');
+    if (savedEarnRate) setEarnRate(`${savedEarnRate}x`);
+  }, []);
 
   const handleSave = async () => {
     setMessage(null);
@@ -18,7 +32,19 @@ export default function SettingsView() {
       setMessage({ type: 'error', text: profileRes.error || 'Profile save failed' });
       return;
     }
-    setMessage({ type: 'success', text: 'Profile settings saved successfully!' });
+
+    if (role === 'ADMIN') {
+      const rawEarnRate = earnRate.replace('x', '');
+      const workspaceRes = await saveWorkspaceSettings({ capacity, earnRate: rawEarnRate });
+      if (!workspaceRes.success) {
+        setMessage({ type: 'error', text: workspaceRes.error || 'Workspace save failed' });
+        return;
+      }
+      localStorage.setItem('holidayhq_capacity', capacity.toString());
+      localStorage.setItem('holidayhq_earn_rate', rawEarnRate);
+    }
+
+    setMessage({ type: 'success', text: 'Settings saved successfully!' });
   };
 
   return (
@@ -27,11 +53,16 @@ export default function SettingsView() {
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl mx-auto space-y-8">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-zinc-900 mb-2">{t('settings')}</h2>
-            <p className="text-lg text-zinc-500">
-              {t('settingsDesc')}
-            </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-4xl font-bold tracking-tight text-zinc-900 mb-2">{t('settings')}</h2>
+              <p className="text-lg text-zinc-500">
+                {t('settingsDesc')}
+              </p>
+            </div>
+            <div className="bg-zinc-50 border border-zinc-200/60 rounded-xl px-4 py-2 text-sm text-zinc-600 font-semibold shadow-xs">
+              Role: <span className="text-zinc-900 font-bold">{role}</span>
+            </div>
           </div>
 
           {message && (
@@ -46,7 +77,7 @@ export default function SettingsView() {
             </div>
           )}
 
-          {/* Profile Settings Card */}
+          {/* Profile Settings Card (Visible to both Admin and User) */}
           <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-8">
             <div className="flex items-center justify-between">
               <div>
@@ -98,6 +129,65 @@ export default function SettingsView() {
               </div>
             </div>
           </div>
+
+          {/* Workspace Settings Card (Visible ONLY to Admin) */}
+          {role === 'ADMIN' && (
+            <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-8">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900">{t('workspaceSettings')}</h3>
+                <p className="text-sm text-zinc-500 mt-1">{t('workspaceSettingsDesc')}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold text-zinc-900 block mb-1">
+                      {t('dailyCapacityLimit')}
+                    </label>
+                    <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+                      {t('dailyCapacityLimitDesc')}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={capacity}
+                        onChange={(e) => setCapacity(Number(e.target.value))}
+                        className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-zinc-900"
+                      />
+                      <span className="text-base font-bold text-zinc-900 w-12 text-right">{capacity}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold text-zinc-900 block mb-1">
+                      {t('weekendEarnRate')}
+                    </label>
+                    <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+                      {t('weekendEarnRateDesc')}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 px-4 py-3 bg-white border border-zinc-200 text-zinc-950 rounded-lg flex items-center justify-between">
+                        <span className="text-sm text-zinc-500">{t('baseRate')}</span>
+                        <span className="text-base font-bold text-zinc-900">{earnRate}</span>
+                      </div>
+                      <select
+                        value={earnRate}
+                        onChange={(e) => setEarnRate(e.target.value)}
+                        className="p-3 border border-zinc-200 rounded-lg bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900"
+                      >
+                        <option value="1.0x">1.0x</option>
+                        <option value="1.5x">1.5x</option>
+                        <option value="2.0x">2.0x</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-4">

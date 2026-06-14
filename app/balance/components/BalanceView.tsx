@@ -9,16 +9,58 @@ import { redeemTokensAction } from '../actions';
 export default function BalanceView() {
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [tokens, setTokens] = useState(3);
 
   useEffect(() => {
     const manager = new HolidayHQManager();
-    setTransactions(manager.getTransactions());
+    
+    // Load transactions from localStorage or fallback
+    const savedTx = localStorage.getItem('holidayhq_transactions');
+    if (savedTx) {
+      setTransactions(JSON.parse(savedTx));
+    } else {
+      const fallbackTx = manager.getTransactions();
+      setTransactions(fallbackTx);
+      localStorage.setItem('holidayhq_transactions', JSON.stringify(fallbackTx));
+    }
+
+    // Load tokens from localStorage
+    const savedTokens = localStorage.getItem('holidayhq_tokens');
+    if (savedTokens) {
+      setTokens(parseFloat(savedTokens));
+    } else {
+      localStorage.setItem('holidayhq_tokens', '3');
+    }
   }, []);
 
   const handleRedeem = async () => {
+    if (tokens < 3) {
+      alert(`Redeem failed: Insufficient tokens. You have ${tokens} tokens but you need at least 3 tokens to request leave.`);
+      return;
+    }
+
     const res = await redeemTokensAction({ tokensToRedeem: 3, reason: 'Redeemed Friday leave' });
-    if (res.success) alert('Leave requested successfully via Tokens!');
-    else alert(`Redeem failed: ${res.error}`);
+    if (res.success) {
+      const newTokens = tokens - 3;
+      setTokens(newTokens);
+      localStorage.setItem('holidayhq_tokens', newTokens.toString());
+
+      // Prepend to transaction list
+      const newTx: Transaction = {
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        type: 'SPEND',
+        description: 'Redeemed Friday leave (Takahashi S.)',
+        status: 'Approved',
+        amount: '-3'
+      };
+      const updatedTx = [newTx, ...transactions];
+      setTransactions(updatedTx);
+      localStorage.setItem('holidayhq_transactions', JSON.stringify(updatedTx));
+
+      alert('Leave requested successfully via Tokens!');
+    } else {
+      alert(`Redeem failed: ${res.error}`);
+    }
   };
 
   return (
@@ -43,7 +85,7 @@ export default function BalanceView() {
                   {t('activeBalance')}
                 </span>
                 <div className="mt-6 flex items-baseline gap-1.5">
-                  <span className="text-8xl font-bold leading-none tracking-tighter text-zinc-900">3</span>
+                  <span className="text-8xl font-bold leading-none tracking-tighter text-zinc-900">{tokens}</span>
                   <span className="text-lg font-semibold text-zinc-500">{t('tokens')}</span>
                 </div>
               </div>
