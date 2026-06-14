@@ -169,7 +169,7 @@ export default function CalendarView() {
     });
     localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
 
-    alert(`${shiftLabel} registered for ${claimTargetDate}! Added +${multiplier} tokens to balance.`);
+    alert(`${shiftLabel} - ${claimTargetDate} ${t('shiftRegistered')}`);
     setClaimTargetDate(null);
   };
 
@@ -181,7 +181,7 @@ export default function CalendarView() {
         <div className="mb-6 flex justify-between items-center">
           <CalendarHeader year={year} month={month} />
           <div className="bg-zinc-50 border border-zinc-200/60 rounded-xl px-4 py-2 text-sm text-zinc-600 font-semibold shadow-xs">
-            Role: <span className="text-zinc-900 font-bold">{role}</span>
+            {t('role')}: <span className="text-zinc-900 font-bold">{role}</span>
           </div>
         </div>
 
@@ -223,27 +223,27 @@ export default function CalendarView() {
         <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-zinc-100 rounded-2xl p-8 max-w-md w-full shadow-xl space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-zinc-900">Claim Weekend Shift Token</h3>
+              <h3 className="text-lg font-bold text-zinc-900">{t('claimShiftTitle')}</h3>
               <p className="text-sm text-zinc-500 mt-2">
-                Did you work on <strong>{claimTargetDate}</strong>? Claiming this shift will award you overtime tokens based on your workspace settings.
+                <strong>{claimTargetDate}</strong>: {t('claimShiftConfirm')}
               </p>
             </div>
             <div className="bg-zinc-50 p-4 rounded-xl text-sm text-zinc-600 border border-zinc-100 flex justify-between items-center">
-              <span>Earn Multiplier:</span>
-              <span className="font-bold text-zinc-900">{localStorage.getItem('holidayhq_earn_rate') || '1.5'}x Tokens</span>
+              <span>{t('earnMultiplier')}:</span>
+              <span className="font-bold text-zinc-900">{localStorage.getItem('holidayhq_earn_rate') || '1.5'}x {t('tokens')}</span>
             </div>
             <div className="flex gap-4 justify-end">
               <button
                 onClick={() => setClaimTargetDate(null)}
                 className="px-5 py-2.5 border border-zinc-200 text-zinc-600 rounded-xl text-sm font-semibold hover:bg-zinc-50 cursor-pointer"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmClaimShift}
                 className="px-5 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-semibold hover:bg-zinc-800 cursor-pointer"
               >
-                Confirm Claim
+                {t('confirm')}
               </button>
             </div>
           </div>

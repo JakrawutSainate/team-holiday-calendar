@@ -75,7 +75,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
     if (holidayEvent) {
       tooltipText = holidayName ? `${t('publicHoliday')}: ${holidayName}` : t('publicHoliday');
     } else if (isWeekend) {
-      tooltipText = 'Weekend Shift';
+      tooltipText = t('weekendShift');
     }
   }
 
@@ -120,7 +120,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
           {claimedEvent ? (
             <div className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
               <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
-              <span>Claimed (+{earnRate}x)</span>
+              <span>{t('claimed')} (+{earnRate}x)</span>
             </div>
           ) : (
             role === 'USER' && (
@@ -132,7 +132,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
                 className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">add_circle</span>
-                <span>Claim Shift</span>
+                <span>{t('claimShift')}</span>
               </button>
             )
           )}
