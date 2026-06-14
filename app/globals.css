@@ -71,6 +71,13 @@ body {
   background-size: 8px 8px;
 }
 
+.weekend-pattern {
+  background-color: #fcfcfc;
+  background-image: radial-gradient(#e4e4e7 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

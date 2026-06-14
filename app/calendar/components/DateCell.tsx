@@ -63,7 +63,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
     relative min-h-[140px] p-4 border-r border-b border-zinc-100 transition-all flex flex-col justify-between
     ${isMuted ? 'bg-zinc-50/40 opacity-30' : 'bg-white'}
     ${isLockedDay ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-zinc-50/50 cursor-pointer'}
-    ${isWeekend && !isMuted ? 'bg-zinc-50/30' : ''}
+    ${isWeekend && !isMuted && !holidayEvent ? 'weekend-pattern' : ''}
     ${holidayEvent && !isMuted ? 'holiday-pattern' : ''}
   `;
 
