@@ -11,7 +11,7 @@ export interface TeamMember {
   tokensBalance: number;
 }
 
-export type CalendarEventStatus = 'NORMAL' | 'WEEKEND_WORK' | 'COMPENSATORY_OFF' | 'PUBLIC_HOLIDAY';
+export type CalendarEventStatus = 'NORMAL' | 'WEEKEND_WORK' | 'COMPENSATORY_OFF' | 'PUBLIC_HOLIDAY' | 'HOLIDAY_WORK';
 
 export interface CalendarEvent {
   id: string;

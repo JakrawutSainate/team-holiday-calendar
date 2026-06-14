@@ -96,10 +96,11 @@ export default function CalendarView() {
     const dateObj = new Date(dateString);
     const dayOfWeek = dateObj.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isHoliday = events.some(e => e.date === dateString && e.status === 'PUBLIC_HOLIDAY');
 
-    if (isWeekend && role === 'USER') {
+    if ((isWeekend || isHoliday) && role === 'USER') {
       // Check if already claimed
-      const isClaimed = events.some(e => e.date === dateString && e.status === 'WEEKEND_WORK');
+      const isClaimed = events.some(e => e.date === dateString && (e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK'));
       if (!isClaimed) {
         setClaimTargetDate(dateString);
       }
@@ -109,14 +110,18 @@ export default function CalendarView() {
   const confirmClaimShift = () => {
     if (!claimTargetDate) return;
 
-    // Create new weekend work event
+    const isHoliday = events.some(e => e.date === claimTargetDate && e.status === 'PUBLIC_HOLIDAY');
+    const status = isHoliday ? 'HOLIDAY_WORK' : 'WEEKEND_WORK';
+    const shiftLabel = isHoliday ? 'Holiday Shift' : 'Weekend Shift';
+
+    // Create new weekend or holiday work event
     const newEvent: CalendarEvent = {
-      id: `weekend-work-${claimTargetDate}-${Date.now()}`,
+      id: `${isHoliday ? 'holiday' : 'weekend'}-work-${claimTargetDate}-${Date.now()}`,
       userId: 'user-takahashi',
       userName: 'Takahashi S.',
       date: claimTargetDate,
-      status: 'WEEKEND_WORK',
-      details: 'Claimed weekend shift'
+      status: status,
+      details: `Claimed ${shiftLabel.toLowerCase()}`
     };
 
     const updatedEvents = [...events, newEvent];
@@ -158,13 +163,13 @@ export default function CalendarView() {
     allTx.unshift({
       date: formattedDate,
       type: 'EARN',
-      description: `Weekend Shift Claimed (${d.toLocaleDateString('en-US', { weekday: 'short' })})`,
+      description: `${shiftLabel} Claimed (${d.toLocaleDateString('en-US', { weekday: 'short' })})`,
       status: 'Approved',
       amount: `+${multiplier}`
     });
     localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
 
-    alert(`Weekend shift registered for ${claimTargetDate}! Added +${multiplier} tokens to balance.`);
+    alert(`${shiftLabel} registered for ${claimTargetDate}! Added +${multiplier} tokens to balance.`);
     setClaimTargetDate(null);
   };
 

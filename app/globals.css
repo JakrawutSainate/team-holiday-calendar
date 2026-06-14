@@ -65,6 +65,13 @@ body {
   background-size: 8px 8px;
 }
 
+.holiday-pattern {
+  background-color: #f5f3ff;
+  background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
@@ -16,6 +17,12 @@ interface DateCellProps {
 export default function DateCell({ day, isMuted, dateString, events, capacity, onClick }: DateCellProps) {
   const { language, t } = useTranslation();
   const { role } = useRole();
+  const [earnRate, setEarnRate] = useState('1.5');
+
+  useEffect(() => {
+    const rate = localStorage.getItem('holidayhq_earn_rate') || '1.5';
+    setEarnRate(rate);
+  }, []);
 
   const dateObj = new Date(dateString);
   const dayOfWeek = dateObj.getDay();
@@ -36,8 +43,10 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
     }
   }
 
-  // Check if weekend work is claimed for this date
+  // Check if weekend or holiday work is claimed for this date
   const weekendWorkEvent = events.find(e => e.status === 'WEEKEND_WORK');
+  const holidayWorkEvent = events.find(e => e.status === 'HOLIDAY_WORK');
+  const claimedEvent = weekendWorkEvent || holidayWorkEvent;
 
   // Capacity label
   let capacityLabel = '';
@@ -47,24 +56,26 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
     capacityLabel = 'Locked';
   }
 
-  const isLockedDay = !isWeekend && (isFull || (maxAllowed === 0 && !isMuted) || !!holidayEvent);
+  // A holiday should not be a locked day now, so we can work/claim it!
+  const isLockedDay = !isWeekend && !holidayEvent && (isFull || (maxAllowed === 0 && !isMuted));
 
   const cellClass = `
     relative min-h-[140px] p-4 border-r border-b border-zinc-100 transition-all flex flex-col justify-between
     ${isMuted ? 'bg-zinc-50/40 opacity-30' : 'bg-white'}
     ${isLockedDay ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-zinc-50/50 cursor-pointer'}
     ${isWeekend && !isMuted ? 'bg-zinc-50/30' : ''}
+    ${holidayEvent && !isMuted ? 'holiday-pattern' : ''}
   `;
 
-  const dayNumberClass = isMuted ? 'text-zinc-300' : isWeekend ? 'text-zinc-900 font-bold' : 'text-zinc-800 font-semibold';
+  const dayNumberClass = isMuted ? 'text-zinc-300' : (isWeekend || holidayEvent) ? 'text-zinc-900 font-bold' : 'text-zinc-800 font-semibold';
   const capacityClass = isLockedDay ? 'text-red-500 font-bold' : 'text-zinc-500';
 
   return (
     <div className={cellClass} onClick={(!isMuted && !isLockedDay) ? onClick : undefined}>
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between items-start mb-2 animate-fade-in">
         <span className={`text-base ${dayNumberClass}`}>{day}</span>
         {holidayEvent ? (
-          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md shadow-xs">
+          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/50 px-1.5 py-0.5 rounded-md shadow-xs">
             {t('publicHoliday')}
           </span>
         ) : (
@@ -87,17 +98,17 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
         </div>
       )}
 
-      {/* Claim Weekend Work Button / Badge */}
-      {isWeekend && !isMuted && !holidayEvent && (
+      {/* Claim Weekend/Holiday Work Button / Badge */}
+      {(isWeekend || !!holidayEvent) && !isMuted && (
         <div className="my-1">
-          {weekendWorkEvent ? (
+          {claimedEvent ? (
             <div className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
               <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
-              <span>Claimed (+1.5x)</span>
+              <span>Claimed (+{earnRate}x)</span>
             </div>
           ) : (
             role === 'USER' && (
-              <button className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1">
+              <button className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1 cursor-pointer">
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 <span>Claim Shift</span>
               </button>
@@ -107,7 +118,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
       )}
 
       <div className="flex flex-wrap gap-1.5 mt-auto">
-        {events.filter(e => e.status !== 'PUBLIC_HOLIDAY' && e.status !== 'WEEKEND_WORK').map((e) => {
+        {events.filter(e => e.status !== 'PUBLIC_HOLIDAY' && e.status !== 'WEEKEND_WORK' && e.status !== 'HOLIDAY_WORK').map((e) => {
           const isOff = e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL';
           const theme = isOff ? 'amber' : 'green';
           return (
@@ -131,10 +142,11 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
       {isLockedDay && !isMuted && (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/65 backdrop-blur-[1px]">
           <span className="bg-zinc-900 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-md">
-            {holidayEvent ? t('publicHoliday') : 'Capacity Reached'}
+            Capacity Reached
           </span>
         </div>
       )}
     </div>
   );
 }
+
