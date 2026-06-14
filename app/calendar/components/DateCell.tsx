@@ -60,7 +60,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
   const isLockedDay = !isWeekend && !holidayEvent && (isFull || (maxAllowed === 0 && !isMuted));
 
   const cellClass = `
-    relative min-h-[140px] p-4 border-r border-b border-zinc-100 transition-all flex flex-col justify-between
+    group relative min-h-[140px] p-4 border-r border-b border-zinc-100 transition-all flex flex-col justify-between
     ${isMuted ? 'bg-zinc-50/40 opacity-30' : 'bg-white'}
     ${isLockedDay ? 'cell-locked-pattern cursor-not-allowed' : 'hover:bg-zinc-50/50 cursor-pointer'}
     ${isWeekend && !isMuted && !holidayEvent ? 'weekend-pattern' : ''}
@@ -70,8 +70,24 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
   const dayNumberClass = isMuted ? 'text-zinc-300' : (isWeekend || holidayEvent) ? 'text-zinc-900 font-bold' : 'text-zinc-800 font-semibold';
   const capacityClass = isLockedDay ? 'text-red-500 font-bold' : 'text-zinc-500';
 
+  let tooltipText = '';
+  if (!isMuted) {
+    if (holidayEvent) {
+      tooltipText = holidayName ? `${t('publicHoliday')}: ${holidayName}` : t('publicHoliday');
+    } else if (isWeekend) {
+      tooltipText = 'Weekend Shift';
+    }
+  }
+
   return (
-    <div className={cellClass} onClick={(!isMuted && !isLockedDay) ? onClick : undefined}>
+    <div className={cellClass} title={tooltipText}>
+      {tooltipText && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 bg-zinc-900 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold z-20 shadow-lg border border-zinc-800 flex items-center gap-1">
+          <span className="material-symbols-outlined text-xs text-indigo-400">info</span>
+          <span>{tooltipText}</span>
+        </div>
+      )}
+
       <div className="flex justify-between items-start mb-2 animate-fade-in">
         <span className={`text-base ${dayNumberClass}`}>{day}</span>
         {holidayEvent ? (
@@ -108,7 +124,13 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
             </div>
           ) : (
             role === 'USER' && (
-              <button className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1 cursor-pointer">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onClick) onClick();
+                }}
+                className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+              >
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 <span>Claim Shift</span>
               </button>
