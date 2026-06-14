@@ -66,14 +66,14 @@ body {
 }
 
 .holiday-pattern {
-  background-color: #f5f3ff;
-  background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+  background-color: #faf9fe;
+  background-image: radial-gradient(#c7d2fe 0.75px, transparent 0.75px);
   background-size: 8px 8px;
 }
 
 .weekend-pattern {
-  background-color: #fcfcfc;
-  background-image: radial-gradient(#e4e4e7 1px, transparent 1px);
+  background-color: #fafafa;
+  background-image: radial-gradient(#e4e4e7 0.75px, transparent 0.75px);
   background-size: 8px 8px;
 }
 
