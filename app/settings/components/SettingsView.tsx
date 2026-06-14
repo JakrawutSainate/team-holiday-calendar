@@ -12,14 +12,14 @@ export default function SettingsView() {
 
   const [fullName, setFullName] = useState('Alex Rivera');
   const [emailAddress, setEmailAddress] = useState('alex.rivera@holidayhq.com');
-  const [capacity, setCapacity] = useState(25);
+  const [maxOffAllowed, setMaxOffAllowed] = useState(2);
   const [earnRate, setEarnRate] = useState('1.5x');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    // Load capacity and earn rate
-    const savedCapacity = localStorage.getItem('holidayhq_capacity');
-    if (savedCapacity) setCapacity(parseInt(savedCapacity));
+    // Load maxOffAllowed and earn rate
+    const savedMaxOff = localStorage.getItem('holidayhq_max_off_allowed');
+    if (savedMaxOff) setMaxOffAllowed(parseInt(savedMaxOff));
     
     const savedEarnRate = localStorage.getItem('holidayhq_earn_rate');
     if (savedEarnRate) setEarnRate(`${savedEarnRate}x`);
@@ -35,12 +35,12 @@ export default function SettingsView() {
 
     if (role === 'ADMIN') {
       const rawEarnRate = earnRate.replace('x', '');
-      const workspaceRes = await saveWorkspaceSettings({ capacity, earnRate: rawEarnRate });
+      const workspaceRes = await saveWorkspaceSettings({ capacity: maxOffAllowed, earnRate: rawEarnRate });
       if (!workspaceRes.success) {
         setMessage({ type: 'error', text: workspaceRes.error || 'Workspace save failed' });
         return;
       }
-      localStorage.setItem('holidayhq_capacity', capacity.toString());
+      localStorage.setItem('holidayhq_max_off_allowed', maxOffAllowed.toString());
       localStorage.setItem('holidayhq_earn_rate', rawEarnRate);
     }
 
@@ -147,15 +147,17 @@ export default function SettingsView() {
                       {t('dailyCapacityLimitDesc')}
                     </p>
                     <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={capacity}
-                        onChange={(e) => setCapacity(Number(e.target.value))}
-                        className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-zinc-900"
-                      />
-                      <span className="text-base font-bold text-zinc-900 w-12 text-right">{capacity}%</span>
+                      <select
+                        value={maxOffAllowed}
+                        onChange={(e) => setMaxOffAllowed(Number(e.target.value))}
+                        className="p-3 border border-zinc-200 rounded-lg bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900 w-full"
+                      >
+                        <option value={1}>1 person (1 คน)</option>
+                        <option value={2}>2 people (2 คน)</option>
+                        <option value={3}>3 people (3 คน)</option>
+                        <option value={4}>4 people (4 คน)</option>
+                        <option value={5}>5 people (5 คน)</option>
+                      </select>
                     </div>
                   </div>
                 </div>

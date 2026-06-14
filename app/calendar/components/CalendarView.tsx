@@ -25,6 +25,7 @@ export default function CalendarView() {
   const [gridCells, setGridCells] = useState<CalendarGridCell[]>([]);
   const [loading, setLoading] = useState(true);
   const [tokens, setTokens] = useState(3);
+  const [capacityLimit, setCapacityLimit] = useState(2);
 
   useEffect(() => {
     // Load tokens
@@ -89,9 +90,16 @@ export default function CalendarView() {
 
     setEvents(finalEvents);
 
+    const maxOff = parseInt(localStorage.getItem('holidayhq_max_off_allowed') || '2');
+    setCapacityLimit(maxOff);
+
     const resolvedCapacities: Record<string, CapacitySetting> = {};
     cells.forEach((cell) => {
-      resolvedCapacities[cell.dateString] = manager.getDayCapacity(cell.dateString);
+      const cap = manager.getDayCapacity(cell.dateString);
+      if (cap.id === 'fallback-default' || cap.id === 'global-default') {
+        cap.maxOffAllowed = maxOff;
+      }
+      resolvedCapacities[cell.dateString] = cap;
     });
     setCapacities(resolvedCapacities);
     setLoading(false);
@@ -388,6 +396,32 @@ export default function CalendarView() {
     });
   };
 
+  const handleMaxOffChange = (newVal: number) => {
+    localStorage.setItem('holidayhq_max_off_allowed', newVal.toString());
+    setCapacityLimit(newVal);
+    
+    // Update capacities state dynamically
+    const updatedCapacities = { ...capacities };
+    Object.keys(updatedCapacities).forEach((dateStr) => {
+      const cap = updatedCapacities[dateStr];
+      if (cap.id === 'fallback-default' || cap.id === 'global-default') {
+        cap.maxOffAllowed = newVal;
+      }
+    });
+    setCapacities(updatedCapacities);
+
+    Swal.fire({
+      title: language === 'th' ? 'ปรับเปลี่ยนเรียบร้อย' : 'Capacity Updated',
+      text: language === 'th'
+        ? `ปรับขีดจำกัดจำนวนวันหยุดพร้อมกันเป็นสูงสุด ${newVal} คน เรียบร้อยแล้ว`
+        : `Daily capacity limit has been updated to max ${newVal} people successfully!`,
+      icon: 'success',
+      confirmButtonColor: '#09090b',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  };
+
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
       <TopNavBar placeholder={t('searchTeamOrDates')} />
@@ -402,6 +436,33 @@ export default function CalendarView() {
             onRequestLeave={handleRequestLeaveForm} 
           />
         </div>
+
+        {role === 'ADMIN' && (
+          <div className="mb-6 bg-white border border-zinc-100 p-6 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-zinc-900">
+                {language === 'th' ? 'ตั้งค่าขีดจำกัดวันลาพักรายวัน (Edit Calendar)' : 'Manage Daily Leave Limit (Edit Calendar)'}
+              </h4>
+              <p className="text-sm text-zinc-500">
+                {language === 'th' ? 'ปรับเพิ่มขีดจำกัดจำนวนคนหยุดสูงสุดที่อนุญาตให้ลาหยุดพร้อมกันเป็น 3 หรือมากกว่า' : 'Adjust the maximum number of people allowed to take leave simultaneously.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-zinc-600 font-semibold">{language === 'th' ? 'จำนวนสูงสุด:' : 'Max Allowed:'}</span>
+              <select
+                value={capacityLimit}
+                onChange={(e) => handleMaxOffChange(Number(e.target.value))}
+                className="p-2.5 border border-zinc-200 rounded-xl bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900 w-32 shadow-xs"
+              >
+                <option value={1}>1 คน (1 person)</option>
+                <option value={2}>2 คน (2 people)</option>
+                <option value={3}>3 คน (3 people)</option>
+                <option value={4}>4 คน (4 people)</option>
+                <option value={5}>5 คน (5 people)</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
           <div className="min-w-[768px] lg:min-w-0">
