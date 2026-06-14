@@ -7,9 +7,12 @@ import { exportCalendarExcel } from '../actions';
 interface CalendarHeaderProps {
   year: number;
   month: number;
+  role: 'ADMIN' | 'USER';
+  tokens: number;
+  onRequestLeave: () => void;
 }
 
-export default function CalendarHeader({ year, month }: CalendarHeaderProps) {
+export default function CalendarHeader({ year, month, role, tokens, onRequestLeave }: CalendarHeaderProps) {
   const { t, language } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -62,7 +65,7 @@ export default function CalendarHeader({ year, month }: CalendarHeaderProps) {
   };
 
   return (
-    <section className="flex flex-col md:flex-row items-end justify-between gap-6 mb-8">
+    <section className="flex flex-col md:flex-row items-end justify-between gap-6 mb-8 w-full">
       <div>
         <h2 className="text-4xl font-bold tracking-tight mb-2 text-primary">
           📅 {t('shiftCalendar')}
@@ -86,14 +89,27 @@ export default function CalendarHeader({ year, month }: CalendarHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="px-5 py-3 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl border border-tertiary-fixed-dim shadow-sm flex items-center gap-3">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">{t('availableTokens')}</span>
-            <span className="text-xl font-bold leading-none">3 {t('tokens')}</span>
+      <div className="flex flex-wrap items-center gap-4">
+        {role === 'USER' && (
+          <button 
+            onClick={onRequestLeave} 
+            className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-base font-semibold hover:bg-zinc-800 transition-all cursor-pointer shadow-md"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            {language === 'th' ? 'ส่งใบลา' : 'Request Leave'}
+          </button>
+        )}
+
+        {role === 'USER' && (
+          <div className="px-5 py-3 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl border border-tertiary-fixed-dim shadow-sm flex items-center gap-3">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">{t('availableTokens')}</span>
+              <span className="text-xl font-bold leading-none">{tokens} {t('tokens')}</span>
+            </div>
+            <span className="material-symbols-outlined text-[32px]">confirmation_number</span>
           </div>
-          <span className="material-symbols-outlined text-[32px]">confirmation_number</span>
-        </div>
+        )}
+
         <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
           <span className="material-symbols-outlined">download</span>
           {t('exportExcel')}

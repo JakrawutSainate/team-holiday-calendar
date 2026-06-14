@@ -18,6 +18,14 @@ export default function SideNavBar() {
     { name: t('settings'), href: '/settings', icon: 'settings' },
   ];
 
+  const filteredItems = navItems.filter((item) => {
+    if (role === 'ADMIN') {
+      return item.href === '/overview' || item.href === '/calendar' || item.href === '/team';
+    } else {
+      return item.href === '/overview' || item.href === '/calendar' || item.href === '/balance' || item.href === '/settings';
+    }
+  });
+
   return (
     <>
       {/* Desktop Sidebar Navigation */}
@@ -28,7 +36,7 @@ export default function SideNavBar() {
         </div>
 
         <nav className="flex flex-col gap-2 grow">
-          {navItems.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -75,7 +83,7 @@ export default function SideNavBar() {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100/80 px-4 py-2 flex justify-between items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
         <div className="flex justify-around items-center flex-1">
-          {navItems.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
