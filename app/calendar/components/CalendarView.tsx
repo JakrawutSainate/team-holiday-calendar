@@ -198,8 +198,8 @@ export default function CalendarView() {
       Swal.fire({
         title: language === 'th' ? 'ส่งใบลาด้วยโทเค็น?' : 'Request Leave?',
         text: language === 'th'
-          ? `คุณต้องการใช้ 3 โทเค็นในการลาหยุดสำหรับวันที่ ${dateString} หรือไม่? (โทเค็นของคุณ: ${currentTokens})`
-          : `Do you want to spend 3 tokens to request leave on ${dateString}? (Your balance: ${currentTokens} tokens)`,
+          ? `คุณต้องการใช้ 1 โทเค็นในการลาหยุดสำหรับวันที่ ${dateString} หรือไม่? (โทเค็นของคุณ: ${currentTokens})`
+          : `Do you want to spend 1 token to request leave on ${dateString}? (Your balance: ${currentTokens} tokens)`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: language === 'th' ? 'ส่งใบลา' : 'Request Leave',
@@ -208,12 +208,12 @@ export default function CalendarView() {
         cancelButtonColor: '#d4d4d8',
       }).then((result) => {
         if (result.isConfirmed) {
-          if (currentTokens < 3) {
+          if (currentTokens < 1) {
             Swal.fire({
               title: language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
               text: language === 'th'
-                ? `ต้องการ 3 โทเค็น แต่ตอนนี้คุณมีเพียง ${currentTokens} โทเค็นเท่านั้น`
-                : `You need 3 tokens to request leave, but you only have ${currentTokens} tokens.`,
+                ? `ต้องการ 1 โทเค็น แต่ตอนนี้คุณมีเพียง ${currentTokens} โทเค็นเท่านั้น`
+                : `You need 1 token to request leave, but you only have ${currentTokens} tokens.`,
               icon: 'error',
               confirmButtonColor: '#09090b'
             });
@@ -221,7 +221,7 @@ export default function CalendarView() {
           }
 
           // Deduct tokens
-          const newTokens = currentTokens - 3;
+          const newTokens = currentTokens - 1;
           setTokens(newTokens);
           localStorage.setItem('holidayhq_tokens', newTokens.toString());
 
@@ -259,13 +259,13 @@ export default function CalendarView() {
             type: 'SPEND',
             description: `Compensatory Leave booked (${dateObj.toLocaleDateString('en-US', { weekday: 'short' })})`,
             status: 'Approved',
-            amount: '-3'
+            amount: '-1'
           });
           localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
 
           Swal.fire({
             title: language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
-            text: language === 'th' ? 'หัก 3 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว' : 'Deducted 3 tokens and registered your leave successfully!',
+            text: language === 'th' ? 'หัก 1 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว' : 'Deducted 1 token and registered your leave successfully!',
             icon: 'success',
             confirmButtonColor: '#09090b'
           });
@@ -284,8 +284,8 @@ export default function CalendarView() {
         <div class="text-left space-y-4 font-sans">
           <p class="text-sm text-zinc-500 mb-4 leading-relaxed">
             ${language === 'th' 
-              ? `ใช้ 3 โทเค็นต่อวันในการหยุดงาน (โทเค็นของคุณตอนนี้: <strong>${currentTokens}</strong>)` 
-              : `It costs 3 tokens per day to request leave. (Your balance: <strong>${currentTokens}</strong> tokens)`}
+              ? `ใช้ 1 โทเค็นต่อวันในการหยุดงาน (โทเค็นของคุณตอนนี้: <strong>${currentTokens}</strong>)` 
+              : `It costs 1 token per day to request leave. (Your balance: <strong>${currentTokens}</strong> tokens)`}
           </p>
           <div class="flex flex-col gap-2">
             <label class="text-xs font-bold text-zinc-700">${language === 'th' ? 'เลือกวันที่ต้องการลา' : 'Select Leave Date'}</label>
@@ -309,12 +309,12 @@ export default function CalendarView() {
     }).then((result) => {
       if (result.isConfirmed && result.value) {
         const selectedDate = result.value;
-        if (currentTokens < 3) {
+        if (currentTokens < 1) {
           Swal.fire({
             title: language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
             text: language === 'th'
-              ? `ต้องการ 3 โทเค็น แต่ตอนนี้คุณมีเพียง ${currentTokens} โทเค็นเท่านั้น`
-              : `You need 3 tokens, but you only have ${currentTokens} tokens.`,
+              ? `ต้องการ 1 โทเค็น แต่ตอนนี้คุณมีเพียง ${currentTokens} โทเค็นเท่านั้น`
+              : `You need 1 token, but you only have ${currentTokens} tokens.`,
             icon: 'error',
             confirmButtonColor: '#09090b'
           });
@@ -336,7 +336,7 @@ export default function CalendarView() {
         }
 
         // Deduct tokens
-        const newTokens = currentTokens - 3;
+        const newTokens = currentTokens - 1;
         setTokens(newTokens);
         localStorage.setItem('holidayhq_tokens', newTokens.toString());
 
@@ -374,13 +374,13 @@ export default function CalendarView() {
           type: 'SPEND',
           description: `Compensatory Leave booked (${dateObj.toLocaleDateString('en-US', { weekday: 'short' })})`,
           status: 'Approved',
-          amount: '-3'
+          amount: '-1'
         });
         localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
 
         Swal.fire({
           title: language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
-          text: language === 'th' ? 'หัก 3 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว' : 'Deducted 3 tokens and registered your leave successfully!',
+          text: language === 'th' ? 'หัก 1 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว' : 'Deducted 1 token and registered your leave successfully!',
           icon: 'success',
           confirmButtonColor: '#09090b'
         });

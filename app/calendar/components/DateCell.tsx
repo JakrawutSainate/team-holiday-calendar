@@ -47,6 +47,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
   const weekendWorkEvent = events.find(e => e.status === 'WEEKEND_WORK');
   const holidayWorkEvent = events.find(e => e.status === 'HOLIDAY_WORK');
   const claimedEvent = weekendWorkEvent || holidayWorkEvent;
+  const isUserOff = events.some(e => e.userId === 'user-takahashi' && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
 
   // Capacity label
   let capacityLabel = '';
@@ -135,6 +136,24 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
                 <span>{t('claimShift')}</span>
               </button>
             )
+          )}
+        </div>
+      )}
+
+      {/* Weekday Request Leave Button */}
+      {!isWeekend && !holidayEvent && !isMuted && !isUserOff && (
+        <div className="my-1">
+          {role === 'USER' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onClick) onClick();
+              }}
+              className="w-full text-left px-2.5 py-1 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">event_busy</span>
+              <span>{t('requestLeave')}</span>
+            </button>
           )}
         </div>
       )}

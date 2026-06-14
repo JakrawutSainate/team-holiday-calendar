@@ -34,14 +34,14 @@ export default function BalanceView() {
   }, []);
 
   const handleRedeem = async () => {
-    if (tokens < 3) {
-      alert(`Redeem failed: Insufficient tokens. You have ${tokens} tokens but you need at least 3 tokens to request leave.`);
+    if (tokens < 1) {
+      alert(`Redeem failed: Insufficient tokens. You have ${tokens} tokens but you need at least 1 token to request leave.`);
       return;
     }
 
-    const res = await redeemTokensAction({ tokensToRedeem: 3, reason: 'Redeemed Friday leave' });
+    const res = await redeemTokensAction({ tokensToRedeem: 1, reason: 'Redeemed leave' });
     if (res.success) {
-      const newTokens = tokens - 3;
+      const newTokens = tokens - 1;
       setTokens(newTokens);
       localStorage.setItem('holidayhq_tokens', newTokens.toString());
 
@@ -49,9 +49,9 @@ export default function BalanceView() {
       const newTx: Transaction = {
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         type: 'SPEND',
-        description: 'Redeemed Friday leave (Takahashi S.)',
+        description: 'Redeemed leave (Takahashi S.)',
         status: 'Approved',
-        amount: '-3'
+        amount: '-1'
       };
       const updatedTx = [newTx, ...transactions];
       setTransactions(updatedTx);

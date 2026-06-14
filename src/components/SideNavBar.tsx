@@ -13,6 +13,7 @@ export default function SideNavBar() {
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
     { name: t('calendar'), href: '/calendar', icon: 'calendar_month' },
+    { name: t('myLeaves'), href: '/leaves', icon: 'event_busy' },
     { name: t('balance'), href: '/balance', icon: 'account_balance_wallet' },
     { name: t('team'), href: '/team', icon: 'group' },
     { name: t('settings'), href: '/settings', icon: 'settings' },
@@ -22,14 +23,14 @@ export default function SideNavBar() {
     if (role === 'ADMIN') {
       return item.href === '/overview' || item.href === '/calendar' || item.href === '/team';
     } else {
-      return item.href === '/overview' || item.href === '/calendar' || item.href === '/balance' || item.href === '/settings';
+      return item.href === '/overview' || item.href === '/calendar' || item.href === '/leaves' || item.href === '/balance' || item.href === '/settings';
     }
   });
 
   return (
     <>
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-full flex-col p-6 w-64 border-r border-zinc-100 bg-white z-50">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full flex-col p-6 w-64 border-r border-zinc-100 bg-white z-50 overflow-y-auto custom-scrollbar">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tighter text-zinc-900">HolidayHQ</h1>
           <p className="text-sm text-zinc-500">{t('teamManagement')}</p>
@@ -82,14 +83,14 @@ export default function SideNavBar() {
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100/80 px-4 py-2 flex justify-between items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-        <div className="flex justify-around items-center flex-1">
+        <div className="flex justify-around items-center flex-1 flex-wrap">
           {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 py-1 px-3 transition-colors ${
+                className={`flex flex-col items-center gap-1 py-1 px-2.5 transition-colors ${
                   isActive ? 'text-zinc-900 font-semibold' : 'text-zinc-400'
                 }`}
               >
