@@ -1,5 +1,6 @@
-import SettingsView from './components/SettingsView';
+import SettingsClient from './components/SettingsClient';
 
-export default function SettingsPage() {
-  return <SettingsView />;
+// Server-Side Rendered (SSR) page component
+export default async function SettingsPage() {
+  return <SettingsClient />;
 }

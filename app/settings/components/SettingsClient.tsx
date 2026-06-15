@@ -1,54 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { saveProfileSettings, saveWorkspaceSettings } from '../actions';
+import { SettingsController } from './SettingsController';
 
-export default function SettingsView() {
+export default function SettingsClient() {
   const { t } = useTranslation();
   const { role } = useRole();
+  const [, setTick] = useState(0);
 
-  const [fullName, setFullName] = useState('Alex Rivera');
-  const [emailAddress, setEmailAddress] = useState('alex.rivera@holidayhq.com');
-  const [maxOffAllowed, setMaxOffAllowed] = useState(2);
-  const [earnRate, setEarnRate] = useState('1.5x');
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const controllerRef = useRef<SettingsController | null>(null);
+
+  if (!controllerRef.current) {
+    controllerRef.current = new SettingsController(() => setTick((tick) => tick + 1));
+  }
+
+  const controller = controllerRef.current;
 
   useEffect(() => {
-    // Load maxOffAllowed and earn rate
-    const savedMaxOff = localStorage.getItem('holidayhq_max_off_allowed');
-    if (savedMaxOff) setMaxOffAllowed(parseInt(savedMaxOff));
-    
-    const savedEarnRate = localStorage.getItem('holidayhq_earn_rate');
-    if (savedEarnRate) setEarnRate(`${savedEarnRate}x`);
-  }, []);
+    controller.loadState();
+  }, [controller]);
 
   const handleSave = async () => {
-    setMessage(null);
-    const profileRes = await saveProfileSettings({ fullName, emailAddress });
-    if (!profileRes.success) {
-      setMessage({ type: 'error', text: profileRes.error || 'Profile save failed' });
-      return;
-    }
-
-    if (role === 'ADMIN') {
-      const rawEarnRate = earnRate.replace('x', '');
-      const workspaceRes = await saveWorkspaceSettings({ capacity: maxOffAllowed, earnRate: rawEarnRate });
-      if (!workspaceRes.success) {
-        setMessage({ type: 'error', text: workspaceRes.error || 'Workspace save failed' });
-        return;
-      }
-      localStorage.setItem('holidayhq_max_off_allowed', maxOffAllowed.toString());
-      localStorage.setItem('holidayhq_earn_rate', rawEarnRate);
-    }
-
-    setMessage({ type: 'success', text: 'Settings saved successfully!' });
+    await controller.save(role, saveProfileSettings, saveWorkspaceSettings);
   };
 
+  const message = controller.getMessage();
+
   return (
-    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-[#fcfcfc]">
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchSettings')} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
@@ -56,9 +39,7 @@ export default function SettingsView() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-4xl font-bold tracking-tight text-zinc-900 mb-2">{t('settings')}</h2>
-              <p className="text-lg text-zinc-500">
-                {t('settingsDesc')}
-              </p>
+              <p className="text-lg text-zinc-500">{t('settingsDesc')}</p>
             </div>
             <div className="bg-zinc-50 border border-zinc-200/60 rounded-xl px-4 py-2 text-sm text-zinc-600 font-semibold shadow-xs">
               Role: <span className="text-zinc-900 font-bold">{role}</span>
@@ -77,7 +58,7 @@ export default function SettingsView() {
             </div>
           )}
 
-          {/* Profile Settings Card (Visible to both Admin and User) */}
+          {/* Profile Settings Card */}
           <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-8">
             <div className="flex items-center justify-between">
               <div>
@@ -109,20 +90,24 @@ export default function SettingsView() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-zinc-500 block mb-2">{t('fullName')}</label>
+                  <label className="text-sm font-semibold text-zinc-500 block mb-2">
+                    {t('fullName')}
+                  </label>
                   <input
                     type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={controller.getFullName()}
+                    onChange={(e) => controller.setFullName(e.target.value)}
                     className="w-full bg-white border border-zinc-200 text-zinc-900 rounded-lg px-4 py-3 text-base focus:border-zinc-900 transition-all outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-zinc-500 block mb-2">{t('emailAddress')}</label>
+                  <label className="text-sm font-semibold text-zinc-500 block mb-2">
+                    {t('emailAddress')}
+                  </label>
                   <input
                     type="email"
-                    value={emailAddress}
-                    onChange={(e) => setEmailAddress(e.target.value)}
+                    value={controller.getEmailAddress()}
+                    onChange={(e) => controller.setEmailAddress(e.target.value)}
                     className="w-full bg-white border border-zinc-200 text-zinc-900 rounded-lg px-4 py-3 text-base focus:border-zinc-900 transition-all outline-none"
                   />
                 </div>
@@ -148,8 +133,8 @@ export default function SettingsView() {
                     </p>
                     <div className="flex items-center gap-4">
                       <select
-                        value={maxOffAllowed}
-                        onChange={(e) => setMaxOffAllowed(Number(e.target.value))}
+                        value={controller.getMaxOffAllowed()}
+                        onChange={(e) => controller.setMaxOffAllowed(Number(e.target.value))}
                         className="p-3 border border-zinc-200 rounded-lg bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900 w-full"
                       >
                         <option value={1}>1 person (1 คน)</option>
@@ -173,11 +158,13 @@ export default function SettingsView() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1 px-4 py-3 bg-white border border-zinc-200 text-zinc-950 rounded-lg flex items-center justify-between">
                         <span className="text-sm text-zinc-500">{t('baseRate')}</span>
-                        <span className="text-base font-bold text-zinc-900">{earnRate}</span>
+                        <span className="text-base font-bold text-zinc-900">
+                          {controller.getEarnRate()}
+                        </span>
                       </div>
                       <select
-                        value={earnRate}
-                        onChange={(e) => setEarnRate(e.target.value)}
+                        value={controller.getEarnRate()}
+                        onChange={(e) => controller.setEarnRate(e.target.value)}
                         className="p-3 border border-zinc-200 rounded-lg bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900"
                       >
                         <option value="1.0x">1.0x</option>
@@ -196,7 +183,10 @@ export default function SettingsView() {
             <button className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer font-bold tracking-wider">
               {t('discardChanges')}
             </button>
-            <button onClick={handleSave} className="bg-zinc-900 text-white px-8 py-3.5 rounded-xl text-sm font-semibold scale-95 active:scale-90 transition-transform shadow-md cursor-pointer tracking-wider">
+            <button
+              onClick={handleSave}
+              className="bg-zinc-900 text-white px-8 py-3.5 rounded-xl text-sm font-semibold scale-95 active:scale-90 transition-transform shadow-md cursor-pointer tracking-wider"
+            >
               {t('savePreferences')}
             </button>
           </div>
