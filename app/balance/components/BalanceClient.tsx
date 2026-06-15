@@ -21,18 +21,11 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
   const { t } = useTranslation();
   const [, setTick] = useState(0);
 
-  // Maintain instance of controller inside ref to persist across renders
-  const controllerRef = useRef<BalanceController | null>(null);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new BalanceController(
-      initialTokens,
-      initialTransactions,
-      () => setTick((tick) => tick + 1)
-    );
-  }
-
-  const controller = controllerRef.current;
+  const [controller] = useState(() => new BalanceController(
+    initialTokens,
+    initialTransactions,
+    () => setTick((tick) => tick + 1)
+  ));
 
   useEffect(() => {
     controller.loadState();
@@ -42,8 +35,9 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
     try {
       const message = await controller.redeem(redeemTokensAction);
       alert(message);
-    } catch (err: any) {
-      alert(`Redeem failed: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(`Redeem failed: ${message}`);
     }
   };
 

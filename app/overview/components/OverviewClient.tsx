@@ -32,7 +32,7 @@ export default function OverviewClient({
   const { t } = useTranslation();
   const [, setTick] = useState(0);
 
-  const controllerRef = useRef<OverviewController | null>(null);
+  const controllerRef = useRef<OverviewController>(undefined);
 
   if (!controllerRef.current) {
     controllerRef.current = new OverviewController(
@@ -54,8 +54,9 @@ export default function OverviewClient({
     try {
       const msg = await controller.syncCalendar(toggleCalendarSync);
       alert(msg);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(message);
     }
   };
 
@@ -63,8 +64,9 @@ export default function OverviewClient({
     try {
       const msg = await controller.quickRequest(submitQuickRequest);
       alert(msg);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(message);
     }
   };
 

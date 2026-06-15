@@ -1,14 +1,22 @@
 'use server';
 
 import { TeamValidator, InviteMemberInput } from './schema';
+import { sanitize } from '@/src/libs/security';
 
 export async function inviteMemberAction(input: InviteMemberInput) {
-  const error = TeamValidator.validateInvite(input);
+  const sanitizedInput: InviteMemberInput = {
+    name: sanitize(input.name),
+    email: sanitize(input.email),
+    role: input.role,
+    department: input.department,
+    title: sanitize(input.title)
+  };
+  const error = TeamValidator.validateInvite(sanitizedInput);
   if (error) {
     return { success: false, error };
   }
 
-  console.log('Member invited on server:', input);
+  console.log('Member invited on server:', sanitizedInput);
   return { success: true };
 }
 

@@ -1,5 +1,7 @@
+import { CalendarEvent } from '@/src/libs/calendarData';
+
 export class LeavesController {
-  private leaves: any[] = [];
+  private leaves: CalendarEvent[] = [];
   private tokens: number = 3;
   private updateCallback: () => void;
 
@@ -7,7 +9,7 @@ export class LeavesController {
     this.updateCallback = updateCallback;
   }
 
-  public getLeaves(): any[] {
+  public getLeaves(): CalendarEvent[] {
     return this.leaves;
   }
 
@@ -25,11 +27,11 @@ export class LeavesController {
     // Load leave events
     const savedEvents = localStorage.getItem('holidayhq_events');
     if (savedEvents) {
-      const allEvents = JSON.parse(savedEvents);
+      const allEvents = JSON.parse(savedEvents) as CalendarEvent[];
       const userLeaves = allEvents.filter(
-        (e: any) => e.userId === 'user-takahashi' && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+        (e: CalendarEvent) => e.userId === 'user-takahashi' && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
       );
-      userLeaves.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      userLeaves.sort((a: CalendarEvent, b: CalendarEvent) => new Date(b.date).getTime() - new Date(a.date).getTime());
       this.leaves = userLeaves;
     } else {
       this.leaves = [];
@@ -38,7 +40,7 @@ export class LeavesController {
     this.updateCallback();
   }
 
-  public cancelLeave(leave: any): void {
+  public cancelLeave(leave: CalendarEvent): void {
     // Refund 1 token
     const currentTokensStr = localStorage.getItem('holidayhq_tokens') || '3';
     const currentTokens = parseFloat(currentTokensStr);
@@ -49,8 +51,8 @@ export class LeavesController {
     // Remove leave event from local storage
     const saved = localStorage.getItem('holidayhq_events');
     if (saved) {
-      const allEvents = JSON.parse(saved);
-      const updatedEvents = allEvents.filter((e: any) => e.id !== leave.id);
+      const allEvents = JSON.parse(saved) as CalendarEvent[];
+      const updatedEvents = allEvents.filter((e: CalendarEvent) => e.id !== leave.id);
       localStorage.setItem('holidayhq_events', JSON.stringify(updatedEvents));
     }
 

@@ -1,3 +1,5 @@
+import { sanitize } from '@/src/libs/security';
+
 export interface InviteMemberInput {
   name: string;
   email: string;
@@ -7,17 +9,21 @@ export interface InviteMemberInput {
 }
 
 export class TeamValidator {
-  public static validateInvite(input: InviteMemberInput): string | null {
-    if (!input.name.trim()) {
+  public static validateInvite(input: InviteMemberInput): string | undefined {
+    const name = sanitize(input.name);
+    const email = sanitize(input.email);
+    const title = sanitize(input.title);
+
+    if (!name.trim()) {
       return 'Name is required';
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(input.email)) {
+    if (!emailRegex.test(email)) {
       return 'Invalid email address';
     }
-    if (!input.title.trim()) {
+    if (!title.trim()) {
       return 'Job title is required';
     }
-    return null;
+    return undefined;
   }
 }

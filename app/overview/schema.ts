@@ -4,10 +4,10 @@ export interface CalendarSyncInput {
 }
 
 export class OverviewValidator {
-  public static validateCalendarSync(input: CalendarSyncInput): string | null {
+  public static validateCalendarSync(input: CalendarSyncInput): string | undefined {
     if (!input.calendarType) {
       return 'Calendar type is required';
     }
-    return null;
+    return undefined;
   }
 }

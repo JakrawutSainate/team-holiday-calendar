@@ -27,7 +27,7 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
 
   const [, setTick] = useState(0);
 
-  const controllerRef = useRef<TeamController | null>(null);
+  const controllerRef = useRef<TeamController>(undefined);
 
   if (!controllerRef.current) {
     controllerRef.current = new TeamController(
@@ -59,8 +59,9 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
     try {
       const msg = await controller.inviteMember(inviteMemberAction);
       alert(msg);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(message);
     }
   };
 
@@ -68,8 +69,9 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
     try {
       const msg = await controller.downloadReport(downloadTeamReportAction);
       alert(msg);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(message);
     }
   };
 

@@ -11,14 +11,7 @@ export default function SettingsClient() {
   const { t } = useTranslation();
   const { role } = useRole();
   const [, setTick] = useState(0);
-
-  const controllerRef = useRef<SettingsController | null>(null);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new SettingsController(() => setTick((tick) => tick + 1));
-  }
-
-  const controller = controllerRef.current;
+  const [controller] = useState(() => new SettingsController(() => setTick((tick) => tick + 1)));
 
   useEffect(() => {
     controller.loadState();
@@ -28,7 +21,8 @@ export default function SettingsClient() {
     await controller.save(role, saveProfileSettings, saveWorkspaceSettings);
   };
 
-  const message = controller.getMessage();
+  const messageText = controller.getMessageText();
+  const messageType = controller.getMessageType();
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -46,15 +40,15 @@ export default function SettingsClient() {
             </div>
           </div>
 
-          {message && (
+          {messageText !== '' && (
             <div
               className={`p-4 rounded-xl text-sm font-semibold border ${
-                message.type === 'success'
+                messageType === 'success'
                   ? 'bg-green-50 text-green-700 border-green-200'
                   : 'bg-red-50 text-red-700 border-red-200'
               }`}
             >
-              {message.text}
+              {messageText}
             </div>
           )}
 

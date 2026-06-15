@@ -6,6 +6,7 @@ import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import Swal from 'sweetalert2';
 import { LeavesController } from './LeavesController';
+import { CalendarEvent } from '@/src/libs/calendarData';
 
 export default function LeavesClient() {
   const { t, language } = useTranslation();
@@ -14,7 +15,7 @@ export default function LeavesClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const controllerRef = useRef<LeavesController | null>(null);
+  const controllerRef = useRef<LeavesController>(undefined);
 
   if (!controllerRef.current) {
     controllerRef.current = new LeavesController(() => setTick((tick) => tick + 1));
@@ -33,7 +34,7 @@ export default function LeavesClient() {
     return () => window.removeEventListener('holidayhq_events_updated', handleUpdate);
   }, [controller]);
 
-  const handleCancelLeave = (leave: any) => {
+  const handleCancelLeave = (leave: CalendarEvent) => {
     Swal.fire({
       title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',
       text:
@@ -154,7 +155,7 @@ export default function LeavesClient() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedLeaves.map((leave: any) => {
+                      paginatedLeaves.map((leave: CalendarEvent) => {
                         const d = new Date(leave.date);
                         const displayDate = d.toLocaleDateString(
                           language === 'en' ? 'en-US' : 'th-TH',

@@ -18,24 +18,13 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { t, language } = useTranslation();
   const { role } = useRole();
   const [, setTick] = useState(0);
-
-  const controllerRef = useRef<CalendarController | null>(null);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new CalendarController(
-      year,
-      month,
-      role,
-      () => setTick((tick) => tick + 1)
-    );
-  }
-
-  const controller = controllerRef.current!;
+  const [controller] = useState(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
 
   // React to change in year/month params
   useEffect(() => {
+    controller.updateParams(year, month, role);
     controller.loadState();
-  }, [year, month, controller]);
+  }, [year, month, role, controller]);
 
   const handleCellClick = (dateString: string) => {
     if (role !== 'USER') return;
