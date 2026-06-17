@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npx -y concurrently --kill-others -p \"[{name}]\" -n \"frontend,backend\" -c \"cyan,green\" \"next dev\" \"cd backend && go run main.go\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

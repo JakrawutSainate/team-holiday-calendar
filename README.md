@@ -52,32 +52,25 @@
 
 ---
 
-## 🏃 วิธีการรันระบบ (How to Run)
+### 🏃 วิธีการรันระบบ (How to Run)
 
-### 1. วิธีรันหน้าบ้าน (Frontend - Next.js)
-ติดตั้งไลบรารีและรันโหมดพัฒนา (Development Mode):
+คุณสามารถเปิดใช้งานทั้งระบบหน้าบ้าน (Next.js) และหลังบ้าน (Go) ได้ในคำสั่งเดียวผ่าน `npm run dev`:
+
 ```bash
-# ติดตั้ง dependencies
+# 1. ติดตั้ง Library ของโปรเจกต์หลัก
 npm install
 
-# รันหน้าบ้าน
+# 2. ย้ายเข้าไปยังหลังบ้านเพื่อเตรียมฐานข้อมูลและเครื่องมือ Prisma (ทำครั้งแรก)
+cd backend
+go run github.com/steebchen/prisma-client-go generate
+cd ..
+
+# 3. รันทั้งหน้าบ้านและหลังบ้านพร้อมกันทันที
 npm run dev
 ```
-หน้าบ้านจะทำงานที่: [http://localhost:3000](http://localhost:3000)
 
-### 2. วิธีรันหลังบ้าน (Backend - Go)
-ตรวจสอบให้แน่ใจว่าติดตั้ง Go 1.21+ และพิมพ์คำสั่งดังนี้:
-```bash
-# ย้ายเข้าไปยังโฟลเดอร์หลังบ้าน
-cd backend
-
-# สั่ง Generate โค้ดของ Prisma Client สำหรับ Go
-go run github.com/steebchen/prisma-client-go generate
-
-# รันเซิร์ฟเวอร์หลังบ้าน
-go run main.go
-```
-หลังบ้านจะทำงานที่: [http://localhost:8080](http://localhost:8080)
+* หน้าบ้านรันบน: [http://localhost:3000](http://localhost:3000)
+* หลังบ้านรันบน: [http://localhost:8080](http://localhost:8080)
 
 ---
 
