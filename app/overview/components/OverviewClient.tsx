@@ -70,7 +70,10 @@ export default function OverviewClient({
             <RecentActivityCard activities={controller.getActivities()} />
 
             <div className="lg:col-span-4 space-y-6">
-              <PulseChart burnoutRisk={controller.getBurnoutRisk()} />
+              <PulseChart
+                burnoutRisk={controller.getBurnoutRisk()}
+                events={controller.getEvents()}
+              />
             </div>
           </div>
         </div>

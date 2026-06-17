@@ -45,6 +45,11 @@ export const translations = {
     availableText: 'Available',
     activeText: 'Workload',
     presentText: 'of all team members are on leave today',
+    workloadModalTitle: 'Daily Workload Details',
+    workloadModalNoLeaves: 'No leave requests on this date.',
+    workloadModalSpentToken: 'Spent 1 Token for leave',
+    workloadModalCompensatory: 'Requested compensatory off',
+    closeButton: 'Close',
 
     // Calendar
     shiftCalendar: 'Team Shift & Token Calendar',
@@ -169,6 +174,11 @@ export const translations = {
     availableText: 'พร้อมใช้งาน',
     activeText: 'ภาระงาน',
     presentText: 'ของสมาชิกทีมทั้งหมดหยุดงานในวันนี้',
+    workloadModalTitle: 'รายละเอียดภาระงานประจำวัน',
+    workloadModalNoLeaves: 'ไม่มีคำขอหยุดงานในวันนี้',
+    workloadModalSpentToken: 'ใช้ 1 โทเค็นในการลาหยุด',
+    workloadModalCompensatory: 'ขอหยุดชดเชยเวรทำงาน',
+    closeButton: 'ปิด',
 
     // Calendar
     shiftCalendar: 'ปฏิทินเวรทำงานและโทเค็นวันหยุด',

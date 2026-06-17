@@ -1,10 +1,12 @@
 import { Activity } from '@/src/libs/models/HolidayHQManager';
+import { CalendarEvent, mockCalendarEvents } from '@/src/libs/calendarData';
 
 export class OverviewController {
   private activities: Activity[];
   private stats: { presentCount: number; availabilityPercent: number };
   private burnoutRisk: number[];
   private tokens: number;
+  private events: CalendarEvent[];
   private updateCallback: () => void;
 
   constructor(
@@ -18,7 +20,12 @@ export class OverviewController {
     this.stats = initialStats;
     this.burnoutRisk = initialBurnoutRisk;
     this.tokens = initialTokens;
+    this.events = [];
     this.updateCallback = updateCallback;
+  }
+
+  public getEvents(): CalendarEvent[] {
+    return this.events;
   }
 
   public getActivities(): Activity[] {
@@ -51,6 +58,7 @@ export class OverviewController {
     if (savedEvents) {
       try {
         const events = JSON.parse(savedEvents);
+        this.events = events;
         const tzOffset = new Date().getTimezoneOffset() * 60000;
         const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
         const activeLeaves = events.filter(
@@ -85,7 +93,10 @@ export class OverviewController {
         this.burnoutRisk = workloads;
       } catch (err) {
         console.error('Failed to parse saved events:', err);
+        this.events = mockCalendarEvents;
       }
+    } else {
+      this.events = mockCalendarEvents;
     }
 
     this.updateCallback();
