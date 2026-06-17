@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"backend/controllers"
 	"backend/models"
 )
@@ -40,13 +41,16 @@ func main() {
 	// Wrap routing in CORS middleware
 	handler := enableCors(mux)
 
-	port := 8080
-	fmt.Printf("HolidayHQ Backend Server started on http://localhost:%d\n", port)
+	port := os.Getenv("BACKEND_PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Printf("HolidayHQ Backend Server started on http://localhost:%s\n", port)
 	fmt.Printf("API Endpoints:\n")
-	fmt.Printf("- Health Check: http://localhost:%d/api/health\n", port)
-	fmt.Printf("- GraphQL API:  http://localhost:%d/api/v1/graphql\n", port)
+	fmt.Printf("- Health Check: http://localhost:%s/api/health\n", port)
+	fmt.Printf("- GraphQL API:  http://localhost:%s/api/v1/graphql\n", port)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), handler); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
