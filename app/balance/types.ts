@@ -1,4 +1,4 @@
-import { Transaction } from '@/src/libs/models/HolidayHQManager';
+import { Transaction } from '@/src/libs/calendarData';
 
 export interface LedgerData {
   transactions: Transaction[];

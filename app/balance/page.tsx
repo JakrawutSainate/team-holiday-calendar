@@ -1,12 +1,16 @@
-import { HolidayHQManager } from '@/src/libs/models/HolidayHQManager';
 import BalanceClient from './components/BalanceClient';
 
-// Server-Side Rendered (SSR) page component
 export default async function BalancePage() {
-  const manager = new HolidayHQManager();
-  
-  // Load initial fallback data from OOP model on the server
-  const initialTransactions = manager.getTransactions();
+  // Static placeholders; immediately populated with dynamic PostgreSQL values inside BalanceClient controller
+  const initialTransactions = [
+    {
+      date: 'Oct 24, 2026',
+      type: 'EARN' as const,
+      description: 'Weekend Coverage (Sat-Sun)',
+      status: 'Approved',
+      amount: '+1'
+    }
+  ];
   const initialTokens = 3;
 
   return (

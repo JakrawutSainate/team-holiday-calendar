@@ -30,6 +30,24 @@ export interface CapacitySetting {
   description?: string;
 }
 
+export interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  time: string;
+  priority?: string;
+  meta?: string;
+}
+
+export interface Transaction {
+  date: string;
+  type: 'EARN' | 'SPEND';
+  description: string;
+  status: string;
+  amount: string;
+}
+
 // Mock data has been completely removed to rely on PostgreSQL Database via Go GraphQL API.
 
 export interface BOHoliday {

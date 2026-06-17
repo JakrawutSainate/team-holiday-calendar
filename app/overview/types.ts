@@ -1,4 +1,4 @@
-import { Activity } from '@/src/libs/models/HolidayHQManager';
+import { Activity } from '@/src/libs/calendarData';
 
 export interface UpcomingHoliday {
   name: string;

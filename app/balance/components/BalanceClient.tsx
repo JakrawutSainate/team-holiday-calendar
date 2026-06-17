@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { Transaction } from '@/src/libs/models/HolidayHQManager';
+import { Transaction } from '@/src/libs/calendarData';
 import { redeemTokensAction } from '../actions';
 import { BalanceController } from './BalanceController';
 

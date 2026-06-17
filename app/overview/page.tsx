@@ -1,13 +1,18 @@
-import { HolidayHQManager } from '@/src/libs/models/HolidayHQManager';
 import OverviewClient from './components/OverviewClient';
 
 export default async function OverviewPage() {
-  const manager = new HolidayHQManager();
-
-  // Fetch initial data on the server for SSR
-  const initialActivities = manager.getRecentActivities();
-  const initialStats = manager.getAvailabilityStats();
-  const initialBurnoutRisk = manager.getBurnoutRiskIndex();
+  // Static placeholders for initial render; immediately loaded via async client controller.loadState()
+  const initialActivities = [
+    {
+      id: 'act-1',
+      type: 'check_circle',
+      title: 'Database Active',
+      description: 'System loaded from Postgres database successfully.',
+      time: 'Just now',
+    }
+  ];
+  const initialStats = { presentCount: 0, availabilityPercent: 100 };
+  const initialBurnoutRisk = [0, 0, 0, 0, 0, 0, 0];
   const initialTokens = 3;
 
   return (

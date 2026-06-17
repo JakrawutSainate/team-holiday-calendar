@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/src/components/LanguageContext';
-import { Activity } from '@/src/libs/models/HolidayHQManager';
+import { Activity } from '@/src/libs/calendarData';
 
 interface RecentActivityCardProps {
   activities: Activity[];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/src/components/LanguageContext';
-import { Transaction } from '@/src/libs/models/HolidayHQManager';
+import { Transaction } from '@/src/libs/calendarData';
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];

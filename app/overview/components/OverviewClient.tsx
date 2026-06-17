@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { Activity } from '@/src/libs/models/HolidayHQManager';
+import { Activity } from '@/src/libs/calendarData';
 import { OverviewController } from './OverviewController';
 
 // Components

@@ -1,4 +1,4 @@
-import { Transaction } from '@/src/libs/models/HolidayHQManager';
+import { Transaction, getTeamMembers } from '@/src/libs/calendarData';
 
 export class BalanceController {
   private tokens: number;
@@ -23,12 +23,18 @@ export class BalanceController {
     return this.transactions;
   }
 
-  /**
-   * Loads the latest state from localStorage if available in browser
-   */
-  public loadState(): void {
+  public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
 
+    try {
+      const members = await getTeamMembers();
+      const takahashi = members.find(m => m.id === 'takahashi') || { tokensBalance: 3 };
+      this.tokens = takahashi.tokensBalance;
+    } catch (e) {
+      console.error('Failed to load balance state from database:', e);
+    }
+
+    // Keep transactions in local storage or generate them from leaves/claims dynamically
     const savedTx = localStorage.getItem('holidayhq_transactions');
     if (savedTx) {
       this.transactions = JSON.parse(savedTx);
@@ -36,45 +42,37 @@ export class BalanceController {
       localStorage.setItem('holidayhq_transactions', JSON.stringify(this.transactions));
     }
 
-    const savedTokens = localStorage.getItem('holidayhq_tokens');
-    if (savedTokens) {
-      this.tokens = parseFloat(savedTokens);
-    } else {
-      localStorage.setItem('holidayhq_tokens', this.tokens.toString());
-    }
-
     this.updateCallback();
   }
 
-  /**
-   * Handles token redemption logic
-   */
-  public async redeem(
-    redeemTokensAction: (input: { tokensToRedeem: number; reason: string }) => Promise<{ success: boolean; error?: string }>
+  public async redeemTokens(
+    amount: number,
+    action: (input: { amount: number }) => Promise<{ success: boolean; error?: string }>
   ): Promise<string> {
-    if (this.tokens < 1) {
-      throw new Error(`Insufficient tokens. You have ${this.tokens} tokens but you need at least 1 token to request leave.`);
+    if (this.tokens < amount) {
+      throw new Error('Insufficient tokens to redeem.');
     }
 
-    const res = await redeemTokensAction({ tokensToRedeem: 1, reason: 'Redeemed leave' });
+    const res = await action({ amount });
     if (!res.success) {
-      throw new Error(res.error || 'Server error occurred');
+      throw new Error(res.error || 'Failed to request token rollover/payout.');
     }
 
-    this.tokens -= 1;
+    this.tokens -= amount;
     localStorage.setItem('holidayhq_tokens', this.tokens.toString());
 
+    // Record txn
     const newTx: Transaction = {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       type: 'SPEND',
-      description: 'Redeemed leave (Takahashi S.)',
+      description: 'Token Rollover/Payout Request',
       status: 'Approved',
-      amount: '-1'
+      amount: `-${amount}`
     };
-    this.transactions = [newTx, ...this.transactions];
+    this.transactions.unshift(newTx);
     localStorage.setItem('holidayhq_transactions', JSON.stringify(this.transactions));
 
     this.updateCallback();
-    return 'Leave requested successfully via Tokens!';
+    return `Successfully requested rollover of ${amount} tokens.`;
   }
 }

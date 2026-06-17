@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import MemberCard from './MemberCard';
-import { TeamMember } from '@/src/libs/calendarData';
-import { HolidayHQManager } from '@/src/libs/models/HolidayHQManager';
+import { TeamMember, getTeamMembers } from '@/src/libs/calendarData';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { inviteMemberAction, downloadTeamReportAction } from '../actions';
 import { TeamController } from './TeamController';
@@ -41,8 +40,15 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
 
   // React to searchTerm parameter changing
   useEffect(() => {
-    const manager = new HolidayHQManager();
-    controller.setMembers(manager.getTeamMembers(searchTerm));
+    getTeamMembers().then(members => {
+      const term = searchTerm.toLowerCase();
+      const filtered = members.filter(
+        m => m.name.toLowerCase().includes(term) ||
+             m.title.toLowerCase().includes(term) ||
+             m.department.toLowerCase().includes(term)
+      );
+      controller.setMembers(filtered);
+    });
   }, [searchTerm, controller]);
 
   const handleSearch = (term: string) => {
