@@ -11,7 +11,6 @@ import OverviewHeader from './OverviewHeader';
 import UpcomingHolidaysCard from './UpcomingHolidaysCard';
 import YourTokenBalanceCard from './YourTokenBalanceCard';
 import RecentActivityCard from './RecentActivityCard';
-import AvailabilityChart from './AvailabilityChart';
 import PulseChart from './PulseChart';
 
 interface OverviewClientProps {
@@ -58,16 +57,8 @@ export default function OverviewClient({
           <OverviewHeader />
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <UpcomingHolidaysCard />
-
-            <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col">
-              <h3 className="text-base font-semibold text-zinc-900 mb-6">{t('teamAvailability')}</h3>
-              <AvailabilityChart
-                availabilityPercent={controller.getStats().availabilityPercent}
-                presentCount={controller.getStats().presentCount}
-              />
-            </div>
 
             <YourTokenBalanceCard
               tokens={controller.getTokens()}
