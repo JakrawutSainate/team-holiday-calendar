@@ -19,13 +19,7 @@ export default function SideNavBar() {
     { name: t('settings'), href: '/settings', icon: 'settings' },
   ];
 
-  const filteredItems = navItems.filter((item) => {
-    if (role === 'ADMIN') {
-      return item.href === '/overview' || item.href === '/calendar' || item.href === '/team';
-    } else {
-      return item.href === '/overview' || item.href === '/calendar' || item.href === '/leaves' || item.href === '/balance' || item.href === '/settings';
-    }
-  });
+  const filteredItems = navItems;
 
   return (
     <>
@@ -69,14 +63,7 @@ export default function SideNavBar() {
           />
           <div className="overflow-hidden w-full flex flex-col gap-1">
             <p className="text-sm font-semibold text-zinc-900 truncate">Takahashi S.</p>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
-              className="text-xs bg-zinc-50 border border-zinc-200 text-zinc-600 rounded px-1 py-0.5 outline-none font-medium cursor-pointer"
-            >
-              <option value="ADMIN">Admin Mode</option>
-              <option value="USER">User Mode</option>
-            </select>
+            <p className="text-xs text-zinc-500 font-medium">Admin & Member</p>
           </div>
         </div>
       </aside>
@@ -104,16 +91,6 @@ export default function SideNavBar() {
               </Link>
             );
           })}
-        </div>
-        <div className="border-l border-zinc-100 pl-3 flex items-center">
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'ADMIN' | 'USER')}
-            className="text-[10px] bg-zinc-50 border border-zinc-200 text-zinc-600 rounded p-1 outline-none font-bold cursor-pointer"
-          >
-            <option value="ADMIN">Admin</option>
-            <option value="USER">User</option>
-          </select>
         </div>
       </nav>
     </>

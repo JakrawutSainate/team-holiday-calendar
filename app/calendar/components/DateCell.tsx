@@ -124,28 +124,6 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
               <span>{t('claimed')} (+{earnRate}x)</span>
             </div>
           ) : (
-            role === 'USER' && (
-              <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClick) onClick();
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm text-zinc-400">add_circle</span>
-                  <span>{t('claimShift')}</span>
-                </button>
-              </div>
-            )
-          )}
-        </div>
-      )}
-
-      {/* Weekday Request Leave Button */}
-      {!isWeekend && !holidayEvent && !isMuted && !isUserOff && (
-        <div className="my-1">
-          {role === 'USER' && (
             <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
               <button
                 onClick={(e) => {
@@ -154,11 +132,29 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
                 }}
                 className="w-full text-left px-2.5 py-1.5 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm text-zinc-400">event_busy</span>
-                <span>{t('requestLeave')}</span>
+                <span className="material-symbols-outlined text-sm text-zinc-400">add_circle</span>
+                <span>{t('claimShift')}</span>
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Weekday Request Leave Button */}
+      {!isWeekend && !holidayEvent && !isMuted && !isUserOff && (
+        <div className="my-1">
+          <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onClick) onClick();
+              }}
+              className="w-full text-left px-2.5 py-1.5 bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm text-zinc-400">event_busy</span>
+              <span>{t('requestLeave')}</span>
+            </button>
+          </div>
         </div>
       )}
 

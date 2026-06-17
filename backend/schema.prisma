@@ -1,0 +1,36 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator db {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model TeamMember {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  role          String   // ADMIN, MEMBER, LEAD
+  avatarUrl     String?
+  department    String   // Engineering, Design, Management
+  title         String
+  tokensBalance Float    @default(0.0)
+}
+
+model CalendarEvent {
+  id       String  @id @default(uuid())
+  userId   String
+  userName String
+  date     String  // YYYY-MM-DD
+  status   String  // NORMAL, WEEKEND_WORK, COMPENSATORY_OFF, PUBLIC_HOLIDAY, HOLIDAY_WORK
+  details  String?
+}
+
+model CapacitySetting {
+  id            String  @id @default(uuid())
+  date          String? // YYYY-MM-DD
+  dayOfWeek     Int?    // 0 = Sun, 1 = Mon, ...
+  maxOffAllowed Int
+  description   String?
+}

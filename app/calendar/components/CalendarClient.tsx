@@ -27,8 +27,6 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   }, [year, month, role, controller]);
 
   const handleCellClick = (dateString: string) => {
-    if (role !== 'USER') return;
-
     const dateObj = new Date(dateString);
     const dayOfWeek = dateObj.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;

@@ -15,15 +15,12 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>('ADMIN');
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('holidayhq_role') as Role;
-    if (savedRole === 'ADMIN' || savedRole === 'USER') {
-      setRoleState(savedRole);
-    }
+    // Force ADMIN role for unified access to both admin settings and user features
+    setRoleState('ADMIN');
   }, []);
 
   const setRole = (newRole: Role) => {
-    setRoleState(newRole);
-    localStorage.setItem('holidayhq_role', newRole);
+    // No-op to prevent role switching from updating state
   };
 
   return (
