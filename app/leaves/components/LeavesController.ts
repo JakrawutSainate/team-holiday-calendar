@@ -14,7 +14,7 @@ export class LeavesController {
   }
 
   public getTokens(): number {
-    return this.tokens;
+    return Math.floor(this.tokens);
   }
 
   public loadState(): void {

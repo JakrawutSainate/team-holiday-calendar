@@ -45,7 +45,7 @@ export class CalendarController {
   }
 
   public getTokens(): number {
-    return this.tokens;
+    return Math.floor(this.tokens);
   }
 
   public getCapacityLimit(): number {

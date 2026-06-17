@@ -7,7 +7,48 @@ interface PulseChartProps {
 }
 
 export default function PulseChart({ burnoutRisk }: PulseChartProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+
+  // Get start of week (Monday) and end of week (Sunday) based on current date
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 is Sunday, 1 is Monday, etc.
+  const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distanceToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  // Format dates depending on language
+  const isThai = language === 'th';
+  const monthNamesTh = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+  const monthNamesEn = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  
+  const shortMonthNamesTh = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+  ];
+  const shortMonthNamesEn = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const currentMonthName = isThai ? monthNamesTh[now.getMonth()] : monthNamesEn[now.getMonth()];
+  const startDay = monday.getDate();
+  const startMonth = isThai ? shortMonthNamesTh[monday.getMonth()] : shortMonthNamesEn[monday.getMonth()];
+  const endDay = sunday.getDate();
+  const endMonth = isThai ? shortMonthNamesTh[sunday.getMonth()] : shortMonthNamesEn[sunday.getMonth()];
+  const currentYear = isThai ? now.getFullYear() + 543 : now.getFullYear();
+
+  const weekRangeText = isThai 
+    ? `สัปดาห์ล่าสุด: ${startDay} ${startMonth} - ${endDay} ${endMonth} (${currentMonthName} ${currentYear})`
+    : `Latest Week: ${startMonth} ${startDay} - ${endMonth} ${endDay} (${currentMonthName} ${currentYear})`;
 
   return (
     <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-6">
@@ -36,14 +77,19 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
           );
         })}
       </div>
-      <div className="flex justify-between px-2 text-sm text-zinc-500">
-        <span>Mon</span>
-        <span>Tue</span>
-        <span>Wed</span>
-        <span>Thu</span>
-        <span>Fri</span>
-        <span>Sat</span>
-        <span className="font-semibold text-zinc-950">Sun</span>
+      <div className="space-y-2">
+        <div className="flex justify-between px-2 text-sm text-zinc-500">
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+          <span className="font-semibold text-zinc-950">Sun</span>
+        </div>
+        <div className="text-xs text-zinc-400 text-center font-medium">
+          {weekRangeText}
+        </div>
       </div>
       <div className="p-5 bg-zinc-50/50 border border-zinc-100 rounded-xl space-y-2">
         <p className="text-base font-semibold text-zinc-900">{t('optimalStatus')}</p>

@@ -98,9 +98,14 @@ export class HolidayHQManager {
 
   public getAvailabilityStats(): { presentCount: number; availabilityPercent: number } {
     const totalMembers = this.members.length;
-    const presentCount = Math.max(totalMembers - 1, 0); // Mock business logic
-    const availabilityPercent = totalMembers > 0 ? Math.round((presentCount / totalMembers) * 100) : 100;
-    return { presentCount, availabilityPercent };
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+    const activeLeaves = this.events.filter(
+      (e) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+    );
+    const absentCount = activeLeaves.length;
+    const availabilityPercent = totalMembers > 0 ? Math.round((absentCount / totalMembers) * 100) : 0;
+    return { presentCount: absentCount, availabilityPercent };
   }
 
   public getRecentActivities(): Activity[] {

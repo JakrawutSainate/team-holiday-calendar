@@ -16,7 +16,7 @@ export class BalanceController {
   }
 
   public getTokens(): number {
-    return this.tokens;
+    return Math.floor(this.tokens);
   }
 
   public getTransactions(): Transaction[] {

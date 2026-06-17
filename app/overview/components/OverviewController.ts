@@ -34,7 +34,7 @@ export class OverviewController {
   }
 
   public getTokens(): number {
-    return this.tokens;
+    return Math.floor(this.tokens);
   }
 
   public loadState(): void {
@@ -43,10 +43,31 @@ export class OverviewController {
     const savedTokens = localStorage.getItem('holidayhq_tokens');
     if (savedTokens) {
       this.tokens = parseFloat(savedTokens);
-      this.updateCallback();
     } else {
       localStorage.setItem('holidayhq_tokens', this.tokens.toString());
     }
+
+    const savedEvents = localStorage.getItem('holidayhq_events');
+    if (savedEvents) {
+      try {
+        const events = JSON.parse(savedEvents);
+        const tzOffset = new Date().getTimezoneOffset() * 60000;
+        const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+        const activeLeaves = events.filter(
+          (e: any) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+        );
+        const absentCount = activeLeaves.length;
+        const totalMembers = 8;
+        this.stats = {
+          presentCount: absentCount,
+          availabilityPercent: totalMembers > 0 ? Math.round((absentCount / totalMembers) * 100) : 0
+        };
+      } catch (err) {
+        console.error('Failed to parse saved events:', err);
+      }
+    }
+
+    this.updateCallback();
   }
 
   public async syncCalendar(

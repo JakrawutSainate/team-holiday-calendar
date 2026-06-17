@@ -27,7 +27,7 @@ export const translations = {
     goodMorning: 'Good morning, Takahashi S.',
     operatingCapacity: 'Your team is operating at high capacity today. Three requests are pending your review before the weekend cutoff.',
     upcomingHolidays: 'Upcoming Holidays',
-    teamAvailability: 'Team Availability',
+    teamAvailability: 'Team Workload',
     yourTokenBalance: 'Your Token Balance',
     personalTokensRemaining: 'Personal Leave Tokens Remaining',
     redeemCarryOver: 'Redeem for Carry Over',
@@ -43,8 +43,8 @@ export const translations = {
     quickRequest: 'Quick Request',
     newFeature: 'NEW FEATURE',
     availableText: 'Available',
-    activeText: 'Active',
-    presentText: 'of members present today',
+    activeText: 'Workload',
+    presentText: 'of all team members are on leave today',
 
     // Calendar
     shiftCalendar: 'Team Shift & Token Calendar',
@@ -151,7 +151,7 @@ export const translations = {
     goodMorning: 'อรุณสวัสดิ์ คุณ Takahashi S.',
     operatingCapacity: 'ทีมของคุณกำลังทำงานในสัดส่วนที่สูงในวันนี้ มีคำขอลา 3 รายการที่รอการอนุมัติก่อนถึงกำหนดวันหยุดสุดสัปดาห์',
     upcomingHolidays: 'วันหยุดที่กำลังจะถึง',
-    teamAvailability: 'อัตราการพร้อมทำงานของทีม',
+    teamAvailability: 'ภาระงานของทีม',
     yourTokenBalance: 'ยอดโทเค็นสะสมของคุณ',
     personalTokensRemaining: 'โทเค็นสำหรับลารับการอนุมัติคงเหลือ',
     redeemCarryOver: 'แลกเปลี่ยนเพื่อทบยอด',
@@ -167,8 +167,8 @@ export const translations = {
     quickRequest: 'ส่งคำขอด่วน',
     newFeature: 'คุณสมบัติใหม่',
     availableText: 'พร้อมใช้งาน',
-    activeText: 'กำลังทำงาน',
-    presentText: 'ของสมาชิกทีมทั้งหมดทำงานในวันนี้',
+    activeText: 'ภาระงาน',
+    presentText: 'ของสมาชิกทีมทั้งหมดหยุดงานในวันนี้',
 
     // Calendar
     shiftCalendar: 'ปฏิทินเวรทำงานและโทเค็นวันหยุด',

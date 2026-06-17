@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { Activity } from '@/src/libs/models/HolidayHQManager';
-import { toggleCalendarSync, submitQuickRequest } from '../actions';
 import { OverviewController } from './OverviewController';
 
 // Components
@@ -12,7 +11,6 @@ import OverviewHeader from './OverviewHeader';
 import UpcomingHolidaysCard from './UpcomingHolidaysCard';
 import YourTokenBalanceCard from './YourTokenBalanceCard';
 import RecentActivityCard from './RecentActivityCard';
-import SyncCalendarCard from './SyncCalendarCard';
 import AvailabilityChart from './AvailabilityChart';
 import PulseChart from './PulseChart';
 
@@ -50,26 +48,6 @@ export default function OverviewClient({
     controller.loadState();
   }, [controller]);
 
-  const handleSync = async () => {
-    try {
-      const msg = await controller.syncCalendar(toggleCalendarSync);
-      alert(msg);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      alert(message);
-    }
-  };
-
-  const handleQuickRequest = async () => {
-    try {
-      const msg = await controller.quickRequest(submitQuickRequest);
-      alert(msg);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      alert(message);
-    }
-  };
-
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchTeamOrDates')} />
@@ -93,7 +71,6 @@ export default function OverviewClient({
 
             <YourTokenBalanceCard
               tokens={controller.getTokens()}
-              onQuickRequest={handleQuickRequest}
             />
           </div>
 
@@ -103,7 +80,6 @@ export default function OverviewClient({
 
             <div className="lg:col-span-4 space-y-6">
               <PulseChart burnoutRisk={controller.getBurnoutRisk()} />
-              <SyncCalendarCard onSync={handleSync} />
             </div>
           </div>
         </div>
