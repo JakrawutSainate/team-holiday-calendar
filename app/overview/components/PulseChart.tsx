@@ -46,9 +46,7 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
   const endMonth = isThai ? shortMonthNamesTh[sunday.getMonth()] : shortMonthNamesEn[sunday.getMonth()];
   const currentYear = isThai ? now.getFullYear() + 543 : now.getFullYear();
 
-  const weekRangeText = isThai 
-    ? `สัปดาห์ล่าสุด: ${startDay} ${startMonth} - ${endDay} ${endMonth} (${currentMonthName} ${currentYear})`
-    : `Latest Week: ${startMonth} ${startDay} - ${endMonth} ${endDay} (${currentMonthName} ${currentYear})`;
+  const monthText = isThai ? `${currentMonthName} ${currentYear}` : `${currentMonthName} ${currentYear}`;
 
   const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(monday);
@@ -71,15 +69,24 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
       {/* Minimal Chart */}
       <div className="h-32 flex items-end justify-between gap-3 px-2">
         {burnoutRisk.map((val, i) => {
-          const isToday = i === 6;
+          const isToday = i === (new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
           return (
-            <div
-              key={i}
-              className={`w-full rounded-t-md transition-all duration-300 ${
-                isToday ? 'bg-zinc-900' : 'bg-zinc-100 hover:bg-zinc-900'
-              }`}
-              style={{ height: `${val}%` }}
-            ></div>
+            <div key={i} className="flex-1 flex flex-col justify-end items-center h-full group relative">
+              {/* Percentage label always visible if workload > 0 */}
+              {val > 0 ? (
+                <span className="text-[10px] font-bold text-zinc-800 mb-1.5 transition-all">
+                  {val}%
+                </span>
+              ) : (
+                <span className="text-[10px] text-transparent select-none mb-1.5">-</span>
+              )}
+              <div
+                className={`w-full rounded-t-md transition-all duration-300 ${
+                  isToday ? 'bg-zinc-900' : 'bg-zinc-100 group-hover:bg-zinc-900'
+                }`}
+                style={{ height: val > 0 ? `${val}%` : '0%' }}
+              ></div>
+            </div>
           );
         })}
       </div>
@@ -114,8 +121,8 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
             <span className="font-bold text-zinc-950 mt-0.5">{weekDays[6]}</span>
           </span>
         </div>
-        <div className="text-xs text-zinc-400 text-center font-medium">
-          {weekRangeText}
+        <div className="text-xs text-zinc-400 text-center font-semibold uppercase tracking-wider">
+          {monthText}
         </div>
       </div>
       <div className="p-5 bg-zinc-50/50 border border-zinc-100 rounded-xl space-y-2">

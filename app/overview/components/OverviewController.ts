@@ -62,6 +62,27 @@ export class OverviewController {
           presentCount: absentCount,
           availabilityPercent: totalMembers > 0 ? Math.round((absentCount / totalMembers) * 100) : 0
         };
+
+        // Recalculate 7-day workloads from localStorage events
+        const workloads = [0, 0, 0, 0, 0, 0, 0];
+        const now = new Date();
+        const currentDay = now.getDay();
+        const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + distanceToMonday);
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          const tzOffsetDay = d.getTimezoneOffset() * 60000;
+          const dateStr = new Date(d.getTime() - tzOffsetDay).toISOString().split('T')[0];
+
+          const dayLeaves = events.filter(
+            (e: any) => e.date === dateStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+          );
+          workloads[i] = totalMembers > 0 ? Math.round((dayLeaves.length / totalMembers) * 100) : 0;
+        }
+        this.burnoutRisk = workloads;
       } catch (err) {
         console.error('Failed to parse saved events:', err);
       }
