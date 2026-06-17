@@ -15,7 +15,7 @@ export default function HowItWorksCard() {
         </div>
       </div>
       <div className="mt-6 p-4 bg-zinc-50/50 rounded-xl text-sm border border-zinc-100/60 text-zinc-500">
-        <p className="italic">"{t('balanceResets')}"</p>
+        <p className="italic">&ldquo;{t('balanceResets')}&rdquo;</p>
       </div>
     </div>
   );

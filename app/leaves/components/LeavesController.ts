@@ -56,9 +56,8 @@ export class LeavesController {
       localStorage.setItem('holidayhq_events', JSON.stringify(updatedEvents));
     }
 
-    // Add a refund transaction
     const savedLocalTx = localStorage.getItem('holidayhq_transactions');
-    let allTx = savedLocalTx ? JSON.parse(savedLocalTx) : [];
+    const allTx = savedLocalTx ? JSON.parse(savedLocalTx) : [];
     const formattedDate = new Date(leave.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     allTx.unshift({
       date: formattedDate,

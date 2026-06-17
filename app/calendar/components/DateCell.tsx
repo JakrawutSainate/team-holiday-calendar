@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
-import { useRole } from '@/src/components/RoleContext';
 
 interface DateCellProps {
   day: number;
@@ -16,13 +15,12 @@ interface DateCellProps {
 
 export default function DateCell({ day, isMuted, dateString, events, capacity, onClick }: DateCellProps) {
   const { language, t } = useTranslation();
-  const { role } = useRole();
-  const [earnRate, setEarnRate] = useState('1');
-
-  useEffect(() => {
-    const rate = localStorage.getItem('holidayhq_earn_rate') || '1';
-    setEarnRate(rate);
-  }, []);
+  const [earnRate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('holidayhq_earn_rate') || '1';
+    }
+    return '1';
+  });
 
   const dateObj = new Date(dateString);
   const dayOfWeek = dateObj.getDay();

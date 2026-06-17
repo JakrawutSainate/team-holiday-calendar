@@ -15,13 +15,7 @@ export default function LeavesClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const controllerRef = useRef<LeavesController>(undefined);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new LeavesController(() => setTick((tick) => tick + 1));
-  }
-
-  const controller = controllerRef.current;
+  const [controller] = useState<LeavesController>(() => new LeavesController(() => setTick((tick) => tick + 1)));
 
   useEffect(() => {
     controller.loadState();

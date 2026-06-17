@@ -26,17 +26,11 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
 
   const [, setTick] = useState(0);
 
-  const controllerRef = useRef<TeamController>(undefined);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new TeamController(
-      initialMembers,
-      searchTerm,
-      () => setTick((tick) => tick + 1)
-    );
-  }
-
-  const controller = controllerRef.current;
+  const [controller] = useState<TeamController>(() => new TeamController(
+    initialMembers,
+    searchTerm,
+    () => setTick((tick) => tick + 1)
+  ));
 
   // React to searchTerm parameter changing
   useEffect(() => {

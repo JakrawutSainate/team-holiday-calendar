@@ -18,7 +18,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { t, language } = useTranslation();
   const { role } = useRole();
   const [, setTick] = useState(0);
-  const [controller] = useState(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
+  const [controller] = useState<CalendarController>(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
 
   // React to change in year/month params
   useEffect(() => {

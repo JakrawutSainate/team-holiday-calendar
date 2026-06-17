@@ -79,11 +79,10 @@ export const botHolidays2026: BOHoliday[] = [
   { date: '2026-12-31', nameEn: "New Year's Eve", nameTh: 'วันสิ้นปี' }
 ];
 
-export const mockCalendarEvents: CalendarEvent[] = generateMockEvents();
 
 const API_URL = 'http://localhost:8080/api/v1/graphql';
 
-async function fetchGraphQL(query: string, variables: any = {}) {
+async function fetchGraphQL(query: string, variables: Record<string, unknown> = {}) {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -142,7 +141,7 @@ export const getCalendarEvents = async (year: number, month: number): Promise<Ca
 
   let dbEvents: CalendarEvent[] = [];
   if (data && data.getEvents) {
-    dbEvents = data.getEvents.filter((e: any) => e.date.startsWith(prefix));
+    dbEvents = data.getEvents.filter((e: CalendarEvent) => e.date.startsWith(prefix));
   }
 
   // Inject public holidays

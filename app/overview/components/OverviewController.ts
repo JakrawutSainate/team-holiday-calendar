@@ -62,7 +62,7 @@ export class OverviewController {
       const tzOffset = now.getTimezoneOffset() * 60000;
       const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
       const activeLeaves = allEvents.filter(
-        (e: any) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+        (e: CalendarEvent) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
       );
       
       const absentCount = activeLeaves.length;
@@ -86,7 +86,7 @@ export class OverviewController {
         const dateStr = new Date(d.getTime() - tzOffsetDay).toISOString().split('T')[0];
 
         const dayLeaves = allEvents.filter(
-          (e: any) => e.date === dateStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+          (e: CalendarEvent) => e.date === dateStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
         );
         workloads[i] = totalMembers > 0 ? Math.round((dayLeaves.length / totalMembers) * 100) : 0;
       }

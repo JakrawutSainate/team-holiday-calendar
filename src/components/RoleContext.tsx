@@ -14,12 +14,7 @@ const RoleContext = createContext<RoleContextProps | undefined>(undefined);
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>('ADMIN');
 
-  useEffect(() => {
-    // Force ADMIN role for unified access to both admin settings and user features
-    setRoleState('ADMIN');
-  }, []);
-
-  const setRole = (newRole: Role) => {
+  const setRole = (_newRole: Role) => {
     // No-op to prevent role switching from updating state
   };
 

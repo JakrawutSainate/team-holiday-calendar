@@ -29,19 +29,13 @@ export default function OverviewClient({
   const { t } = useTranslation();
   const [, setTick] = useState(0);
 
-  const controllerRef = useRef<OverviewController>(undefined);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new OverviewController(
-      initialActivities,
-      initialStats,
-      initialBurnoutRisk,
-      initialTokens,
-      () => setTick((tick) => tick + 1)
-    );
-  }
-
-  const controller = controllerRef.current;
+  const [controller] = useState<OverviewController>(() => new OverviewController(
+    initialActivities,
+    initialStats,
+    initialBurnoutRisk,
+    initialTokens,
+    () => setTick((tick) => tick + 1)
+  ));
 
   useEffect(() => {
     controller.loadState();
