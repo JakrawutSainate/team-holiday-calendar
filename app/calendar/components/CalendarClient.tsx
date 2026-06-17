@@ -47,7 +47,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         : language === 'th'
         ? 'เวรวันหยุดสุดสัปดาห์'
           : 'Weekend Shift';
-      const multiplier = parseFloat(localStorage.getItem('holidayhq_earn_rate') || '1.5');
+      const multiplier = parseFloat(localStorage.getItem('holidayhq_earn_rate') || '1');
 
       Swal.fire({
         title: language === 'th' ? `เคลมทำงาน ${shiftLabel}` : `Claim ${shiftLabel}`,

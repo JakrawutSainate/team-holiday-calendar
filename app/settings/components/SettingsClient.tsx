@@ -162,8 +162,8 @@ export default function SettingsClient() {
                         className="p-3 border border-zinc-200 rounded-lg bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900"
                       >
                         <option value="1.0x">1.0x</option>
-                        <option value="1.5x">1.5x</option>
                         <option value="2.0x">2.0x</option>
+                        <option value="3.0x">3.0x</option>
                       </select>
                     </div>
                   </div>

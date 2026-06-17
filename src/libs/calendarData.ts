@@ -50,7 +50,7 @@ export const mockTeamMembers: TeamMember[] = [
     avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAxqpaUNIleLAD9XYhKsX2Qooc6XptE2clDD2Vk35OtdDPrAbhVDtIBD5grW9dmuu0t_0_76tdEww6kzLNxGg1CNiS2NgIYQTICX6W93GldTrIWnWxYJ-qQvE36Q_1xzfyaK-_ioen7Mbpeau6fhmNuVY4v-QQMP6x6YaT12g4TZGfVVmBrEBT_BEadMETd7nN13afYPgbqP4_Zn0c3eLBOGRF__MXE_indHaUYg9RGaFX72v1Cso3YvGiw-J8tEsIVKjxT2ORvKb_',
     department: 'Engineering',
     title: 'Lead Architect',
-    tokensBalance: 24.5
+    tokensBalance: 24
   },
   {
     id: 'sarah',
@@ -80,7 +80,7 @@ export const mockTeamMembers: TeamMember[] = [
     avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxE4SdlJ2CGQnsrHCRCr3QtaBfbOIHh3xWbIahYtfqFcF-l4tZgNb_ExS1YWxTxjJkKRx0wIiobkekXEA9YOPxQV4Ybu3XxprM89ZtNa7C7wxwf0cmc7VQ5qLyUVhkn-hd7xMSDClXORk8ndGrwSzYDhoXQ_dz2rQ3R1Db0o6K364kPgtXgUjVTqMgxZyJD6NaSMsy9bGnZjJP0fjrjRRaSP2Iy586l3fvsw1IlirsU2PwhPE1Rtk1LlQUFmcMqTxjtpzEviGeR1p2',
     department: 'Engineering',
     title: 'QA Engineer',
-    tokensBalance: 30.5
+    tokensBalance: 30
   },
   {
     id: 'jordan',
@@ -100,7 +100,7 @@ export const mockTeamMembers: TeamMember[] = [
     avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCg1kFusWGShxda497lhrmpzDx7Rjhls3X5K3-kALzKtncilmqFqbno74yIMUku2rukk30IasgoXvAYj0JPotW4W96Wr459FGTk9nBlbyQSg0MIJeG5z8CaagBN8dRbRcwuabume43rERNe0nio8Bb63aLQNQWic3R-i59SXdBq0x_rjX70c3LuvqKcMgfoJT64ascPYO6oawcpBIfP5BenLVxfOPEgzUSEsJvsN5XcRxGuRdLuQZnJGKk7SVeJkIwS9ttyCKtna8zt',
     department: 'Design',
     title: 'UI Designer',
-    tokensBalance: 8.5
+    tokensBalance: 8
   },
   {
     id: 'liam',

@@ -2,7 +2,7 @@ export class SettingsController {
   private fullName: string = 'Alex Rivera';
   private emailAddress: string = 'alex.rivera@holidayhq.com';
   private maxOffAllowed: number = 2;
-  private earnRate: string = '1.5x';
+  private earnRate: string = '1.0x';
   private messageType: string = '';
   private messageText: string = '';
   private updateCallback: () => void;

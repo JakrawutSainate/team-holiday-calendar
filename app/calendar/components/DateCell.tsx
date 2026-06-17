@@ -17,10 +17,10 @@ interface DateCellProps {
 export default function DateCell({ day, isMuted, dateString, events, capacity, onClick }: DateCellProps) {
   const { language, t } = useTranslation();
   const { role } = useRole();
-  const [earnRate, setEarnRate] = useState('1.5');
+  const [earnRate, setEarnRate] = useState('1');
 
   useEffect(() => {
-    const rate = localStorage.getItem('holidayhq_earn_rate') || '1.5';
+    const rate = localStorage.getItem('holidayhq_earn_rate') || '1';
     setEarnRate(rate);
   }, []);
 
