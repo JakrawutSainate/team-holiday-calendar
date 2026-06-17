@@ -1,45 +1,89 @@
-# 📅 Team Holiday Calendar & Token Management System
+# 📅 Team Holiday Calendar & Token Management System (HolidayHQ)
 
-A robust and flexible web application designed for teams with non-standard working hours or shift work. It helps manage production/on-call schedules during weekends and automatically tracks compensatory day-off tokens while maintaining team capacity guidelines.
+ระบบจัดการตารางวันทำงาน วันหยุด และสิทธิ์การลาสะสมโทเค็นของทีมงาน (HolidayHQ) สำหรับอำนวยความสะดวกให้ทีมที่ต้องสลับเวรปฏิบัติงานช่วงวันหยุด พร้อมระบบตรวจสอบความพร้อมของทีมไม่ให้มีคนลาพร้อมกันมากเกินไป
 
-## 🚀 Key Features
+---
 
-### Phase 1: Core & MVP
+## 🚀 คุณสมบัติระบบ (Key Features)
 
-- **Team Timeline View:** A comprehensive monthly grid showing all team members' schedules at a glance[cite: 2].
-- **Automated Token Engine:** Earn +1 token for working on weekends and spend -1 token for taking a compensatory weekday off (prevents negative balances)[cite: 2].
-- **Master Data Export:** One-click export of the entire team's monthly schedule to Excel (.xlsx)[cite: 2].
+1. **หน้าแสดงภาพรวมข้อมูลแดชบอร์ด (Overview Dashboard)**
+   - คำนวณความพร้อมของทีมงานเป็นเปอร์เซ็นต์ (Team Availability)
+   - แสดงรายชื่อวันหยุดที่จะถึงของทีม (Upcoming Leaves)
+   - สรุปยอดโทเค็นและรายการประวัติกิจกรรมล่าสุดในระบบ
 
-### Phase 2: Collaboration & Guards
+2. **ระบบปฏิทินปฏิบัติงานทีม (Interactive Team Calendar)**
+   - แสดงตารางเวรทำงานและการลาพักผ่อนแบบรายเดือน
+   - แนะนำข้อมูลวันหยุดตามประกาศของธนาคารแห่งประเทศไทย (Bank of Thailand Holidays 2026) อัตโนมัติ
+   - ล็อกวันอัตโนมัติเมื่อจำนวนคนลาถึงโควตาขีดจำกัดสูงสุด (Capacity Lock)
 
-- **Dynamic Capacity Control:** Advanced validation logic using `Max_Off_Allowed` variables to limit the number of employees taking leave simultaneously on any given day.
-- **Flexible Hierarchy Setup:** Supports global system defaults, weekday/weekend patterns, and specific date overrides (e.g., locking deployment days or opening more slots for holidays).
-- **UI/UX Prevention:** Visual indicators showing leave status (e.g., 1/2 slots taken) with color-coded alerts and automated button disabling when quotas are full[cite: 2].
-- **Audit Logs & Notifications:** Full history logging for manual changes and instant updates via Line Notify / Discord Webhooks[cite: 2].
+3. **ระบบสะสมและหักโทเค็นการลา (Token Balance Ledger)**
+   - ทำงานช่วงวันหยุดสุดสัปดาห์ / วันหยุดเทศกาลเพื่อเคลมรับโทเค็นสะสม (+1x หรือตามอัตราตัวคูณที่ตั้งค่า)
+   - หักโทเค็นสะสมอัตโนมัติเมื่อยื่นขอลาพักในวันธรรมดา (หัก 1 โทเค็น หรือ 3 โทเค็นในกรณีลาวันติดวันหยุดยาว)
 
-### Phase 3: Advanced Options
+4. **การจัดระดับขีดความสามารถการลา (Dynamic Capacity Control)**
+   - กำหนดเกณฑ์สูงสุดที่อนุญาตให้ทีมลาหยุดพร้อมกันในแต่ละวันเพื่อป้องกันปัญหาการขาดกำลังพล (Capacity Limit)
+   - สามารถระบุการล็อกรายวัน (Specific Date Overrides) หรือรายวันในสัปดาห์ (Day-of-Week Patterns)
 
-- **P2P Shift Trading:** Peer-to-peer requests for swapping shifts, requiring mutual confirmation[cite: 2].
-- **Calendar Synchronization:** Generate unique iCalendar (.ics) feeds for seamless integration with Google Calendar and Apple Calendar[cite: 2].
-- **Analytics Dashboard:** Annual stats and visual insights into team token usage and workload distribution[cite: 2].
+5. **ระบบการดึงข้อมูลและจัดการพนักงาน (Team Directory & Settings)**
+   - แสดงรายชื่อพนักงาน แบ่งตามฝ่ายงานและยศ/บทบาทหน้าที่
+   - หน้าตั้งค่าข้อมูลโปรไฟล์ส่วนตัว และการตั้งค่าอัตราตัวคูณการทำงานล่วงเวลาสำหรับแอดมิน
 
-## 🛠️ Tech Stack
+---
 
-- **Frontend:** Next.js (App Router), React, Tailwind CSS, Shadcn UI / FullCalendar
-- **Backend:** Node.js, Next.js Server Actions / NestJS
-- **Database & ORM:** PostgreSQL / MySQL, Prisma ORM[cite: 2]
-- **Libraries:** ExcelJS (for report generation), WeasyPrint (for documentation formatting)[cite: 1, 2]
+## 🛠️ โครงสร้างสถาปัตยกรรม (Architecture Stack)
 
-## 🗄️ Database Schema Overview
+### หน้าบ้าน (Frontend)
+- **Framework:** Next.js 16 (App Router) & React 19
+- **CSS / Theme:** Tailwind CSS 4 & HeroUI
+- **Language:** ระบบเลือกสลับภาษา ไทย / อังกฤษ (i18n)
 
-The core architecture relies on a highly scalable data model[cite: 2]:
+### หลังบ้าน (Backend - Go API)
+- **Framework:** Go (Standard Library `net/http`) ออกแบบตามโครงสร้าง **OOP** และ **MVC**
+- **Database ORM:** SQLite ร่วมกับ **Prisma Client Go** (`prisma-client-go`)
+- **API Spec:** Expose บริการในรูปแบบ **GraphQL** และมีระบบ **Health Endpoint** ในตัว
 
-- `User`: Handles accounts and roles (Admin/Member)[cite: 2].
-- `HolidayQuota`: Tracks current available day-off tokens[cite: 2].
-- `CalendarEvent`: Records individual daily status (Work, Weekend Work, Leave)[cite: 2].
-- `CapacitySetting`: Manages dynamic override rules per date or day-of-week.
-- `AuditLog` & `SwapRequest`: Tracks system history and peer trades[cite: 2].
+---
 
-## 📝 License
+## 🔌 รายการ API (Endpoints)
 
-This project is open-source and available under the [MIT License](LICENSE).
+หลังบ้านของ Go จะทำงานอยู่ที่พอร์ต `8080` โดยรองรับบริการดังนี้:
+- **`GET /api/health`**: สำหรับตรวจสอบสถานะการทำงานของหลังบ้านและฐานข้อมูล (Health Check)
+- **`POST /api/v1/graphql`**: จุดเชื่อมต่อหลักของ GraphQL สำหรับคิวรีและทำ Mutation เชื่อมหน้าบ้าน
+
+---
+
+## 🏃 วิธีการรันระบบ (How to Run)
+
+### 1. วิธีรันหน้าบ้าน (Frontend - Next.js)
+ติดตั้งไลบรารีและรันโหมดพัฒนา (Development Mode):
+```bash
+# ติดตั้ง dependencies
+npm install
+
+# รันหน้าบ้าน
+npm run dev
+```
+หน้าบ้านจะทำงานที่: [http://localhost:3000](http://localhost:3000)
+
+### 2. วิธีรันหลังบ้าน (Backend - Go)
+ตรวจสอบให้แน่ใจว่าติดตั้ง Go 1.21+ และพิมพ์คำสั่งดังนี้:
+```bash
+# ย้ายเข้าไปยังโฟลเดอร์หลังบ้าน
+cd backend
+
+# สั่ง Generate โค้ดของ Prisma Client สำหรับ Go
+go run github.com/steebchen/prisma-client-go generate
+
+# รันเซิร์ฟเวอร์หลังบ้าน
+go run main.go
+```
+หลังบ้านจะทำงานที่: [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 🤖 สคริปต์อัตโนมัติ (Git Auto Push Utility)
+เรามีสคริปต์ PowerShell สำหรับรันบน Windows เพื่อบันทึกงานและอัปโหลดขึ้น Git ได้ทันทีในขั้นตอนเดียว:
+```powershell
+.\git-push.ps1
+```
+*(ทำการรันคำสั่ง `git add .`, สร้าง commit อัตโนมัติ และทำการ `git push` ไปยังรีโพสิทอรีทันที)*
