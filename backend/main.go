@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,6 +28,9 @@ func main() {
 	// Initialize Database Service (OOP Singleton Model)
 	dbService := models.GetDatabaseInstance()
 	defer dbService.Disconnect()
+
+	// Seed database with mock data if empty
+	dbService.Seed(context.Background())
 
 	// Instantiate Controllers (OOP & MVC Controllers)
 	healthCtrl := controllers.NewHealthController()

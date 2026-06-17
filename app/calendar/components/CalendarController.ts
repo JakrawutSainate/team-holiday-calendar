@@ -1,5 +1,13 @@
-import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
-import { HolidayHQManager } from '@/src/libs/models/HolidayHQManager';
+import {
+  CalendarEvent,
+  CapacitySetting,
+  getTeamMembers,
+  getCalendarEvents,
+  getDayCapacitySetting,
+  claimShiftMutation,
+  requestLeaveMutation,
+  updateMaxOffAllowedMutation
+} from '@/src/libs/calendarData';
 import { CalendarGridCell } from '../types';
 
 export class CalendarController {
@@ -53,23 +61,22 @@ export class CalendarController {
   }
 
   // Load state and build grid
-  public loadState(): void {
+  public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    // Load tokens
-    const savedTokens = localStorage.getItem('holidayhq_tokens') || '3';
-    this.tokens = parseFloat(savedTokens);
+    // Load actual DB values
+    try {
+      const members = await getTeamMembers();
+      const takahashi = members.find(m => m.id === 'takahashi') || { tokensBalance: 3 };
+      this.tokens = takahashi.tokensBalance;
+    } catch (e) {
+      console.error('Failed to load team tokens balance:', e);
+    }
 
-    const maxOff = parseInt(localStorage.getItem('holidayhq_max_off_allowed') || '2');
-    this.capacityLimit = maxOff;
-
-    const manager = new HolidayHQManager();
-
+    const cells: CalendarGridCell[] = [];
     const firstDayOffset = new Date(this.year, this.month - 1, 1).getDay();
     const prevMonthDays = new Date(this.year, this.month - 1, 0).getDate();
     const currentMonthDays = new Date(this.year, this.month, 0).getDate();
-
-    const cells: CalendarGridCell[] = [];
 
     // Prev Month
     for (let i = firstDayOffset - 1; i >= 0; i--) {
@@ -107,135 +114,63 @@ export class CalendarController {
 
     this.gridCells = cells;
 
-    // Load events
-    const localEvents = localStorage.getItem('holidayhq_events');
-    let parsedEvents: CalendarEvent[] = [];
-    if (localEvents) {
-      parsedEvents = JSON.parse(localEvents);
-    } else {
-      parsedEvents = manager.getEventsForMonth(this.year, this.month);
-      localStorage.setItem('holidayhq_events', JSON.stringify(parsedEvents));
+    // Load actual DB events
+    try {
+      this.events = await getCalendarEvents(this.year, this.month);
+    } catch (e) {
+      console.error('Failed to load events:', e);
     }
 
-    const activeEvents = parsedEvents.filter((e) =>
-      e.date.startsWith(`${this.year}-${this.month.toString().padStart(2, '0')}`)
-    );
-    const managerHolidays = manager
-      .getEventsForMonth(this.year, this.month)
-      .filter((e) => e.status === 'PUBLIC_HOLIDAY');
-
-    this.events = [...activeEvents, ...managerHolidays].reduce((acc: CalendarEvent[], curr) => {
-      if (!acc.some((e) => e.date === curr.date && e.status === curr.status && e.userName === curr.userName)) {
-        acc.push(curr);
-      }
-      return acc;
-    }, []);
-
+    // Get capacity settings from DB
     const resolvedCapacities: Record<string, CapacitySetting> = {};
-    cells.forEach((cell) => {
-      const cap = manager.getDayCapacity(cell.dateString);
-      if (cap.id === 'fallback-default' || cap.id === 'global-default') {
-        cap.maxOffAllowed = maxOff;
+    for (const cell of cells) {
+      try {
+        resolvedCapacities[cell.dateString] = await getDayCapacitySetting(cell.dateString);
+      } catch (e) {
+        resolvedCapacities[cell.dateString] = { id: cell.dateString, maxOffAllowed: 2 };
       }
-      resolvedCapacities[cell.dateString] = cap;
-    });
+    }
     this.capacities = resolvedCapacities;
+
+    // Resolve default maxOff
+    try {
+      const dummyDate = `${this.year}-${this.month.toString().padStart(2, '0')}-01`;
+      const defaultSetting = await getDayCapacitySetting(dummyDate);
+      this.capacityLimit = defaultSetting.maxOffAllowed;
+    } catch (e) {
+      this.capacityLimit = 2;
+    }
 
     this.updateCallback();
   }
 
   // Claim shift
-  public claimShift(dateString: string, status: 'WEEKEND_WORK' | 'HOLIDAY_WORK', shiftLabel: string, multiplier: number): void {
-    const dateObj = new Date(dateString);
-    const newEvent: CalendarEvent = {
-      id: `${status === 'HOLIDAY_WORK' ? 'holiday' : 'weekend'}-work-${dateString}-${Date.now()}`,
-      userId: 'user-takahashi',
-      userName: 'Takahashi S.',
-      date: dateString,
-      status: status,
-      details: `Claimed ${shiftLabel.toLowerCase()}`
-    };
-
-    this.events = [...this.events, newEvent];
-
-    // Save to localStorage
-    const savedLocalEvents = localStorage.getItem('holidayhq_events');
-    let allEvents: CalendarEvent[] = savedLocalEvents ? JSON.parse(savedLocalEvents) : [];
-    allEvents.push(newEvent);
-    localStorage.setItem('holidayhq_events', JSON.stringify(allEvents));
-
-    // Update tokens
-    this.tokens += multiplier;
-    localStorage.setItem('holidayhq_tokens', this.tokens.toString());
-
-    // Save transaction
-    const savedLocalTx = localStorage.getItem('holidayhq_transactions');
-    let allTx = savedLocalTx ? JSON.parse(savedLocalTx) : [];
-    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    allTx.unshift({
-      date: formattedDate,
-      type: 'EARN',
-      description: `${shiftLabel} Claimed (${dateObj.toLocaleDateString('en-US', { weekday: 'short' })})`,
-      status: 'Approved',
-      amount: `+${multiplier}`
-    });
-    localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
-
-    this.updateCallback();
+  public async claimShift(dateString: string, status: 'WEEKEND_WORK' | 'HOLIDAY_WORK', shiftLabel: string, multiplier: number): Promise<void> {
+    try {
+      await claimShiftMutation(dateString, status, `Claimed ${shiftLabel.toLowerCase()}`);
+      await this.loadState();
+    } catch (e) {
+      console.error('Failed to claim shift:', e);
+    }
   }
 
   // Request Leave
-  public requestLeave(dateString: string): void {
-    const dateObj = new Date(dateString);
-    this.tokens -= 1;
-    localStorage.setItem('holidayhq_tokens', this.tokens.toString());
-
-    const newEvent: CalendarEvent = {
-      id: `leave-${dateString}-${Date.now()}`,
-      userId: 'user-takahashi',
-      userName: 'Takahashi S.',
-      date: dateString,
-      status: 'COMPENSATORY_OFF',
-      details: 'Requested leave via calendar click'
-    };
-
-    this.events = [...this.events, newEvent];
-
-    // Save events
-    const savedLocalEvents = localStorage.getItem('holidayhq_events');
-    let allEvents: CalendarEvent[] = savedLocalEvents ? JSON.parse(savedLocalEvents) : [];
-    allEvents.push(newEvent);
-    localStorage.setItem('holidayhq_events', JSON.stringify(allEvents));
-
-    // Save transaction
-    const savedLocalTx = localStorage.getItem('holidayhq_transactions');
-    let allTx = savedLocalTx ? JSON.parse(savedLocalTx) : [];
-    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    allTx.unshift({
-      date: formattedDate,
-      type: 'SPEND',
-      description: `Compensatory Leave booked (${dateObj.toLocaleDateString('en-US', { weekday: 'short' })})`,
-      status: 'Approved',
-      amount: '-1'
-    });
-    localStorage.setItem('holidayhq_transactions', JSON.stringify(allTx));
-
-    this.updateCallback();
+  public async requestLeave(dateString: string): Promise<void> {
+    try {
+      await requestLeaveMutation(dateString);
+      await this.loadState();
+    } catch (e) {
+      console.error('Failed to request leave:', e);
+    }
   }
 
-  // Update capacity limit
-  public changeMaxOff(newVal: number): void {
-    localStorage.setItem('holidayhq_max_off_allowed', newVal.toString());
-    this.capacityLimit = newVal;
-
-    const updatedCapacities = { ...this.capacities };
-    Object.keys(updatedCapacities).forEach((dateStr) => {
-      const cap = updatedCapacities[dateStr];
-      if (cap.id === 'fallback-default' || cap.id === 'global-default') {
-        cap.maxOffAllowed = newVal;
-      }
-    });
-    this.capacities = updatedCapacities;
-    this.updateCallback();
+  // Update Max Off
+  public async updateMaxOff(newVal: number): Promise<void> {
+    try {
+      await updateMaxOffAllowedMutation(newVal);
+      await this.loadState();
+    } catch (e) {
+      console.error('Failed to update capacity limit:', e);
+    }
   }
 }
