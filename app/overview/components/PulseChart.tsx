@@ -50,6 +50,12 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
     ? `สัปดาห์ล่าสุด: ${startDay} ${startMonth} - ${endDay} ${endMonth} (${currentMonthName} ${currentYear})`
     : `Latest Week: ${startMonth} ${startDay} - ${endMonth} ${endDay} (${currentMonthName} ${currentYear})`;
 
+  const weekDays = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.getDate();
+  });
+
   return (
     <div className="bg-white border border-zinc-100/80 rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-6">
       <div className="flex justify-between items-center">
@@ -79,13 +85,34 @@ export default function PulseChart({ burnoutRisk }: PulseChartProps) {
       </div>
       <div className="space-y-2">
         <div className="flex justify-between px-2 text-sm text-zinc-500">
-          <span>Mon</span>
-          <span>Tue</span>
-          <span>Wed</span>
-          <span>Thu</span>
-          <span>Fri</span>
-          <span>Sat</span>
-          <span className="font-semibold text-zinc-950">Sun</span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Mon</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[0]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Tue</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[1]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Wed</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[2]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Thu</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[3]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Fri</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[4]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-400 text-xs">Sat</span>
+            <span className="font-semibold text-zinc-700 mt-0.5">{weekDays[5]}</span>
+          </span>
+          <span className="flex flex-col items-center">
+            <span className="text-zinc-950 font-bold text-xs">Sun</span>
+            <span className="font-bold text-zinc-950 mt-0.5">{weekDays[6]}</span>
+          </span>
         </div>
         <div className="text-xs text-zinc-400 text-center font-medium">
           {weekRangeText}
