@@ -129,6 +129,8 @@ export const translations = {
     confirm: 'Confirm Claim',
     role: 'Role',
     myLeaves: 'My Leaves',
+    login: 'Sign In',
+    logout: 'Sign Out',
   },
   th: {
     // Navigation
@@ -258,5 +260,7 @@ export const translations = {
     confirm: 'ยืนยันเคลม',
     role: 'บทบาท',
     myLeaves: 'รายการลาหยุด',
+    login: 'เข้าสู่ระบบ',
+    logout: 'ออกจากระบบ',
   }
 };

@@ -33,7 +33,7 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
 
   const handleRedeem = async () => {
     try {
-      const message = await controller.redeem(redeemTokensAction);
+      const message = await controller.redeemTokens(1, redeemTokensAction);
       alert(message);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);

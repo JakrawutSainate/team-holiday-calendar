@@ -47,13 +47,13 @@ export class BalanceController {
 
   public async redeemTokens(
     amount: number,
-    action: (input: { amount: number }) => Promise<{ success: boolean; error?: string }>
+    action: (input: { tokensToRedeem: number; reason: string }) => Promise<{ success: boolean; error?: string }>
   ): Promise<string> {
     if (this.tokens < amount) {
       throw new Error('Insufficient tokens to redeem.');
     }
 
-    const res = await action({ amount });
+    const res = await action({ tokensToRedeem: amount, reason: 'Token Rollover/Payout Request' });
     if (!res.success) {
       throw new Error(res.error || 'Failed to request token rollover/payout.');
     }
