@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
+import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { saveProfileSettings, saveWorkspaceSettings } from '../actions';
 import { SettingsController } from './SettingsController';
@@ -10,12 +11,20 @@ import { SettingsController } from './SettingsController';
 export default function SettingsClient() {
   const { t } = useTranslation();
   const { role } = useRole();
+  const { user } = useAuth();
   const [, setTick] = useState(0);
   const [controller] = useState(() => new SettingsController(() => setTick((tick) => tick + 1)));
 
   useEffect(() => {
     controller.loadState();
   }, [controller]);
+
+  // Pre-fill profile fields from logged-in user
+  useEffect(() => {
+    if (user) {
+      controller.initFromUser(user.name, user.email);
+    }
+  }, [controller, user]);
 
   const handleSave = async () => {
     await controller.save(role, saveProfileSettings, saveWorkspaceSettings);
@@ -67,11 +76,17 @@ export default function SettingsClient() {
             <div className="space-y-6">
               <div className="flex items-center gap-4 p-5 bg-zinc-50/50 border border-zinc-100 rounded-xl">
                 <div className="w-16 h-16 rounded-full overflow-hidden relative group border border-zinc-100">
-                  <img
-                    alt="Profile Avatar"
-                    className="w-full h-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAxqpaUNIleLAD9XYhKsX2Qooc6XptE2clDD2Vk35OtdDPrAbhVDtIBD5grW9dmuu0t_0_76tdEww6kzLNxGg1CNiS2NgIYQTICX6W93GldTrIWnWxYJ-qQvE36Q_1xzfyaK-_ioen7Mbpeau6fhmNuVY4v-QQMP6x6YaT12g4TZGfVVmBrEBT_BEadMETd7nN13afYPgbqP4_Zn0c3eLBOGRF__MXE_indHaUYg9RGaFX72v1Cso3YvGiw-J8tEsIVKjxT2ORvKb_"
-                  />
+                  {user?.avatarUrl ? (
+                    <img
+                      alt="Profile Avatar"
+                      className="w-full h-full object-cover"
+                      src={user.avatarUrl}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-zinc-200 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-zinc-500 text-3xl">person</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
                     <span className="material-symbols-outlined text-white">photo_camera</span>
                   </div>

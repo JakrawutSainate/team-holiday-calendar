@@ -7,13 +7,17 @@ export class OverviewController {
   private tokens: number;
   private events: CalendarEvent[];
   private updateCallback: () => void;
+  private userId: string;
+  private userName: string;
 
   constructor(
     initialActivities: Activity[],
     initialStats: { presentCount: number; availabilityPercent: number },
     initialBurnoutRisk: number[],
     initialTokens: number,
-    updateCallback: () => void
+    updateCallback: () => void,
+    userId = '',
+    userName = ''
   ) {
     this.activities = initialActivities;
     this.stats = initialStats;
@@ -21,6 +25,8 @@ export class OverviewController {
     this.tokens = initialTokens;
     this.events = [];
     this.updateCallback = updateCallback;
+    this.userId = userId;
+    this.userName = userName;
   }
 
   public getEvents(): CalendarEvent[] {
@@ -43,19 +49,23 @@ export class OverviewController {
     return Math.floor(this.tokens);
   }
 
-  public async loadState(): Promise<void> {
+  public async loadState(userId?: string): Promise<void> {
     if (typeof window === 'undefined') return;
+
+    const effectiveUserId = userId || this.userId;
 
     try {
       const members = await getTeamMembers();
-      const takahashi = members.find(m => m.id === 'takahashi') || { tokensBalance: 3 };
-      this.tokens = takahashi.tokensBalance;
+
+      // Use logged-in user's balance, fall back to first member
+      const currentUser = members.find(m => m.id === effectiveUserId) || members[0];
+      this.tokens = currentUser?.tokensBalance ?? 0;
 
       // Get current date details
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
-      
+
       const allEvents = await getCalendarEvents(year, month);
       this.events = allEvents;
 
@@ -64,9 +74,9 @@ export class OverviewController {
       const activeLeaves = allEvents.filter(
         (e: CalendarEvent) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
       );
-      
+
       const absentCount = activeLeaves.length;
-      const totalMembers = members.length || 8;
+      const totalMembers = members.length || 1;
       this.stats = {
         presentCount: absentCount,
         availabilityPercent: totalMembers > 0 ? Math.round((absentCount / totalMembers) * 100) : 0
@@ -91,6 +101,32 @@ export class OverviewController {
         workloads[i] = totalMembers > 0 ? Math.round((dayLeaves.length / totalMembers) * 100) : 0;
       }
       this.burnoutRisk = workloads;
+
+      // Build recent activities from real events (last 5 events)
+      const recentEvents = [...allEvents]
+        .filter(e => e.status !== 'PUBLIC_HOLIDAY')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5);
+
+      this.activities = recentEvents.map(e => ({
+        id: e.id,
+        type: e.status,
+        title: `${e.userName} - ${e.status.replace(/_/g, ' ')}`,
+        description: e.details || `Scheduled for ${e.date}`,
+        time: e.date,
+        priority: 'normal',
+        meta: e.userId
+      }));
+
+      if (this.activities.length === 0) {
+        this.activities = [{
+          id: 'db-connected',
+          type: 'SYSTEM',
+          title: 'Database Active',
+          description: 'System loaded from Postgres database successfully.',
+          time: 'Just now'
+        }];
+      }
     } catch (err) {
       console.error('Failed to load DB state for dashboard:', err);
     }

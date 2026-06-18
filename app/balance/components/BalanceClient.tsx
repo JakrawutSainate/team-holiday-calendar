@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { Transaction } from '@/src/libs/calendarData';
 import { redeemTokensAction } from '../actions';
@@ -19,17 +20,24 @@ interface BalanceClientProps {
 
 export default function BalanceClient({ initialTokens, initialTransactions }: BalanceClientProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [, setTick] = useState(0);
 
   const [controller] = useState(() => new BalanceController(
     initialTokens,
     initialTransactions,
-    () => setTick((tick) => tick + 1)
+    () => setTick((tick) => tick + 1),
+    user?.id || ''
   ));
 
   useEffect(() => {
-    controller.loadState();
-  }, [controller]);
+    if (user?.id) {
+      controller.setUserId(user.id);
+      controller.loadState(user.id);
+    } else {
+      controller.loadState();
+    }
+  }, [controller, user?.id]);
 
   const handleRedeem = async () => {
     try {
@@ -40,6 +48,9 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
       alert(`Redeem failed: ${message}`);
     }
   };
+
+  // Prefer the live balance from AuthContext user if available
+  const displayTokens = user ? Math.floor(user.tokensBalance) : controller.getTokens();
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -52,7 +63,7 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
 
           {/* Cards Grid */}
           <div className="grid grid-cols-12 gap-6">
-            <BalanceCard tokens={controller.getTokens()} onRedeem={handleRedeem} />
+            <BalanceCard tokens={displayTokens} onRedeem={handleRedeem} />
             <HowItWorksCard />
           </div>
 

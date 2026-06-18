@@ -1,6 +1,8 @@
+import { getDayCapacitySetting, updateMaxOffAllowedMutation } from '@/src/libs/calendarData';
+
 export class SettingsController {
-  private fullName: string = 'Alex Rivera';
-  private emailAddress: string = 'alex.rivera@holidayhq.com';
+  private fullName: string = '';
+  private emailAddress: string = '';
   private maxOffAllowed: number = 2;
   private earnRate: string = '1.0x';
   private messageType: string = '';
@@ -57,11 +59,30 @@ export class SettingsController {
     this.updateCallback();
   }
 
-  public loadState(): void {
+  /** Pre-fill profile info from logged-in user */
+  public initFromUser(name: string, email: string): void {
+    if (this.fullName === '' && name) {
+      this.fullName = name;
+    }
+    if (this.emailAddress === '' && email) {
+      this.emailAddress = email;
+    }
+    this.updateCallback();
+  }
+
+  public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    const savedMaxOff = localStorage.getItem('holidayhq_max_off_allowed');
-    if (savedMaxOff) this.maxOffAllowed = parseInt(savedMaxOff);
+    // Load capacity from DB
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const setting = await getDayCapacitySetting(today);
+      if (setting && setting.maxOffAllowed) {
+        this.maxOffAllowed = setting.maxOffAllowed;
+      }
+    } catch (e) {
+      console.error('Failed to load capacity setting:', e);
+    }
 
     const savedEarnRate = localStorage.getItem('holidayhq_earn_rate');
     if (savedEarnRate) this.earnRate = `${savedEarnRate}x`;
@@ -95,7 +116,14 @@ export class SettingsController {
         this.updateCallback();
         return;
       }
-      localStorage.setItem('holidayhq_max_off_allowed', this.maxOffAllowed.toString());
+
+      // Persist capacity setting to backend
+      try {
+        await updateMaxOffAllowedMutation(this.maxOffAllowed);
+      } catch (e) {
+        console.error('Failed to update capacity in DB:', e);
+      }
+
       localStorage.setItem('holidayhq_earn_rate', rawEarnRate);
     }
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { Activity } from '@/src/libs/calendarData';
 import { OverviewController } from './OverviewController';
@@ -27,6 +28,7 @@ export default function OverviewClient({
   initialTokens
 }: OverviewClientProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [, setTick] = useState(0);
 
   const [controller] = useState<OverviewController>(() => new OverviewController(
@@ -34,12 +36,15 @@ export default function OverviewClient({
     initialStats,
     initialBurnoutRisk,
     initialTokens,
-    () => setTick((tick) => tick + 1)
+    () => setTick((tick) => tick + 1),
+    user?.id || '',
+    user?.name || ''
   ));
 
   useEffect(() => {
-    controller.loadState();
-  }, [controller]);
+    // Load state with current user's ID so token balance is accurate
+    controller.loadState(user?.id || '');
+  }, [controller, user?.id]);
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -55,7 +60,7 @@ export default function OverviewClient({
             <UpcomingHolidaysCard />
 
             <YourTokenBalanceCard
-              tokens={controller.getTokens()}
+              tokens={user ? Math.floor(user.tokensBalance) : controller.getTokens()}
             />
           </div>
 

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
+import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import Swal from 'sweetalert2';
 import { LeavesController } from './LeavesController';
@@ -11,22 +12,21 @@ import { CalendarEvent } from '@/src/libs/calendarData';
 export default function LeavesClient() {
   const { t, language } = useTranslation();
   const { role } = useRole();
+  const { user } = useAuth();
   const [, setTick] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const [controller] = useState<LeavesController>(() => new LeavesController(() => setTick((tick) => tick + 1)));
+  const [controller] = useState<LeavesController>(
+    () => new LeavesController(() => setTick((tick) => tick + 1), user?.id || '')
+  );
 
   useEffect(() => {
-    controller.loadState();
-
-    const handleUpdate = () => {
-      controller.loadState();
-    };
-
-    window.addEventListener('holidayhq_events_updated', handleUpdate);
-    return () => window.removeEventListener('holidayhq_events_updated', handleUpdate);
-  }, [controller]);
+    if (user?.id) {
+      controller.setUserId(user.id);
+      controller.loadState(user.id);
+    }
+  }, [controller, user?.id]);
 
   const handleCancelLeave = (leave: CalendarEvent) => {
     Swal.fire({
@@ -41,9 +41,9 @@ export default function LeavesClient() {
       cancelButtonText: t('cancel'),
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#d4d4d8'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        controller.cancelLeave(leave);
+        await controller.cancelLeave(leave);
 
         const totalAfterDelete = controller.getLeaves().length;
         const maxPagesAfterDelete = Math.ceil(totalAfterDelete / pageSize);
@@ -88,14 +88,14 @@ export default function LeavesClient() {
               </p>
             </div>
 
-            {/* Token Card */}
+            {/* Token Card — show from AuthContext user for live balance */}
             <div className="px-6 py-4 bg-zinc-900 text-white rounded-2xl flex items-center gap-4 shadow-md border border-zinc-800">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
                   {t('availableTokens')}
                 </span>
                 <span className="text-2xl font-bold leading-none mt-1">
-                  {controller.getTokens()} {t('tokens')}
+                  {user ? Math.floor(user.tokensBalance) : controller.getTokens()} {t('tokens')}
                 </span>
               </div>
               <span className="material-symbols-outlined text-[36px] text-zinc-300">
@@ -170,7 +170,9 @@ export default function LeavesClient() {
                             </td>
                             <td className="p-4 text-base font-semibold text-zinc-700">
                               <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-100 rounded-lg text-xs font-semibold">
-                                {t('tokens')} Leave
+                                {leave.status === 'COMPENSATORY_OFF'
+                                  ? (language === 'th' ? 'วันหยุดชดเชย' : 'Compensatory Off')
+                                  : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
                             <td className="p-4 text-base text-zinc-500">

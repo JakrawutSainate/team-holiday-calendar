@@ -1,18 +1,21 @@
-import { Transaction, getTeamMembers } from '@/src/libs/calendarData';
+import { Transaction, CalendarEvent, getTeamMembers, getCalendarEvents } from '@/src/libs/calendarData';
 
 export class BalanceController {
   private tokens: number;
   private transactions: Transaction[];
   private updateCallback: () => void;
+  private userId: string;
 
   constructor(
     initialTokens: number,
     initialTransactions: Transaction[],
-    updateCallback: () => void
+    updateCallback: () => void,
+    userId = ''
   ) {
     this.tokens = initialTokens;
     this.transactions = initialTransactions;
     this.updateCallback = updateCallback;
+    this.userId = userId;
   }
 
   public getTokens(): number {
@@ -23,23 +26,65 @@ export class BalanceController {
     return this.transactions;
   }
 
-  public async loadState(): Promise<void> {
+  public setUserId(userId: string): void {
+    this.userId = userId;
+  }
+
+  public async loadState(userId?: string): Promise<void> {
     if (typeof window === 'undefined') return;
 
+    const effectiveUserId = userId || this.userId;
+
     try {
+      // Fetch token balance from live backend for the logged-in user
       const members = await getTeamMembers();
-      const takahashi = members.find(m => m.id === 'takahashi') || { tokensBalance: 3 };
-      this.tokens = takahashi.tokensBalance;
+      const currentUser = members.find(m => m.id === effectiveUserId);
+      if (currentUser) {
+        this.tokens = currentUser.tokensBalance;
+      }
+
+      // Build transaction history from real calendar events (WEEKEND_WORK = earn, COMPENSATORY_OFF = spend)
+      const now = new Date();
+      const promises = [];
+      for (let i = 0; i < 3; i++) {
+        const m = now.getMonth() + 1 - i;
+        const y = m <= 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const adjustedMonth = m <= 0 ? m + 12 : m;
+        promises.push(getCalendarEvents(y, adjustedMonth));
+      }
+      const monthsData = await Promise.all(promises);
+      const allEvents: CalendarEvent[] = monthsData.flat();
+
+      // Filter to this user's events and build transactions
+      const userEvents = allEvents
+        .filter(
+          (e: CalendarEvent) =>
+            e.userId === effectiveUserId &&
+            e.status !== 'PUBLIC_HOLIDAY' &&
+            (e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK' || e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+        )
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      this.transactions = userEvents.map(e => {
+        const isEarn = e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK';
+        const formattedDate = new Date(e.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
+          year: 'numeric'
+        });
+        return {
+          date: formattedDate,
+          type: isEarn ? 'EARN' : 'SPEND',
+          description: isEarn
+            ? `Weekend/Holiday Coverage`
+            : (e.details || 'Compensatory Leave Used'),
+          status: 'Approved',
+          amount: isEarn ? '+1' : '-1'
+        };
+      });
+
     } catch (e) {
       console.error('Failed to load balance state from database:', e);
-    }
-
-    // Keep transactions in local storage or generate them from leaves/claims dynamically
-    const savedTx = localStorage.getItem('holidayhq_transactions');
-    if (savedTx) {
-      this.transactions = JSON.parse(savedTx);
-    } else {
-      localStorage.setItem('holidayhq_transactions', JSON.stringify(this.transactions));
     }
 
     this.updateCallback();
@@ -59,9 +104,8 @@ export class BalanceController {
     }
 
     this.tokens -= amount;
-    localStorage.setItem('holidayhq_tokens', this.tokens.toString());
 
-    // Record txn
+    // Record txn locally
     const newTx: Transaction = {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       type: 'SPEND',
@@ -70,7 +114,6 @@ export class BalanceController {
       amount: `-${amount}`
     };
     this.transactions.unshift(newTx);
-    localStorage.setItem('holidayhq_transactions', JSON.stringify(this.transactions));
 
     this.updateCallback();
     return `Successfully requested rollover of ${amount} tokens.`;
