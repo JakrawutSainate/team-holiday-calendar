@@ -2,10 +2,19 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"log"
 	"sync"
 	"backend/db" // Generated Prisma client package
 )
+
+// HashPassword hashes a plain text password using SHA256 (OOP helper method)
+func HashPassword(password string) string {
+	h := sha256.New()
+	h.Write([]byte(password))
+	return hex.EncodeToString(h.Sum(nil))
+}
 
 type DatabaseService struct {
 	Client *db.PrismaClient
@@ -97,6 +106,8 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 	}
 
 	for _, m := range members {
+		// Use password123 as the default password for all seeded users
+		pwHash := HashPassword("password123")
 		_, err := s.Client.TeamMember.CreateOne(
 			db.TeamMember.Name.Set(m.Name),
 			db.TeamMember.Email.Set(m.Email),
@@ -106,6 +117,7 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			db.TeamMember.ID.Set(m.ID),
 			db.TeamMember.AvatarURL.Set(m.AvatarURL),
 			db.TeamMember.TokensBalance.Set(m.Tokens),
+			db.TeamMember.PasswordHash.Set(pwHash),
 		).Exec(ctx)
 		if err != nil {
 			log.Printf("Error seeding team member %s: %v", m.Name, err)

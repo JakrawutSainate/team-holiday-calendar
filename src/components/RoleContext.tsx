@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useAuth } from './AuthContext';
 
-type Role = 'ADMIN' | 'USER';
+export type Role = 'ADMIN' | 'USER';
 
 interface RoleContextProps {
   role: Role;
@@ -12,10 +13,13 @@ interface RoleContextProps {
 const RoleContext = createContext<RoleContextProps | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRoleState] = useState<Role>('ADMIN');
+  const { user } = useAuth();
+
+  // Resolve role dynamically: ADMIN/LEAD map to 'ADMIN', others/unauthenticated map to 'USER'
+  const role: Role = user && (user.role === 'ADMIN' || user.role === 'LEAD') ? 'ADMIN' : 'USER';
 
   const setRole = (_newRole: Role) => {
-    // No-op to prevent role switching from updating state
+    // No-op (role resolved dynamically from AuthContext)
   };
 
   return (

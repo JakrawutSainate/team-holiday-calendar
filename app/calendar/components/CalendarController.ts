@@ -67,8 +67,11 @@ export class CalendarController {
     // Load actual DB values
     try {
       const members = await getTeamMembers();
-      const takahashi = members.find(m => m.id === 'takahashi') || { tokensBalance: 3 };
-      this.tokens = takahashi.tokensBalance;
+      const savedUserStr = typeof window !== 'undefined' ? localStorage.getItem('holidayhq_user') : null;
+      const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+      const activeUserId = savedUser ? savedUser.id : 'takahashi';
+      const activeUser = members.find(m => m.id === activeUserId) || { tokensBalance: 0 };
+      this.tokens = activeUser.tokensBalance;
     } catch (e) {
       console.error('Failed to load team tokens balance:', e);
     }

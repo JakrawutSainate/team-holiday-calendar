@@ -1,14 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from './LanguageContext';
 import { useRole } from './RoleContext';
+import { useAuth } from './AuthContext';
 
 export default function SideNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useTranslation();
-  const { role, setRole } = useRole();
+  const { role } = useRole();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
@@ -19,15 +22,35 @@ export default function SideNavBar() {
     { name: t('settings'), href: '/settings', icon: 'settings' },
   ];
 
-  const filteredItems = navItems;
+  // Filter items based on login status and role
+  const filteredItems = navItems.filter((item) => {
+    // If guest (not logged in): only show Calendar and Team
+    if (!user) {
+      return item.href === '/calendar' || item.href === '/team';
+    }
+    // If not admin: hide settings page
+    if (role !== 'ADMIN' && item.href === '/settings') {
+      return false;
+    }
+    return true;
+  });
+
+  const handleLogout = () => {
+    logout();
+    router.push('/calendar');
+  };
+
+  const defaultAvatar = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO';
 
   return (
     <>
       {/* Desktop Sidebar Navigation */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-full flex-col p-6 w-64 border-r border-zinc-100 bg-white z-50 overflow-y-auto custom-scrollbar">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tighter text-zinc-900">HolidayHQ</h1>
-          <p className="text-sm text-zinc-500">{t('teamManagement')}</p>
+          <Link href="/calendar" className="block">
+            <h1 className="text-2xl font-bold tracking-tighter text-zinc-900">HolidayHQ</h1>
+            <p className="text-sm text-zinc-500">{t('teamManagement')}</p>
+          </Link>
         </div>
 
         <nav className="flex flex-col gap-2 grow">
@@ -55,16 +78,38 @@ export default function SideNavBar() {
           })}
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-zinc-100 flex items-center gap-3">
-          <img
-            alt="Takahashi S. Profile"
-            className="w-10 h-10 rounded-full object-cover border border-zinc-100"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO"
-          />
-          <div className="overflow-hidden w-full flex flex-col gap-1">
-            <p className="text-sm font-semibold text-zinc-900 truncate">Takahashi S.</p>
-            <p className="text-xs text-zinc-500 font-medium">Admin & Member</p>
-          </div>
+        {/* Footer Account Section */}
+        <div className="mt-auto pt-4 border-t border-zinc-100 flex flex-col gap-3">
+          {user ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  alt={`${user.name} Profile`}
+                  className="w-10 h-10 rounded-full object-cover border border-zinc-100 bg-zinc-50"
+                  src={user.avatarUrl || defaultAvatar}
+                />
+                <div className="overflow-hidden w-full flex flex-col gap-0.5">
+                  <p className="text-sm font-semibold text-zinc-900 truncate">{user.name}</p>
+                  <p className="text-xs text-zinc-500 font-medium truncate">{user.title || user.role}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-zinc-200 hover:border-zinc-300 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">logout</span>
+                {t('logout') || 'Sign Out'}
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-sm font-semibold transition-colors text-center cursor-pointer shadow-sm"
+            >
+              <span className="material-symbols-outlined text-sm">login</span>
+              {t('login') || 'Sign In'}
+            </Link>
+          )}
         </div>
       </aside>
 
@@ -91,6 +136,25 @@ export default function SideNavBar() {
               </Link>
             );
           })}
+          
+          {/* Sign In/Out in Mobile Nav */}
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-2xl">logout</span>
+              <span className="text-[10px]">{t('logout') || 'Sign Out'}</span>
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400"
+            >
+              <span className="material-symbols-outlined text-2xl">login</span>
+              <span className="text-[10px]">{t('login') || 'Sign In'}</span>
+            </Link>
+          )}
         </div>
       </nav>
     </>

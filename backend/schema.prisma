@@ -12,6 +12,7 @@ model TeamMember {
   name          String
   email         String   @unique
   role          String   // ADMIN, MEMBER, LEAD
+  passwordHash  String   @default("")
   avatarUrl     String?
   department    String   // Engineering, Design, Management
   title         String

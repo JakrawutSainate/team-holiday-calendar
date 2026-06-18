@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
+import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import CalendarHeader from './CalendarHeader';
 import DateCell from './DateCell';
@@ -17,6 +18,7 @@ interface CalendarClientProps {
 export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { t, language } = useTranslation();
   const { role } = useRole();
+  const { user } = useAuth();
   const [, setTick] = useState(0);
   const [controller] = useState<CalendarController>(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
 
@@ -27,6 +29,24 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   }, [year, month, role, controller]);
 
   const handleCellClick = (dateString: string) => {
+    if (!user) {
+      Swal.fire({
+        title: language === 'th' ? 'กรุณาเข้าสู่ระบบ' : 'Authentication Required',
+        text: language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อดำเนินการยื่นวันลาหรือบันทึกกะทำงาน' : 'Please sign in to request leaves or log shifts.',
+        icon: 'warning',
+        confirmButtonText: language === 'th' ? 'เข้าสู่ระบบ' : 'Sign In',
+        showCancelButton: true,
+        cancelButtonText: t('cancel'),
+        confirmButtonColor: '#09090b',
+        cancelButtonColor: '#d4d4d8'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login';
+        }
+      });
+      return;
+    }
+
     const dateObj = new Date(dateString);
     const dayOfWeek = dateObj.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;

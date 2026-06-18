@@ -84,11 +84,17 @@ const API_URL = 'http://localhost:8080/api/v1/graphql';
 
 async function fetchGraphQL(query: string, variables: Record<string, unknown> = {}) {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('holidayhq_token') : null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ query, variables }),
     });
     const json = await res.json();
