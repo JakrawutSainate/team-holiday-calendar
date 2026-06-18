@@ -1,0 +1,244 @@
+{
+	"info": {
+		"_postman_id": "a904e5d6-d08c-4a37-b844-48615cf1a95e",
+		"name": "HolidayHQ API Collection",
+		"description": "Collection of API endpoints for HolidayHQ backend including Health Check and GraphQL Queries/Mutations.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "System Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "GraphQL API",
+			"item": [
+				{
+					"name": "1. Login (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"mutation login($email: String!, $password: String!) { login(email: $email, password: $password) { token user { id name email role } } }\",\n    \"variables\": {\n        \"email\": \"takahashi@example.com\",\n        \"password\": \"password123\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Get Team Members (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"query getTeamMembers { getTeamMembers { id name email role department title tokensBalance } }\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Events (Public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"query getEvents { getEvents { id userId userName date status details } }\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Request Leave (Protected)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer session-replace-with-user-id-123456789",
+								"type": "text",
+								"description": "Replace token with login result session key"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"mutation requestLeave($date: String!) { requestLeave(date: $date) { id date status } }\",\n    \"variables\": {\n        \"date\": \"2026-06-25\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Claim Shift (Protected)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer session-replace-with-user-id-123456789",
+								"type": "text",
+								"description": "Replace token with login result session key"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"mutation claimShift($date: String!, $status: String!, $details: String) { claimShift(date: $date, status: $status, details: $details) { id date status userName } }\",\n    \"variables\": {\n        \"date\": \"2026-06-27\",\n        \"status\": \"WEEKEND_WORK\",\n        \"details\": \"เคลมเวรเสาร์อาทิตย์\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Update Capacity Limit (Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer session-replace-with-admin-id-123456789",
+								"type": "text",
+								"description": "Requires Admin Role Session token"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"mutation updateMaxOffAllowed($maxOffAllowed: Float!) { updateMaxOffAllowed(maxOffAllowed: $maxOffAllowed) { id maxOffAllowed } }\",\n    \"variables\": {\n        \"maxOffAllowed\": 3.0\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/graphql",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
