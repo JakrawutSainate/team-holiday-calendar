@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from './LanguageContext';
 import { useRole } from './RoleContext';
 import { useAuth } from './AuthContext';
+import Swal from 'sweetalert2';
 
 export default function SideNavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
   const { role } = useRole();
-  const { user, logout } = useAuth();
+  const { user, logout, openLogin } = useAuth();
 
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
@@ -36,8 +37,29 @@ export default function SideNavBar() {
   });
 
   const handleLogout = () => {
-    logout();
-    router.push('/calendar');
+    Swal.fire({
+      title: t('logoutConfirmTitle'),
+      text: t('logoutConfirmText'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: t('logout') || 'Sign Out',
+      cancelButtonText: t('cancel') || 'Cancel',
+      confirmButtonColor: '#09090b',
+      cancelButtonColor: '#d4d4d8'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        Swal.fire({
+          title: t('logoutSuccessTitle'),
+          text: t('logoutSuccessText'),
+          icon: 'success',
+          confirmButtonColor: '#09090b',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        router.push('/calendar');
+      }
+    });
   };
 
   const defaultAvatar = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO';
@@ -102,13 +124,13 @@ export default function SideNavBar() {
               </button>
             </div>
           ) : (
-            <Link
-              href="/login"
+            <button
+              onClick={openLogin}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-sm font-semibold transition-colors text-center cursor-pointer shadow-sm"
             >
               <span className="material-symbols-outlined text-sm">login</span>
               {t('login') || 'Sign In'}
-            </Link>
+            </button>
           )}
         </div>
       </aside>
@@ -147,13 +169,13 @@ export default function SideNavBar() {
               <span className="text-[10px]">{t('logout') || 'Sign Out'}</span>
             </button>
           ) : (
-            <Link
-              href="/login"
-              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400"
+            <button
+              onClick={openLogin}
+              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400 cursor-pointer"
             >
               <span className="material-symbols-outlined text-2xl">login</span>
               <span className="text-[10px]">{t('login') || 'Sign In'}</span>
-            </Link>
+            </button>
           )}
         </div>
       </nav>

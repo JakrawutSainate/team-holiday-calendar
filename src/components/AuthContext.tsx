@@ -20,6 +20,9 @@ interface AuthContextProps {
   logout: () => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  isLoginOpen: boolean;
+  openLogin: () => void;
+  closeLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -28,6 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const openLogin = () => setIsLoginOpen(true);
+  const closeLogin = () => setIsLoginOpen(false);
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -143,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser, isLoginOpen, openLogin, closeLogin }}>
       {children}
     </AuthContext.Provider>
   );

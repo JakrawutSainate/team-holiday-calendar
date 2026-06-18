@@ -13,6 +13,8 @@ import { TeamController } from './TeamController';
 import TeamHeader from './TeamHeader';
 import TeamSummaryFooter from './TeamSummaryFooter';
 
+import { useAuth } from '@/src/components/AuthContext';
+
 interface TeamClientProps {
   initialMembers: TeamMember[];
   searchTerm: string;
@@ -23,6 +25,7 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
 
   const [, setTick] = useState(0);
 
@@ -158,12 +161,14 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
       </main>
 
       {/* Floating Action Button */}
-      <button
-        onClick={handleAddMember}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-zinc-900 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-50 cursor-pointer"
-      >
-        <span className="material-symbols-outlined text-[28px]">person_add</span>
-      </button>
+      {user && (
+        <button
+          onClick={handleAddMember}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-zinc-900 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-50 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[28px]">person_add</span>
+        </button>
+      )}
     </div>
   );
 }

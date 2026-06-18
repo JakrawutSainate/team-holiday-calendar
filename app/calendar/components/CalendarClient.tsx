@@ -18,7 +18,7 @@ interface CalendarClientProps {
 export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { t, language } = useTranslation();
   const { role } = useRole();
-  const { user } = useAuth();
+  const { user, openLogin } = useAuth();
   const [, setTick] = useState(0);
   const [controller] = useState<CalendarController>(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
 
@@ -41,7 +41,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         cancelButtonColor: '#d4d4d8'
       }).then((result) => {
         if (result.isConfirmed) {
-          window.location.href = '/login';
+          openLogin();
         }
       });
       return;
