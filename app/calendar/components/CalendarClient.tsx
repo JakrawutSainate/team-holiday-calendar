@@ -227,7 +227,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   };
 
   const handleMaxOffChange = (newVal: number) => {
-    controller.changeMaxOff(newVal);
+    controller.updateMaxOff(newVal);
     Swal.fire({
       title: language === 'th' ? 'ปรับเปลี่ยนเรียบร้อย' : 'Capacity Updated',
       text:
