@@ -52,13 +52,14 @@ export default function LoginModal() {
 
   const fillCredentials = (testEmail: string) => {
     setEmail(testEmail);
-    setPassword('password123');
+    setPassword('123456789aB');
   };
 
   const testAccounts = [
-    { name: 'Takahashi S.', email: 'takahashi.s@holidayhq.com', role: 'Lead & Admin' },
-    { name: 'Alex Rivera', email: 'alex.rivera@holidayhq.com', role: 'Admin' },
-    { name: 'Sarah Chen', email: 'sarah.chen@holidayhq.com', role: 'Member' },
+    { name: 'Admin', email: 'admin', role: 'Admin' },
+    { name: 'Big', email: 'usr_big', role: 'Member' },
+    { name: 'V', email: 'usr_v', role: 'Member' },
+    { name: 'earth', email: 'usr_earth', role: 'Member' },
   ];
 
   if (!isLoginOpen) return null;
@@ -98,11 +99,11 @@ export default function LoginModal() {
                     {t('emailAddress')}
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@holidayhq.com"
+                    placeholder="admin, usr_big, usr_v, usr_earth"
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 focus:border-zinc-950 rounded-xl text-sm outline-none transition-all placeholder-zinc-400 text-zinc-900 shadow-inner"
                   />
                 </div>

@@ -47,7 +47,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"query\": \"mutation login($email: String!, $password: String!) { login(email: $email, password: $password) { token user { id name email role } } }\",\n    \"variables\": {\n        \"email\": \"takahashi@example.com\",\n        \"password\": \"password123\"\n    }\n}"
+							"raw": "{\n    \"query\": \"mutation login($email: String!, $password: String!) { login(email: $email, password: $password) { token user { id name email role } } }\",\n    \"variables\": {\n        \"email\": \"admin\",\n        \"password\": \"123456789aB\"\n    }\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/api/v1/graphql",
