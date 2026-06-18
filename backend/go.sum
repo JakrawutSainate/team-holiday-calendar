@@ -1,0 +1,3 @@
+github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
+github.com/steebchen/prisma-client-go v0.33.0 h1:x57OUo/qJZPj6wyaE7zOOOPa1nDft3VOa/BZkg4v9ZU=
+github.com/steebchen/prisma-client-go v0.33.0/go.mod h1:shY2GTQyv15WYTE4p2zffr01ratTzX0zXtBWnDHiLpo=

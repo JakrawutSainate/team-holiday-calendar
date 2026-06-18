@@ -40,13 +40,13 @@ func (s *DatabaseService) Disconnect() {
 // Seed populates the database with initial mock data if the database is empty (OOP MVC pattern)
 func (s *DatabaseService) Seed(ctx context.Context) {
 	// Check if we have members already
-	count, err := s.Client.TeamMember.FindMany().Count().Exec(ctx)
+	existingMembers, err := s.Client.TeamMember.FindMany().Exec(ctx)
 	if err != nil {
-		log.Printf("Failed to count database records (it might be because migrations/db push haven't run yet): %v", err)
+		log.Printf("Failed to check database records (it might be because migrations/db push haven't run yet): %v", err)
 		return
 	}
 
-	if count > 0 {
+	if len(existingMembers) > 0 {
 		log.Println("Database already seeded. Skipping...")
 		return
 	}
@@ -104,7 +104,7 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			db.TeamMember.Department.Set(m.Dept),
 			db.TeamMember.Title.Set(m.Title),
 			db.TeamMember.ID.Set(m.ID),
-			db.TeamMember.AvatarUrl.Set(m.AvatarURL),
+			db.TeamMember.AvatarURL.Set(m.AvatarURL),
 			db.TeamMember.TokensBalance.Set(m.Tokens),
 		).Exec(ctx)
 		if err != nil {

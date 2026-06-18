@@ -1,32 +1,21 @@
-# Stage 1: Build Go Application
-FROM golang:1.21-alpine AS builder
+# Build Go Application
+FROM golang:1.21
 
 WORKDIR /app
 
-# Install git/gcc
-RUN apk add --no-cache git gcc libc-dev
-
 COPY go.mod ./
-COPY . .
-RUN go mod tidy
+RUN go get github.com/steebchen/prisma-client-go@v0.33.0
 
-# Generate Prisma Client Go
+COPY . .
+
+# Generate Prisma Client Go (generates the db package which imports prisma-client-go)
 RUN go run github.com/steebchen/prisma-client-go generate
+
+# Now tidy dependencies because db package is generated and imports prisma-client-go
+RUN go mod tidy
 
 # Build the executable
 RUN CGO_ENABLED=0 GOOS=linux go build -o main .
-
-# Stage 2: Runtime image with Go SDK to support db push on startup
-FROM golang:1.21-alpine
-
-WORKDIR /app
-
-# Copy built main binary and schema
-COPY --from=builder /app/main .
-COPY --from=builder /app/schema.prisma .
-COPY --from=builder /app/go.mod .
-# Copy backend source files so go run works for prisma cli at runtime
-COPY . .
 
 EXPOSE 8080
 
