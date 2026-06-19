@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loginAction, logoutAction, getCurrentUserAction } from '@/src/actions/auth';
 
 export interface User {
   id: string;
@@ -29,125 +30,64 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const openLogin = () => setIsLoginOpen(true);
   const closeLogin = () => setIsLoginOpen(false);
 
-  // Restore session from localStorage on mount
+  // Restore session from BFF secure cookie on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('holidayhq_token');
-    const savedUser = localStorage.getItem('holidayhq_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    async function initAuth() {
+      try {
+        const currentUser = await getCurrentUserAction();
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      } catch (err) {
+        console.error('Failed to restore auth session', err);
+      } finally {
+        setLoading(false);
+      }
     }
-    setLoading(false);
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1/graphql';
-      
-      const query = `
-        mutation Login($email: String!, $password: String!) {
-          login(email: $email, password: $password) {
-            token
-            user {
-              id
-              name
-              email
-              role
-              avatarUrl
-              department
-              title
-              tokensBalance
-            }
-          }
-        }
-      `;
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          variables: { email, password },
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.errors && result.errors.length > 0) {
-        return { success: false, error: result.errors[0].message };
+      const res = await loginAction(email, password);
+      if (res.success && res.user) {
+        setUser(res.user);
+        return { success: true };
+      } else {
+        return { success: false, error: res.error || 'Login failed' };
       }
-
-      const { token: sessionToken, user: userData } = result.data.login;
-      
-      setToken(sessionToken);
-      setUser(userData);
-      
-      localStorage.setItem('holidayhq_token', sessionToken);
-      localStorage.setItem('holidayhq_user', JSON.stringify(userData));
-
-      return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Connection error' };
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('holidayhq_token');
-    localStorage.removeItem('holidayhq_user');
+  const logout = async () => {
+    try {
+      await logoutAction();
+      setUser(null);
+    } catch (err) {
+      console.error('Failed to logout', err);
+    }
   };
 
   const refreshUser = async () => {
-    if (!token || !user) return;
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1/graphql';
-      
-      const query = `
-        query GetTeamMembers {
-          getTeamMembers {
-            id
-            name
-            email
-            role
-            avatarUrl
-            department
-            title
-            tokensBalance
-          }
-        }
-      `;
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const result = await response.json();
-      if (result.data && result.data.getTeamMembers) {
-        const updated = result.data.getTeamMembers.find((m: User) => m.id === user.id);
-        if (updated) {
-          setUser(updated);
-          localStorage.setItem('holidayhq_user', JSON.stringify(updated));
-        }
+      const currentUser = await getCurrentUserAction();
+      if (currentUser) {
+        setUser(currentUser);
       }
     } catch (err) {
       console.error('Failed to refresh user data', err);
     }
   };
+
+  const token = user ? 'session_active_masked' : null;
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser, isLoginOpen, openLogin, closeLogin }}>

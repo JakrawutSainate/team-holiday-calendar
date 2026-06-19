@@ -1,4 +1,4 @@
-import { Activity, CalendarEvent, getTeamMembers, getCalendarEvents } from '@/src/libs/calendarData';
+import { Activity, CalendarEvent, getTeamMembers, getCalendarEvents, botHolidays2026 } from '@/src/libs/calendarData';
 
 export class OverviewController {
   private activities: Activity[];
@@ -47,6 +47,99 @@ export class OverviewController {
 
   public getTokens(): number {
     return Math.floor(this.tokens);
+  }
+
+  public getUpcomingHolidaysAndShifts(language: 'th' | 'en' = 'en'): { title: string; subtitle?: string; type: string }[] {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const today = new Date(Date.now() - tzOffset);
+    
+    const items: { title: string; subtitle?: string; type: string; dateVal: string }[] = [];
+
+    // Look ahead 14 days
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayOfWeek = d.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const weekendName = dayOfWeek === 0 
+        ? (language === 'th' ? 'วันอาทิตย์' : 'Sunday') 
+        : (language === 'th' ? 'วันเสาร์' : 'Saturday');
+
+      // Check if it's a public holiday
+      const holiday = botHolidays2026.find((h: any) => h.date === dateStr);
+
+      // Get database events for this date
+      const dayEvents = this.events.filter((e) => e.date === dateStr);
+
+      const leaves = dayEvents.filter((e) => e.status === 'COMPENSATORY_OFF');
+      const workers = dayEvents.filter((e) => e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK');
+
+      const dateLabel = d.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+
+      if (holiday) {
+        const holidayName = language === 'th' ? holiday.nameTh : holiday.nameEn;
+        let desc = '';
+        if (workers.length > 0) {
+          const workerNames = workers.map(w => w.userName).join(', ');
+          desc += language === 'th' ? ` (ทำงาน: ${workerNames})` : ` (Working: ${workerNames})`;
+        }
+        if (leaves.length > 0) {
+          const leaveNames = leaves.map(l => l.userName).join(', ');
+          desc += language === 'th' ? ` (หยุดลา: ${leaveNames})` : ` (On Leave: ${leaveNames})`;
+        }
+
+        items.push({
+          title: `${holidayName} - ${dateLabel}`,
+          subtitle: desc ? desc : (language === 'th' ? 'วันหยุดนักขัตฤกษ์' : 'Public Holiday'),
+          type: 'holiday',
+          dateVal: dateStr,
+        });
+      } else if (isWeekend) {
+        let desc = '';
+        if (workers.length > 0) {
+          const workerNames = workers.map(w => w.userName).join(', ');
+          desc += language === 'th' ? `ทำงาน: ${workerNames}` : `Working: ${workerNames}`;
+        }
+        if (leaves.length > 0) {
+          const leaveNames = leaves.map(l => l.userName).join(', ');
+          if (desc) desc += ' | ';
+          desc += language === 'th' ? `หยุดลา: ${leaveNames}` : `On Leave: ${leaveNames}`;
+        }
+
+        items.push({
+          title: `${weekendName} - ${dateLabel}`,
+          subtitle: desc ? desc : (language === 'th' ? 'วันหยุดสุดสัปดาห์' : 'Weekend'),
+          type: 'weekend',
+          dateVal: dateStr,
+        });
+      } else if (leaves.length > 0 || workers.length > 0) {
+        let desc = '';
+        if (workers.length > 0) {
+          const workerNames = workers.map(w => w.userName).join(', ');
+          desc += language === 'th' ? `ทำงาน: ${workerNames}` : `Working: ${workerNames}`;
+        }
+        if (leaves.length > 0) {
+          const leaveNames = leaves.map(l => l.userName).join(', ');
+          if (desc) desc += ' | ';
+          desc += language === 'th' ? `หยุดลา: ${leaveNames}` : `On Leave: ${leaveNames}`;
+        }
+
+        items.push({
+          title: `${language === 'th' ? 'วันธรรมดา' : 'Weekday'} - ${dateLabel}`,
+          subtitle: desc,
+          type: 'shift',
+          dateVal: dateStr,
+        });
+      }
+    }
+
+    return items.slice(0, 5);
   }
 
   public async loadState(userId?: string): Promise<void> {

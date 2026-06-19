@@ -14,7 +14,7 @@ export class CalendarController {
   private events: CalendarEvent[] = [];
   private capacities: Record<string, CapacitySetting> = {};
   private gridCells: CalendarGridCell[] = [];
-  private tokens: number = 3;
+  private tokens: number = 0;
   private capacityLimit: number = 2;
   private year: number;
   private month: number;

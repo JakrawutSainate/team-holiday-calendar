@@ -97,7 +97,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
     } else {
       const isAlreadyOff = controller
         .getEvents()
-        .some((e) => e.date === dateString && e.userId === 'user-takahashi' && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
+        .some((e) => e.date === dateString && e.userId === user?.id && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
       if (isAlreadyOff) {
         Swal.fire({
           title: language === 'th' ? 'มีวันหยุดอยู่แล้ว' : 'Leave Already Booked',

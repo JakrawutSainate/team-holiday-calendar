@@ -27,7 +27,7 @@ export default function OverviewClient({
   initialBurnoutRisk,
   initialTokens
 }: OverviewClientProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const [, setTick] = useState(0);
 
@@ -57,7 +57,7 @@ export default function OverviewClient({
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <UpcomingHolidaysCard />
+            <UpcomingHolidaysCard items={controller.getUpcomingHolidaysAndShifts(language)} />
 
             <YourTokenBalanceCard
               tokens={user ? Math.floor(user.tokensBalance) : controller.getTokens()}

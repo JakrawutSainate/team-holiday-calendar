@@ -9,6 +9,7 @@ import (
 	"strings"
 	"backend/models"
 	"backend/db"
+	"backend/services"
 )
 
 type contextKey string
@@ -32,11 +33,15 @@ type GQLError struct {
 }
 
 type GraphQLController struct {
-	dbService *models.DatabaseService
+	dbService   *models.DatabaseService
+	authService services.IAuthService
 }
 
-func NewGraphQLController(dbService *models.DatabaseService) *GraphQLController {
-	return &GraphQLController{dbService: dbService}
+func NewGraphQLController(dbService *models.DatabaseService, authService services.IAuthService) *GraphQLController {
+	return &GraphQLController{
+		dbService:   dbService,
+		authService: authService,
+	}
 }
 
 // getAuthenticatedUser extracts and parses the Authorization token from headers (Clean Architecture pattern)
@@ -49,19 +54,17 @@ func (g *GraphQLController) getAuthenticatedUser(r *http.Request) (*db.TeamMembe
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		return nil, errors.New("unauthorized: invalid token format")
 	}
-	token := parts[1]
-	if !strings.HasPrefix(token, "session-") {
-		return nil, errors.New("unauthorized: invalid token")
+	tokenStr := parts[1]
+
+	// Validate JWT token using AuthService
+	claims, err := g.authService.ValidateToken(tokenStr)
+	if err != nil {
+		return nil, fmt.Errorf("unauthorized: invalid token: %w", err)
 	}
-	tokenParts := strings.Split(token, "-")
-	if len(tokenParts) < 3 {
-		return nil, errors.New("unauthorized: invalid token structure")
-	}
-	userId := tokenParts[1]
-	
-	// Fetch user from DB using the parsed userId
+
+	// Fetch user from DB using the parsed claims.UserID
 	user, err := g.dbService.Client.TeamMember.FindUnique(
-		db.TeamMember.ID.Equals(userId),
+		db.TeamMember.ID.Equals(claims.UserID),
 	).Exec(r.Context())
 	if err != nil {
 		return nil, fmt.Errorf("unauthorized: user not found: %w", err)

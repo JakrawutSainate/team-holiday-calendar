@@ -83,7 +83,7 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			Role:      "MEMBER",
 			AvatarURL: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO",
 			Dept:      "Engineering",
-			Title:     "Senior Developer",
+			Title:     "DevOps Engineer",
 			Tokens:    0.0,
 		},
 		{
@@ -91,9 +91,9 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			Name:      "V",
 			Email:     "usr_v",
 			Role:      "MEMBER",
-			AvatarURL: "https://lh3.googleusercontent.com/aida-public/AB6AXuAS8TddYcJaksvd4bKJzD93hLliZg1S3S2batx0lDbsHqsr1xiFg8FlcuwW6bzJBQ_geod2SW29hTdCFbfVfn0dSG7txCHGHQZCbpCkJHvJenGGch0eWnMZoBKdzzCnamJWTRBHSABWzzZQ5b9-l8XiNx4YXPRDc4En7lhFDAE4uDbQZWZTK7yPKTjIJSeKEU7YK09kBdwXfGYvxs7aHwkOmVySxZyKkkdm5jvLC1ZMWAypdXXdydZc5ak7H-qJTOTztDEY9Sp5DkjO",
-			Dept:      "Design",
-			Title:     "UI/UX Designer",
+			AvatarURL: "",
+			Dept:      "Engineering",
+			Title:     "AI Engineer",
 			Tokens:    0.0,
 		},
 		{
@@ -103,7 +103,7 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			Role:      "MEMBER",
 			AvatarURL: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO",
 			Dept:      "Engineering",
-			Title:     "Frontend Engineer",
+			Title:     "AI Engineer",
 			Tokens:    0.0,
 		},
 	}

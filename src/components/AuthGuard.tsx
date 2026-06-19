@@ -27,23 +27,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  // If loading, show a clean modern spinner using HSL curated colors
-  if (loading) {
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const isAdminOnlyRoute = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+
+  // If loading AND accessing a protected route, show a clean modern spinner centered on the main page content
+  if (loading && isProtectedRoute) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[70vh] w-full lg:pl-64">
         <div className="flex flex-col items-center gap-3">
-          <span className="w-8 h-8 border-4 border-zinc-100 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold tracking-wide text-zinc-400">Loading HolidayHQ...</p>
+          <span className="w-8 h-8 border-4 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold tracking-wide text-zinc-500">Loading HolidayHQ...</p>
         </div>
       </div>
     );
   }
 
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-  const isAdminOnlyRoute = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
-
   // Prevent flash of content before redirect completes
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !user && !loading) {
     return null;
   }
   if (isAdminOnlyRoute && user && user.role !== 'ADMIN' && user.role !== 'LEAD') {

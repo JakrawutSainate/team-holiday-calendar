@@ -8,6 +8,9 @@ import (
 	"os"
 	"backend/controllers"
 	"backend/models"
+	"backend/services"
+
+	"github.com/joho/godotenv"
 )
 
 // enableCors is a basic middleware to allow frontend connection
@@ -25,6 +28,11 @@ func enableCors(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Load Environment variables from .env
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
 	// Initialize Database Service (OOP Singleton Model)
 	dbService := models.GetDatabaseInstance()
 	defer dbService.Disconnect()
@@ -32,14 +40,19 @@ func main() {
 	// Seed database with mock data if empty
 	dbService.Seed(context.Background())
 
+	// Initialize Auth Service
+	authService := services.NewAuthService()
+
 	// Instantiate Controllers (OOP & MVC Controllers)
 	healthCtrl := controllers.NewHealthController()
-	graphqlCtrl := controllers.NewGraphQLController(dbService)
+	authCtrl := controllers.NewAuthController(dbService, authService)
+	graphqlCtrl := controllers.NewGraphQLController(dbService, authService)
 
 	mux := http.NewServeMux()
 
 	// Register Routes
 	mux.Handle("/api/health", healthCtrl)
+	mux.HandleFunc("/api/v1/auth/login", authCtrl.Login)
 	mux.Handle("/api/v1/graphql", graphqlCtrl)
 
 	// Wrap routing in CORS middleware
@@ -52,6 +65,7 @@ func main() {
 	fmt.Printf("HolidayHQ Backend Server started on http://localhost:%s\n", port)
 	fmt.Printf("API Endpoints:\n")
 	fmt.Printf("- Health Check: http://localhost:%s/api/health\n", port)
+	fmt.Printf("- Login Check:  http://localhost:%s/api/v1/auth/login\n", port)
 	fmt.Printf("- GraphQL API:  http://localhost:%s/api/v1/graphql\n", port)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler); err != nil {

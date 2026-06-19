@@ -4,6 +4,7 @@ import "./globals.css";
 import SideNavBar from "@/src/components/SideNavBar";
 import LoginModal from "@/src/components/LoginModal";
 import { Providers } from "./providers";
+import { AuthGuard } from "@/src/components/AuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,9 @@ export default function RootLayout({
           <SideNavBar />
           <LoginModal />
           <div className="flex-1 flex flex-col min-h-screen">
-            {children}
+            <AuthGuard>
+              {children}
+            </AuthGuard>
           </div>
         </Providers>
       </body>

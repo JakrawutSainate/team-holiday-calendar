@@ -14,11 +14,17 @@ export default function MemberCard({ member }: MemberCardProps) {
   return (
     <div className="bg-white border border-zinc-100/80 p-6 rounded-xl space-y-4 hover:border-zinc-900 transition-colors group flex flex-col justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <div className="flex justify-between items-start">
-        <img
-          alt={member.name}
-          className="w-12 h-12 rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all border border-zinc-100"
-          src={member.avatarUrl}
-        />
+        {member.avatarUrl ? (
+          <img
+            alt={member.name}
+            className="w-12 h-12 rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all border border-zinc-100"
+            src={member.avatarUrl}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center border border-zinc-200">
+            <span className="material-symbols-outlined text-zinc-400">person</span>
+          </div>
+        )}
         <span
           className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
             isAdmin

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useAuth } from '@/src/components/AuthContext';
 
 interface DateCellProps {
   day: number;
@@ -15,6 +16,7 @@ interface DateCellProps {
 
 export default function DateCell({ day, isMuted, dateString, events, capacity, onClick }: DateCellProps) {
   const { language, t } = useTranslation();
+  const { user } = useAuth();
   const [earnRate] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('holidayhq_earn_rate') || '1';
@@ -45,7 +47,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
   const weekendWorkEvent = events.find(e => e.status === 'WEEKEND_WORK');
   const holidayWorkEvent = events.find(e => e.status === 'HOLIDAY_WORK');
   const claimedEvent = weekendWorkEvent || holidayWorkEvent;
-  const isUserOff = events.some(e => e.userId === 'user-takahashi' && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
+  const isUserOff = events.some(e => e.userId === user?.id && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
 
   // Capacity label
   let capacityLabel = '';
