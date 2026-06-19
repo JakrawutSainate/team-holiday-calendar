@@ -116,7 +116,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
       )}
 
       {/* Claim Weekend/Holiday Work Button / Badge */}
-      {(isWeekend || !!holidayEvent) && !isMuted && (
+      {(isWeekend || !!holidayEvent) && !isMuted && user && (
         <div className="my-1">
           {claimedEvent ? (
             <div className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
@@ -141,7 +141,7 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
       )}
 
       {/* Weekday Request Leave Button */}
-      {!isWeekend && !holidayEvent && !isMuted && !isUserOff && (
+      {!isWeekend && !holidayEvent && !isMuted && !isUserOff && user && (
         <div className="my-1">
           <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
             <button

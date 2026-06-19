@@ -56,12 +56,14 @@ export default function OverviewClient({
           <OverviewHeader />
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={user ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
             <UpcomingHolidaysCard items={controller.getUpcomingHolidaysAndShifts(language)} />
 
-            <YourTokenBalanceCard
-              tokens={user ? Math.floor(user.tokensBalance) : controller.getTokens()}
-            />
+            {user && (
+              <YourTokenBalanceCard
+                tokens={Math.floor(user.tokensBalance)}
+              />
+            )}
           </div>
 
           {/* Details Section */}

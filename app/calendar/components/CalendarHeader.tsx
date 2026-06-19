@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslation } from '@/src/components/LanguageContext';
+import { useAuth } from '@/src/components/AuthContext';
 import { exportCalendarExcel } from '../actions';
 
 interface CalendarHeaderProps {
@@ -14,6 +15,7 @@ interface CalendarHeaderProps {
 
 export default function CalendarHeader({ year, month, role, tokens, onRequestLeave }: CalendarHeaderProps) {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -90,7 +92,7 @@ export default function CalendarHeader({ year, month, role, tokens, onRequestLea
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        {role === 'USER' && (
+        {user && role === 'USER' && (
           <button 
             onClick={onRequestLeave} 
             className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-base font-semibold hover:bg-zinc-800 transition-all cursor-pointer shadow-md"
@@ -100,7 +102,7 @@ export default function CalendarHeader({ year, month, role, tokens, onRequestLea
           </button>
         )}
 
-        {role === 'USER' && (
+        {user && role === 'USER' && (
           <div className="px-5 py-3 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl border border-tertiary-fixed-dim shadow-sm flex items-center gap-3">
             <div className="flex flex-col">
               <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">{t('availableTokens')}</span>
@@ -110,10 +112,12 @@ export default function CalendarHeader({ year, month, role, tokens, onRequestLea
           </div>
         )}
 
-        <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
-          <span className="material-symbols-outlined">download</span>
-          {t('exportExcel')}
-        </button>
+        {user && (
+          <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
+            <span className="material-symbols-outlined">download</span>
+            {t('exportExcel')}
+          </button>
+        )}
       </div>
     </section>
   );
