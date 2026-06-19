@@ -69,7 +69,7 @@ export class CalendarController {
       const members = await getTeamMembers();
       const savedUserStr = typeof window !== 'undefined' ? localStorage.getItem('holidayhq_user') : null;
       const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-      const activeUserId = savedUser ? savedUser.id : 'takahashi';
+      const activeUserId = savedUser ? savedUser.id : '';
       const activeUser = members.find(m => m.id === activeUserId) || { tokensBalance: 0 };
       this.tokens = activeUser.tokensBalance;
     } catch (e) {

@@ -24,7 +24,7 @@ export const translations = {
     insights: 'Insights',
 
     // Overview Dashboard
-    goodMorning: 'Good morning, Takahashi S.',
+    goodMorning: 'Good morning',
     operatingCapacity: 'Your team is operating at high capacity today. Three requests are pending your review before the weekend cutoff.',
     upcomingHolidays: 'Upcoming Holidays',
     teamAvailability: 'Team Workload',
@@ -170,7 +170,7 @@ export const translations = {
     insights: 'ข้อมูลเชิงลึก',
 
     // Overview Dashboard
-    goodMorning: 'อรุณสวัสดิ์ คุณ Takahashi S.',
+    goodMorning: 'อรุณสวัสดิ์',
     operatingCapacity: 'ทีมของคุณกำลังทำงานในสัดส่วนที่สูงในวันนี้ มีคำขอลา 3 รายการที่รอการอนุมัติก่อนถึงกำหนดวันหยุดสุดสัปดาห์',
     upcomingHolidays: 'วันหยุดที่กำลังจะถึง',
     teamAvailability: 'ภาระงานของทีม',

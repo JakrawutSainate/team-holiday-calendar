@@ -12,18 +12,7 @@ export default async function TeamPage({ searchParams }: PageProps) {
   const q = resolvedParams.q || '';
   
   // Set initial empty state; instantly loads using async client controller getTeamMembers()
-  const initialMembers = [
-    {
-      id: 'takahashi',
-      name: 'Takahashi S.',
-      email: 'takahashi.s@holidayhq.com',
-      role: 'LEAD' as const,
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO',
-      department: 'Management' as const,
-      title: 'Team Lead',
-      tokensBalance: 3
-    }
-  ];
+  const initialMembers: any[] = [];
 
   return (
     <Suspense
