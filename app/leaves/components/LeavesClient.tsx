@@ -29,10 +29,7 @@ export default function LeavesClient() {
   }, [controller, user?.id]);
 
   const handleCancelLeave = (leave: CalendarEvent) => {
-    const dateObj = new Date(leave.date);
-    const dayOfWeek = dateObj.getDay();
-    const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
-    const tokensRefunded = isMonOrFri ? 3 : 1;
+    const tokensRefunded = 1;
 
     Swal.fire({
       title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',

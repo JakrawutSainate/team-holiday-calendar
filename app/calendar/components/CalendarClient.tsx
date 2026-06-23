@@ -105,10 +105,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         return;
       }
 
-      const dateObj = new Date(dateString);
-      const dayOfWeek = dateObj.getDay();
-      const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
-      const tokensNeeded = isMonOrFri ? 3 : 1;
+      const tokensNeeded = 1;
 
       Swal.fire({
         title: language === 'th' ? 'ส่งใบลาด้วยโทเค็น?' : 'Request Leave?',
@@ -160,8 +157,8 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
           <p class="text-sm text-zinc-500 mb-4 leading-relaxed">
             ${
               language === 'th'
-                ? `ใช้ 1 โทเค็นต่อวันในการหยุดงาน (หยุดวันจันทร์หรือวันศุกร์ใช้ 3 โทเค็น) โทเค็นของคุณตอนนี้: <strong>${controller.getTokens()}</strong>`
-                : `It costs 1 token per day to request leave (3 tokens for Monday/Friday). (Your balance: <strong>${controller.getTokens()}</strong> tokens)`
+                ? `ใช้ 1 โทเค็นต่อวันในการหยุดงาน โทเค็นของคุณตอนนี้: <strong>${controller.getTokens()}</strong>`
+                : `It costs 1 token per day to request leave. (Your balance: <strong>${controller.getTokens()}</strong> tokens)`
             }
           </p>
           <div class="flex flex-col gap-2">
@@ -201,8 +198,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
           return;
         }
 
-        const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
-        const tokensNeeded = isMonOrFri ? 3 : 1;
+        const tokensNeeded = 1;
 
         if (controller.getTokens() < tokensNeeded) {
           Swal.fire({

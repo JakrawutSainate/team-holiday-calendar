@@ -7,22 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 	"backend/models"
 	"backend/db"
 	"backend/services"
 )
 
-// getLeaveTokenCost returns 3.0 tokens for Monday or Friday, and 1.0 for other days.
+// getLeaveTokenCost returns 1.0 tokens for all days.
 func getLeaveTokenCost(dateStr string) float64 {
-	t, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return 1.0 // fallback
-	}
-	weekday := t.Weekday()
-	if weekday == time.Monday || weekday == time.Friday {
-		return 3.0
-	}
 	return 1.0
 }
 
