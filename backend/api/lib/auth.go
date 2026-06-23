@@ -1,4 +1,4 @@
-package handler
+package lib
 
 import (
 	"crypto/sha256"
@@ -44,7 +44,7 @@ func createToken(userID, email, role string) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret())
 }
 
-func validateToken(tokenStr string) (*Claims, error) {
+func ValidateToken(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return jwtSecret(), nil
 	})
@@ -58,7 +58,7 @@ func validateToken(tokenStr string) (*Claims, error) {
 	return claims, nil
 }
 
-func handleLogin(w http.ResponseWriter, r *http.Request) {
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -69,11 +69,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 		return
 	}
 
-	db := getDB()
+	db := GetDB()
 	var (
 		id            string
 		name          string
@@ -93,17 +93,17 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &passwordHash)
 
 	if err != nil || hashPassword(body.Password) != passwordHash {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
+		WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
 		return
 	}
 
 	token, err := createToken(id, email, role)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to create token"})
+		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to create token"})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"token": token,
 		"user": map[string]interface{}{
 			"id":            id,

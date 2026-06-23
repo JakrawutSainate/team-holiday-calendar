@@ -1,4 +1,4 @@
-package handler
+package lib
 
 import (
 	"database/sql"
@@ -26,7 +26,7 @@ type gqlError struct {
 	Message string `json:"message"`
 }
 
-func handleGraphQL(w http.ResponseWriter, r *http.Request) {
+func HandleGraphQL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -34,7 +34,7 @@ func handleGraphQL(w http.ResponseWriter, r *http.Request) {
 
 	var req gqlRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusOK, gqlResponse{Errors: []gqlError{{Message: "invalid request body"}}})
+		WriteJSON(w, http.StatusOK, gqlResponse{Errors: []gqlError{{Message: "invalid request body"}}})
 		return
 	}
 
@@ -42,7 +42,7 @@ func handleGraphQL(w http.ResponseWriter, r *http.Request) {
 	var userID, userRole string
 	authHeader := r.Header.Get("Authorization")
 	if strings.HasPrefix(authHeader, "Bearer ") {
-		if claims, err := validateToken(strings.TrimPrefix(authHeader, "Bearer ")); err == nil {
+		if claims, err := ValidateToken(strings.TrimPrefix(authHeader, "Bearer ")); err == nil {
 			userID = claims.UserID
 			userRole = claims.Role
 		}
@@ -50,15 +50,15 @@ func handleGraphQL(w http.ResponseWriter, r *http.Request) {
 
 	data, err := resolveGraphQL(req.Query, req.Variables, userID, userRole)
 	if err != nil {
-		writeJSON(w, http.StatusOK, gqlResponse{Errors: []gqlError{{Message: err.Error()}}})
+		WriteJSON(w, http.StatusOK, gqlResponse{Errors: []gqlError{{Message: err.Error()}}})
 		return
 	}
-	writeJSON(w, http.StatusOK, gqlResponse{Data: data})
+	WriteJSON(w, http.StatusOK, gqlResponse{Data: data})
 }
 
 func resolveGraphQL(query string, vars map[string]interface{}, userID, userRole string) (interface{}, error) {
 	q := strings.TrimSpace(query)
-	db := getDB()
+	db := GetDB()
 
 	requireAuth := func() error {
 		if userID == "" {

@@ -1,16 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
-)
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
+	"backend/api/lib"
+)
 
 // Handler is the Vercel serverless function entry point.
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -27,11 +22,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case path == "/" || path == "/health":
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "team-holiday-calendar-api"})
+		lib.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "team-holiday-calendar-api"})
 	case strings.HasSuffix(path, "/auth/login"):
-		handleLogin(w, r)
+		lib.HandleLogin(w, r)
 	case strings.HasSuffix(path, "/graphql"):
-		handleGraphQL(w, r)
+		lib.HandleGraphQL(w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
