@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"backend/api/lib"
+	"backend/lib"
 )
 
 // Handler is the Vercel serverless function entry point.
