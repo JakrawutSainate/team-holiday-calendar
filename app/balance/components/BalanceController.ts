@@ -1,4 +1,4 @@
-import { Transaction, CalendarEvent, getTeamMembers, getCalendarEvents } from '@/src/libs/calendarData';
+import { Transaction, TokenTransaction, getTeamMembers, getTokenTransactions } from '@/src/libs/calendarData';
 
 export class BalanceController {
   private tokens: number;
@@ -6,25 +6,15 @@ export class BalanceController {
   private updateCallback: () => void;
   private userId: string;
 
-  constructor(
-    initialTokens: number,
-    initialTransactions: Transaction[],
-    updateCallback: () => void,
-    userId = ''
-  ) {
+  constructor(initialTokens: number, initialTransactions: Transaction[], updateCallback: () => void, userId = '') {
     this.tokens = initialTokens;
     this.transactions = initialTransactions;
     this.updateCallback = updateCallback;
     this.userId = userId;
   }
 
-  public getTokens(): number {
-    return Math.floor(this.tokens);
-  }
-
-  public getTransactions(): Transaction[] {
-    return this.transactions;
-  }
+  public getTokens(): number { return Math.floor(this.tokens); }
+  public getTransactions(): Transaction[] { return this.transactions; }
 
   public setUserId(userId: string): void {
     this.userId = userId;
@@ -36,52 +26,30 @@ export class BalanceController {
     const effectiveUserId = userId || this.userId;
 
     try {
-      // Fetch token balance from live backend for the logged-in user
-      const members = await getTeamMembers();
+      // Fetch token balance and transactions in parallel
+      const [members, txns] = await Promise.all([
+        getTeamMembers(),
+        getTokenTransactions(),
+      ]);
+
       const currentUser = members.find(m => m.id === effectiveUserId);
       if (currentUser) {
         this.tokens = currentUser.tokensBalance;
       }
 
-      // Build transaction history from real calendar events (WEEKEND_WORK = earn, COMPENSATORY_OFF = spend)
-      const now = new Date();
-      const promises = [];
-      for (let i = 0; i < 3; i++) {
-        const m = now.getMonth() + 1 - i;
-        const y = m <= 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const adjustedMonth = m <= 0 ? m + 12 : m;
-        promises.push(getCalendarEvents(y, adjustedMonth));
-      }
-      const monthsData = await Promise.all(promises);
-      const allEvents: CalendarEvent[] = monthsData.flat();
-
-      // Filter to this user's events and build transactions
-      const userEvents = allEvents
-        .filter(
-          (e: CalendarEvent) =>
-            e.userId === effectiveUserId &&
-            e.status !== 'PUBLIC_HOLIDAY' &&
-            (e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK' || e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
-        )
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      this.transactions = userEvents.map(e => {
-        const isEarn = e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK';
-        const formattedDate = new Date(e.date).toLocaleDateString('en-US', {
+      // Map real TokenTransaction records to the display Transaction type
+      this.transactions = txns.map((t: TokenTransaction): Transaction => ({
+        date: new Date(t.createdAt).toLocaleDateString('en-US', {
           month: 'short',
           day: '2-digit',
-          year: 'numeric'
-        });
-        return {
-          date: formattedDate,
-          type: isEarn ? 'EARN' : 'SPEND',
-          description: isEarn
-            ? `Weekend/Holiday Coverage`
-            : (e.details || 'Compensatory Leave Used'),
-          status: 'Approved',
-          amount: isEarn ? '+1' : '-1'
-        };
-      });
+          year: 'numeric',
+        }),
+        type: t.type as 'EARN' | 'SPEND',
+        description: t.description,
+        status: 'Approved',
+        amount: t.type === 'EARN' ? `+${t.amount}` : `-${t.amount}`,
+        relatedDate: t.relatedDate ?? undefined,
+      }));
 
     } catch (e) {
       console.error('Failed to load balance state from database:', e);
@@ -105,13 +73,12 @@ export class BalanceController {
 
     this.tokens -= amount;
 
-    // Record txn locally
     const newTx: Transaction = {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       type: 'SPEND',
       description: 'Token Rollover/Payout Request',
       status: 'Approved',
-      amount: `-${amount}`
+      amount: `-${amount}`,
     };
     this.transactions.unshift(newTx);
 
