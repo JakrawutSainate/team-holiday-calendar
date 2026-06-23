@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Modal, Button } from '@heroui/react';
 import { useAuth } from './AuthContext';
 import { useTranslation } from './LanguageContext';
-import Swal from 'sweetalert2';
+import { toast } from 'sonner';
 
 export default function LoginModal() {
   const { isLoginOpen, closeLogin, login } = useAuth();
@@ -16,12 +16,7 @@ export default function LoginModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      Swal.fire({
-        title: t('incompleteForm'),
-        text: t('enterEmailPass'),
-        icon: 'error',
-        confirmButtonColor: '#09090b',
-      });
+      toast.error(t('incompleteForm'), { description: t('enterEmailPass') });
       return;
     }
 
@@ -30,23 +25,12 @@ export default function LoginModal() {
     setLoading(false);
 
     if (res.success) {
-      Swal.fire({
-        title: t('loginSuccess'),
-        text: t('signedInSuccess'),
-        icon: 'success',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      toast.success(t('loginSuccess'), { description: t('signedInSuccess') });
       setEmail('');
       setPassword('');
       closeLogin();
     } else {
-      Swal.fire({
-        title: t('loginFailed'),
-        text: res.error || t('invalidEmailPass'),
-        icon: 'error',
-        confirmButtonColor: '#09090b',
-      });
+      toast.error(t('loginFailed'), { description: res.error || t('invalidEmailPass') });
     }
   };
 

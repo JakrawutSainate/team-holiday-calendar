@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from './LanguageContext';
 import { useRole } from './RoleContext';
 import { useAuth } from './AuthContext';
-import Swal from 'sweetalert2';
+import { toast } from 'sonner';
+import { useConfirm } from './ConfirmDialog';
 
 export default function SideNavBar() {
   const pathname = usePathname();
@@ -13,6 +14,7 @@ export default function SideNavBar() {
   const { t } = useTranslation();
   const { role } = useRole();
   const { user, logout, openLogin } = useAuth();
+  const confirm = useConfirm();
 
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
@@ -36,30 +38,19 @@ export default function SideNavBar() {
     return true;
   });
 
-  const handleLogout = () => {
-    Swal.fire({
+  const handleLogout = async () => {
+    const ok = await confirm({
       title: t('logoutConfirmTitle'),
       text: t('logoutConfirmText'),
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: t('logout') || 'Sign Out',
-      cancelButtonText: t('cancel') || 'Cancel',
-      confirmButtonColor: '#09090b',
-      cancelButtonColor: '#d4d4d8'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        logout();
-        Swal.fire({
-          title: t('logoutSuccessTitle'),
-          text: t('logoutSuccessText'),
-          icon: 'success',
-          confirmButtonColor: '#09090b',
-          timer: 1500,
-          showConfirmButton: false
-        });
-        router.push('/calendar');
-      }
+      confirmText: t('logout') || 'Sign Out',
+      cancelText: t('cancel') || 'Cancel',
+      variant: 'danger',
     });
+    if (ok) {
+      logout();
+      toast.success(t('logoutSuccessTitle'), { description: t('logoutSuccessText') });
+      router.push('/calendar');
+    }
   };
 
   const defaultAvatar = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVLNtV3nW5jQ9v1QJ-Lp-jtql1Sl2gs9aUg1u-UQwGgb20KcoEREuR2Cj89a6cu8_NnbQvNqzwlEN2X0mTabrR0CnLpyY91cdXwmbTOeOjYQbFFO4WXrNog61BL9S7MaC3if-2Wao1Q7aXmPMQSMSkMvntSadX0VQnymZOJ8gHtexzgEx54o_6bFLRQoWWgrehsFB6DTylKcIMrtDCa4MMoOdvwBVeDpPz_AGnq2mxnvAKhJjAyDpK8qbwVD6fdwiyjwWoCJ6VUzpO';

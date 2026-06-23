@@ -7,7 +7,8 @@ import TopNavBar from '@/src/components/TopNavBar';
 import { Transaction } from '@/src/libs/calendarData';
 import { redeemTokensAction } from '../actions';
 import { BalanceController } from './BalanceController';
-import Swal from 'sweetalert2';
+import { toast } from 'sonner';
+import { useConfirm } from '@/src/components/ConfirmDialog';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 import BalanceSkeleton from '@/src/components/skeletons/BalanceSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
@@ -25,6 +26,7 @@ interface BalanceClientProps {
 export default function BalanceClient({ initialTokens, initialTransactions }: BalanceClientProps) {
   const { t, language } = useTranslation();
   const { user, refreshUser } = useAuth();
+  const confirm = useConfirm();
   const [, setTick] = useState(0);
 
   const [controller] = useState(() => new BalanceController(
@@ -47,51 +49,33 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
 
   const handleRedeem = async () => {
     if (!user) {
-      Swal.fire({
-        title: language === 'th' ? 'กรุณาเข้าสู่ระบบ' : 'Authentication Required',
-        text: language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อทำรายการแลกเปลี่ยนโทเค็น' : 'Please sign in to redeem tokens.',
-        icon: 'warning',
-        confirmButtonColor: '#09090b'
-      });
+      toast.warning(
+        language === 'th' ? 'กรุณาเข้าสู่ระบบ' : 'Authentication Required',
+        { description: language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อทำรายการแลกเปลี่ยนโทเค็น' : 'Please sign in to redeem tokens.' }
+      );
       return;
     }
 
-    Swal.fire({
+    const ok = await confirm({
       title: language === 'th' ? 'แลกเปลี่ยนโทเค็น?' : 'Redeem Tokens?',
       text: language === 'th'
-        ? `คุณต้องการแลกเปลี่ยน 1 โทเค็นเพื่อทบยอด/ถอนเงินใช่หรือไม่?`
-        : `Do you want to redeem 1 token for rollover/payout?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: language === 'th' ? 'ยืนยัน' : 'Confirm',
-      cancelButtonText: t('cancel') || 'Cancel',
-      confirmButtonColor: '#09090b',
-      cancelButtonColor: '#d4d4d8'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const message = await controller.redeemTokens(1, redeemTokensAction);
-          if (refreshUser) {
-            await refreshUser();
-          }
-          await controller.loadState(user.id);
-          Swal.fire({
-            title: language === 'th' ? 'ดำเนินการสำเร็จ' : 'Success',
-            text: message,
-            icon: 'success',
-            confirmButtonColor: '#09090b'
-          });
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          Swal.fire({
-            title: language === 'th' ? 'ล้มเหลว' : 'Failed',
-            text: message,
-            icon: 'error',
-            confirmButtonColor: '#09090b'
-          });
-        }
-      }
+        ? 'ต้องการแลกเปลี่ยน 1 โทเค็นเพื่อทบยอด/ถอนเงินใช่หรือไม่?'
+        : 'Do you want to redeem 1 token for rollover/payout?',
+      confirmText: language === 'th' ? 'ยืนยัน' : 'Confirm',
+      cancelText: t('cancel') || 'Cancel',
     });
+
+    if (ok) {
+      try {
+        const message = await controller.redeemTokens(1, redeemTokensAction);
+        if (refreshUser) await refreshUser();
+        await controller.loadState(user.id);
+        toast.success(language === 'th' ? 'ดำเนินการสำเร็จ' : 'Success', { description: message });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        toast.error(language === 'th' ? 'ล้มเหลว' : 'Failed', { description: message });
+      }
+    }
   };
 
   const displayTokens = user ? Math.floor(user.tokensBalance) : controller.getTokens();

@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
 import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import Swal from 'sweetalert2';
+import { useConfirm } from '@/src/components/ConfirmDialog';
 import { LeavesController } from './LeavesController';
 import { CalendarEvent } from '@/src/libs/calendarData';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
@@ -16,6 +17,7 @@ export default function LeavesClient() {
   const { t, language } = useTranslation();
   const { role } = useRole();
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [, setTick] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
@@ -33,42 +35,31 @@ export default function LeavesClient() {
 
   useRealtimeSync(() => { if (user?.id) controller.loadState(user.id); });
 
-  const handleCancelLeave = (leave: CalendarEvent) => {
+  const handleCancelLeave = async (leave: CalendarEvent) => {
     const tokensRefunded = 1;
-
-    Swal.fire({
+    const ok = await confirm({
       title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',
-      text:
-        language === 'th'
-          ? `คุณต้องการยกเลิกการลาในวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
-          : `Do you want to cancel your leave on ${leave.date} and refund ${tokensRefunded} tokens?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: language === 'th' ? 'ยืนยันยกเลิก' : 'Confirm Cancel',
-      cancelButtonText: t('cancel'),
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#d4d4d8'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        await controller.cancelLeave(leave);
-
-        const totalAfterDelete = controller.getLeaves().length;
-        const maxPagesAfterDelete = Math.ceil(totalAfterDelete / pageSize);
-        if (currentPage > maxPagesAfterDelete && maxPagesAfterDelete > 0) {
-          setCurrentPage(maxPagesAfterDelete);
-        }
-
-        Swal.fire({
-          title: language === 'th' ? 'ยกเลิกสำเร็จ' : 'Leave Cancelled',
-          text:
-            language === 'th'
-              ? `คืน ${tokensRefunded} โทเค็นสะสมของคุณเรียบร้อยแล้ว`
-              : `Refunded ${tokensRefunded} tokens to your balance successfully!`,
-          icon: 'success',
-          confirmButtonColor: '#09090b'
-        });
-      }
+      text: language === 'th'
+        ? `ยกเลิกการลาวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
+        : `Cancel your leave on ${leave.date} and refund ${tokensRefunded} token?`,
+      confirmText: language === 'th' ? 'ยืนยันยกเลิก' : 'Confirm Cancel',
+      cancelText: t('cancel'),
+      variant: 'danger',
     });
+    if (ok) {
+      await controller.cancelLeave(leave);
+      const totalAfterDelete = controller.getLeaves().length;
+      const maxPagesAfterDelete = Math.ceil(totalAfterDelete / pageSize);
+      if (currentPage > maxPagesAfterDelete && maxPagesAfterDelete > 0) {
+        setCurrentPage(maxPagesAfterDelete);
+      }
+      toast.success(
+        language === 'th' ? 'ยกเลิกสำเร็จ' : 'Leave Cancelled',
+        { description: language === 'th'
+            ? `คืน ${tokensRefunded} โทเค็นสะสมเรียบร้อยแล้ว`
+            : `Refunded ${tokensRefunded} token to your balance!` }
+      );
+    }
   };
 
   const leaves = controller.getLeaves();
