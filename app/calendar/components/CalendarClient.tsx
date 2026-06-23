@@ -20,13 +20,15 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { role } = useRole();
   const { user, openLogin } = useAuth();
   const [, setTick] = useState(0);
-  const [controller] = useState<CalendarController>(() => new CalendarController(year, month, role, () => setTick((tick) => tick + 1)));
+  const [controller] = useState<CalendarController>(
+    () => new CalendarController(year, month, user?.id ?? '', () => setTick((tick) => tick + 1))
+  );
 
-  // React to change in year/month params
+  // React to change in year/month or user
   useEffect(() => {
-    controller.updateParams(year, month, role);
+    controller.updateParams(year, month, user?.id ?? '');
     controller.loadState();
-  }, [year, month, role, controller]);
+  }, [year, month, user?.id, controller]);
 
   const handleCellClick = (dateString: string) => {
     if (!user) {
@@ -59,20 +61,15 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
       if (isClaimed) return;
 
       const shiftLabel = isHoliday
-        ? language === 'th'
-          ? 'เวรวันหยุดเทศกาล'
-          : 'Holiday Shift'
-        : language === 'th'
-        ? 'เวรวันหยุดสุดสัปดาห์'
-          : 'Weekend Shift';
-      const multiplier = parseFloat(localStorage.getItem('holidayhq_earn_rate') || '1');
+        ? language === 'th' ? 'เวรวันหยุดเทศกาล' : 'Holiday Shift'
+        : language === 'th' ? 'เวรวันหยุดสุดสัปดาห์' : 'Weekend Shift';
 
       Swal.fire({
         title: language === 'th' ? `เคลมทำงาน ${shiftLabel}` : `Claim ${shiftLabel}`,
         text:
           language === 'th'
-            ? `คุณต้องการสะสมโทเค็นสำหรับการทำงานในวันที่ ${dateString} หรือไม่? (รับ +${multiplier} โทเค็น)`
-            : `Do you want to log that you worked on ${dateString} and earn +${multiplier} tokens?`,
+            ? `คุณต้องการสะสมโทเค็นสำหรับการทำงานในวันที่ ${dateString} หรือไม่? (รับ +1 โทเค็น)`
+            : `Do you want to log that you worked on ${dateString} and earn +1 token?`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: language === 'th' ? 'ยืนยันเคลม' : 'Confirm Claim',
@@ -82,13 +79,13 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
       }).then((result) => {
         if (result.isConfirmed) {
           const status = isHoliday ? 'HOLIDAY_WORK' : 'WEEKEND_WORK';
-          controller.claimShift(dateString, status, shiftLabel, multiplier);
+          controller.claimShift(dateString, status, shiftLabel);
           Swal.fire({
             title: language === 'th' ? 'ลงทะเบียนสำเร็จ' : 'Claim Confirmed',
             text:
               language === 'th'
-                ? `ทำการบันทึกเวรทำงานและเพิ่ม +${multiplier} โทเค็นสะสมแล้ว`
-                : `Logged shift successfully and added +${multiplier} tokens!`,
+                ? `ทำการบันทึกเวรทำงานและเพิ่ม +1 โทเค็นสะสมแล้ว`
+                : `Logged shift successfully and added +1 token!`,
             icon: 'success',
             confirmButtonColor: '#09090b'
           });
@@ -108,12 +105,17 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         return;
       }
 
+      const dateObj = new Date(dateString);
+      const dayOfWeek = dateObj.getDay();
+      const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
+      const tokensNeeded = isMonOrFri ? 3 : 1;
+
       Swal.fire({
         title: language === 'th' ? 'ส่งใบลาด้วยโทเค็น?' : 'Request Leave?',
         text:
           language === 'th'
-            ? `คุณต้องการใช้ 1 โทเค็นในการลาหยุดสำหรับวันที่ ${dateString} หรือไม่? (โทเค็นของคุณ: ${controller.getTokens()})`
-            : `Do you want to spend 1 token to request leave on ${dateString}? (Your balance: ${controller.getTokens()} tokens)`,
+            ? `คุณต้องการใช้ ${tokensNeeded} โทเค็นในการลาหยุดสำหรับวันที่ ${dateString} หรือไม่? (โทเค็นของคุณ: ${controller.getTokens()})`
+            : `Do you want to spend ${tokensNeeded} tokens to request leave on ${dateString}? (Your balance: ${controller.getTokens()} tokens)`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: language === 'th' ? 'ส่งใบลา' : 'Request Leave',
@@ -122,13 +124,13 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         cancelButtonColor: '#d4d4d8'
       }).then((result) => {
         if (result.isConfirmed) {
-          if (controller.getTokens() < 1) {
+          if (controller.getTokens() < tokensNeeded) {
             Swal.fire({
               title: language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
               text:
                 language === 'th'
-                  ? `ต้องการ 1 โทเค็น แต่ตอนนี้คุณมีเพียง ${controller.getTokens()} โทเค็นเท่านั้น`
-                  : `You need 1 token to request leave, but you only have ${controller.getTokens()} tokens.`,
+                  ? `ต้องการ ${tokensNeeded} โทเค็น แต่ตอนนี้คุณมีเพียง ${controller.getTokens()} โทเค็นเท่านั้น`
+                  : `You need ${tokensNeeded} tokens to request leave, but you only have ${controller.getTokens()} tokens.`,
               icon: 'error',
               confirmButtonColor: '#09090b'
             });
@@ -140,8 +142,8 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
             title: language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
             text:
               language === 'th'
-                ? 'หัก 1 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว'
-                : 'Deducted 1 token and registered your leave successfully!',
+                ? `หัก ${tokensNeeded} โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว`
+                : `Deducted ${tokensNeeded} tokens and registered your leave successfully!`,
             icon: 'success',
             confirmButtonColor: '#09090b'
           });
@@ -158,8 +160,8 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
           <p class="text-sm text-zinc-500 mb-4 leading-relaxed">
             ${
               language === 'th'
-                ? `ใช้ 1 โทเค็นต่อวันในการหยุดงาน (โทเค็นของคุณตอนนี้: <strong>${controller.getTokens()}</strong>)`
-                : `It costs 1 token per day to request leave. (Your balance: <strong>${controller.getTokens()}</strong> tokens)`
+                ? `ใช้ 1 โทเค็นต่อวันในการหยุดงาน (หยุดวันจันทร์หรือวันศุกร์ใช้ 3 โทเค็น) โทเค็นของคุณตอนนี้: <strong>${controller.getTokens()}</strong>`
+                : `It costs 1 token per day to request leave (3 tokens for Monday/Friday). (Your balance: <strong>${controller.getTokens()}</strong> tokens)`
             }
           </p>
           <div class="flex flex-col gap-2">
@@ -186,19 +188,6 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
     }).then((result) => {
       if (result.isConfirmed && result.value) {
         const selectedDate = result.value;
-        if (controller.getTokens() < 1) {
-          Swal.fire({
-            title: language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
-            text:
-              language === 'th'
-                ? `ต้องการ 1 โทเค็น แต่ตอนนี้คุณมีเพียง ${controller.getTokens()} โทเค็นเท่านั้น`
-                : `You need 1 token, but you only have ${controller.getTokens()} tokens.`,
-            icon: 'error',
-            confirmButtonColor: '#09090b'
-          });
-          return;
-        }
-
         const dateObj = new Date(selectedDate);
         const dayOfWeek = dateObj.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -212,13 +201,29 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
           return;
         }
 
+        const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
+        const tokensNeeded = isMonOrFri ? 3 : 1;
+
+        if (controller.getTokens() < tokensNeeded) {
+          Swal.fire({
+            title: language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
+            text:
+              language === 'th'
+                ? `ต้องการ ${tokensNeeded} โทเค็น แต่ตอนนี้คุณมีเพียง ${controller.getTokens()} โทเค็นเท่านั้น`
+                : `You need ${tokensNeeded} tokens, but you only have ${controller.getTokens()} tokens.`,
+            icon: 'error',
+            confirmButtonColor: '#09090b'
+          });
+          return;
+        }
+
         controller.requestLeave(selectedDate);
         Swal.fire({
           title: language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
           text:
             language === 'th'
-              ? 'หัก 1 โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว'
-              : 'Deducted 1 token and registered your leave successfully!',
+              ? `หัก ${tokensNeeded} โทเค็นสะสม และลงทะเบียนวันลาให้คุณเรียบร้อยแล้ว`
+              : `Deducted ${tokensNeeded} tokens and registered your leave successfully!`,
           icon: 'success',
           confirmButtonColor: '#09090b'
         });

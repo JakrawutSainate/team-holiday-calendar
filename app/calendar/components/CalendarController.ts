@@ -3,7 +3,8 @@ import {
   CapacitySetting,
   getTeamMembers,
   getCalendarEvents,
-  getDayCapacitySetting,
+  getAllCapacitySettings,
+  resolveCapacity,
   claimShiftMutation,
   requestLeaveMutation,
   updateMaxOffAllowedMutation
@@ -18,162 +19,133 @@ export class CalendarController {
   private capacityLimit: number = 2;
   private year: number;
   private month: number;
-  private role: string;
+  private userId: string;
   private updateCallback: () => void;
 
-  constructor(
-    year: number,
-    month: number,
-    role: string,
-    updateCallback: () => void
-  ) {
+  constructor(year: number, month: number, userId: string, updateCallback: () => void) {
     this.year = year;
     this.month = month;
-    this.role = role;
+    this.userId = userId;
     this.updateCallback = updateCallback;
   }
 
-  public updateParams(year: number, month: number, role: string): void {
+  public updateParams(year: number, month: number, userId: string): void {
     this.year = year;
     this.month = month;
-    this.role = role;
+    this.userId = userId;
   }
 
   // Getters
-  public getEvents(): CalendarEvent[] {
-    return this.events;
-  }
+  public getEvents(): CalendarEvent[] { return this.events; }
+  public getCapacities(): Record<string, CapacitySetting> { return this.capacities; }
+  public getGridCells(): CalendarGridCell[] { return this.gridCells; }
+  public getTokens(): number { return Math.floor(this.tokens); }
+  public getCapacityLimit(): number { return this.capacityLimit; }
 
-  public getCapacities(): Record<string, CapacitySetting> {
-    return this.capacities;
-  }
-
-  public getGridCells(): CalendarGridCell[] {
-    return this.gridCells;
-  }
-
-  public getTokens(): number {
-    return Math.floor(this.tokens);
-  }
-
-  public getCapacityLimit(): number {
-    return this.capacityLimit;
-  }
-
-  // Load state and build grid
-  public async loadState(): Promise<void> {
-    if (typeof window === 'undefined') return;
-
-    // Load actual DB values
-    try {
-      const members = await getTeamMembers();
-      const savedUserStr = typeof window !== 'undefined' ? localStorage.getItem('holidayhq_user') : null;
-      const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-      const activeUserId = savedUser ? savedUser.id : '';
-      const activeUser = members.find(m => m.id === activeUserId) || { tokensBalance: 0 };
-      this.tokens = activeUser.tokensBalance;
-    } catch (e) {
-      console.error('Failed to load team tokens balance:', e);
-    }
-
+  /** Build the grid cell array for the current month */
+  private buildGridCells(): CalendarGridCell[] {
     const cells: CalendarGridCell[] = [];
     const firstDayOffset = new Date(this.year, this.month - 1, 1).getDay();
     const prevMonthDays = new Date(this.year, this.month - 1, 0).getDate();
     const currentMonthDays = new Date(this.year, this.month, 0).getDate();
 
-    // Prev Month
+    // Previous month trailing days
     for (let i = firstDayOffset - 1; i >= 0; i--) {
       const day = prevMonthDays - i;
-      const prevMonth = this.month === 1 ? 12 : this.month - 1;
-      const prevYear = this.month === 1 ? this.year - 1 : this.year;
-      cells.push({
-        day,
-        isMuted: true,
-        dateString: `${prevYear}-${prevMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-      });
+      const pm = this.month === 1 ? 12 : this.month - 1;
+      const py = this.month === 1 ? this.year - 1 : this.year;
+      cells.push({ day, isMuted: true, dateString: `${py}-${pm.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
     }
 
-    // Current Month
+    // Current month days
     for (let day = 1; day <= currentMonthDays; day++) {
-      cells.push({
-        day,
-        isMuted: false,
-        dateString: `${this.year}-${this.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-      });
+      cells.push({ day, isMuted: false, dateString: `${this.year}-${this.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
     }
 
-    // Next Month
+    // Next month leading days
     const totalCells = Math.ceil((currentMonthDays + firstDayOffset) / 7) * 7;
-    const nextMonthRemaining = totalCells - (currentMonthDays + firstDayOffset);
-    for (let day = 1; day <= nextMonthRemaining; day++) {
-      const nextMonth = this.month === 12 ? 1 : this.month + 1;
-      const nextYear = this.month === 12 ? this.year + 1 : this.year;
-      cells.push({
-        day,
-        isMuted: true,
-        dateString: `${nextYear}-${nextMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-      });
+    const remaining = totalCells - (currentMonthDays + firstDayOffset);
+    for (let day = 1; day <= remaining; day++) {
+      const nm = this.month === 12 ? 1 : this.month + 1;
+      const ny = this.month === 12 ? this.year + 1 : this.year;
+      cells.push({ day, isMuted: true, dateString: `${ny}-${nm.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
     }
 
-    this.gridCells = cells;
+    return cells;
+  }
 
-    // Load actual DB events
+  /**
+   * Load all data in parallel — replaces the old N+1 pattern.
+   * Previously: 42+ sequential getDayCapacitySetting calls.
+   * Now: 3 parallel requests (members, events, capacities).
+   */
+  public async loadState(): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    // Build grid cells first (sync, no I/O)
+    this.gridCells = this.buildGridCells();
+
     try {
-      this.events = await getCalendarEvents(this.year, this.month);
-    } catch (e) {
-      console.error('Failed to load events:', e);
-    }
+      // 3 parallel requests instead of 42+ sequential calls
+      const [members, events, allSettings] = await Promise.all([
+        getTeamMembers(),
+        getCalendarEvents(this.year, this.month),
+        getAllCapacitySettings(),
+      ]);
 
-    // Get capacity settings from DB
-    const resolvedCapacities: Record<string, CapacitySetting> = {};
-    for (const cell of cells) {
-      try {
-        resolvedCapacities[cell.dateString] = await getDayCapacitySetting(cell.dateString);
-      } catch (e) {
-        resolvedCapacities[cell.dateString] = { id: cell.dateString, maxOffAllowed: 2 };
+      // Token balance from AuthContext user
+      const currentUser = members.find(m => m.id === this.userId);
+      this.tokens = currentUser?.tokensBalance ?? 0;
+
+      this.events = events;
+
+      // Resolve capacity for every cell client-side (no extra I/O)
+      const resolved: Record<string, CapacitySetting> = {};
+      for (const cell of this.gridCells) {
+        resolved[cell.dateString] = resolveCapacity(cell.dateString, allSettings);
       }
-    }
-    this.capacities = resolvedCapacities;
+      this.capacities = resolved;
 
-    // Resolve default maxOff
-    try {
-      const dummyDate = `${this.year}-${this.month.toString().padStart(2, '0')}-01`;
-      const defaultSetting = await getDayCapacitySetting(dummyDate);
-      this.capacityLimit = defaultSetting.maxOffAllowed;
+      // Global default capacity limit
+      const firstCell = this.gridCells.find(c => !c.isMuted);
+      this.capacityLimit = firstCell
+        ? resolveCapacity(firstCell.dateString, allSettings).maxOffAllowed
+        : 2;
+
     } catch (e) {
-      this.capacityLimit = 2;
+      console.error('CalendarController.loadState failed:', e);
     }
 
     this.updateCallback();
   }
 
-  // Claim shift
-  public async claimShift(dateString: string, status: 'WEEKEND_WORK' | 'HOLIDAY_WORK', shiftLabel: string, multiplier: number): Promise<void> {
+  public async claimShift(dateString: string, status: 'WEEKEND_WORK' | 'HOLIDAY_WORK', shiftLabel: string): Promise<void> {
     try {
       await claimShiftMutation(dateString, status, `Claimed ${shiftLabel.toLowerCase()}`);
       await this.loadState();
     } catch (e) {
       console.error('Failed to claim shift:', e);
+      throw e;
     }
   }
 
-  // Request Leave
   public async requestLeave(dateString: string): Promise<void> {
     try {
       await requestLeaveMutation(dateString);
       await this.loadState();
     } catch (e) {
       console.error('Failed to request leave:', e);
+      throw e;
     }
   }
 
-  // Update Max Off
   public async updateMaxOff(newVal: number): Promise<void> {
     try {
       await updateMaxOffAllowedMutation(newVal);
       await this.loadState();
     } catch (e) {
       console.error('Failed to update capacity limit:', e);
+      throw e;
     }
   }
 }

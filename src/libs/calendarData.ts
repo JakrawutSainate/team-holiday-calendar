@@ -46,9 +46,18 @@ export interface Transaction {
   description: string;
   status: string;
   amount: string;
+  relatedDate?: string;
 }
 
-// Mock data has been completely removed to rely on PostgreSQL Database via Go GraphQL API.
+export interface TokenTransaction {
+  id: string;
+  userId: string;
+  type: 'EARN' | 'SPEND';
+  amount: number;
+  description: string;
+  relatedDate?: string;
+  createdAt: string;
+}
 
 export interface BOHoliday {
   date: string;
@@ -95,49 +104,37 @@ async function fetchGraphQL(query: string, variables: Record<string, unknown> = 
   }
 }
 
-// Actual Database Getters connecting to Go backend
+// ─── TEAM MEMBERS ─────────────────────────────────────────────────────────────
+
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
   const data = await fetchGraphQL(`
     query {
       getTeamMembers {
-        id
-        name
-        email
-        role
-        avatarUrl
-        department
-        title
-        tokensBalance
+        id name email role avatarUrl department title tokensBalance
       }
     }
   `);
-  if (data && data.getTeamMembers) {
-    return data.getTeamMembers;
-  }
-  return [];
+  return data?.getTeamMembers ?? [];
 };
+
+// ─── CALENDAR EVENTS ──────────────────────────────────────────────────────────
 
 export const getCalendarEvents = async (year: number, month: number): Promise<CalendarEvent[]> => {
   const prefix = `${year}-${month.toString().padStart(2, '0')}`;
   const data = await fetchGraphQL(`
     query {
       getEvents {
-        id
-        userId
-        userName
-        date
-        status
-        details
+        id userId userName date status details
       }
     }
   `);
 
   let dbEvents: CalendarEvent[] = [];
-  if (data && data.getEvents) {
+  if (data?.getEvents) {
     dbEvents = data.getEvents.filter((e: CalendarEvent) => e.date.startsWith(prefix));
   }
 
-  // Inject public holidays
+  // Inject public holidays as synthetic events
   const monthHolidays = botHolidays2026.filter(h => h.date.startsWith(prefix));
   const holidayEvents: CalendarEvent[] = monthHolidays.map((h, i) => ({
     id: `holiday-${h.date}-${i}`,
@@ -151,53 +148,65 @@ export const getCalendarEvents = async (year: number, month: number): Promise<Ca
   return [...dbEvents, ...holidayEvents];
 };
 
-export const getDayCapacitySetting = async (dateString: string): Promise<CapacitySetting> => {
-  // 0. Check if it is a Bank of Thailand holiday
-  const isHoliday = botHolidays2026.some(h => h.date === dateString);
-  if (isHoliday) {
-    return {
-      id: `holiday-capacity-${dateString}`,
-      date: dateString,
-      maxOffAllowed: 0,
-      description: 'Bank of Thailand Holiday'
-    };
-  }
+// ─── CAPACITY SETTINGS ────────────────────────────────────────────────────────
 
+/** Fetch ALL capacity settings in one round-trip */
+export const getAllCapacitySettings = async (): Promise<CapacitySetting[]> => {
   const data = await fetchGraphQL(`
     query {
       getCapacitySettings {
-        id
-        date
-        dayOfWeek
-        maxOffAllowed
-        description
+        id date dayOfWeek maxOffAllowed description
       }
     }
   `);
+  return data?.getCapacitySettings ?? [];
+};
 
-  let settings: CapacitySetting[] = [];
-  if (data && data.getCapacitySettings) {
-    settings = data.getCapacitySettings;
+/**
+ * Resolve the capacity limit for a given date using already-fetched settings.
+ * Pass the result of getAllCapacitySettings() to avoid repeated network calls.
+ */
+export const resolveCapacity = (dateString: string, settings: CapacitySetting[]): CapacitySetting => {
+  // BOT holiday → 0 off allowed
+  const isHoliday = botHolidays2026.some(h => h.date === dateString);
+  if (isHoliday) {
+    return { id: `holiday-capacity-${dateString}`, date: dateString, maxOffAllowed: 0, description: 'Bank of Thailand Holiday' };
   }
 
-  const dateObj = new Date(dateString);
-  const dayOfWeek = dateObj.getDay();
+  const dayOfWeek = new Date(dateString).getDay();
 
-  // 1. Specific Date override
+  // Priority 1: specific date override
   const dateOverride = settings.find(s => s.date === dateString);
   if (dateOverride) return dateOverride;
 
-  // 2. Day of Week Pattern override
+  // Priority 2: day-of-week override
   const dowOverride = settings.find(s => s.dayOfWeek === dayOfWeek);
   if (dowOverride) return dowOverride;
 
-  // 3. Global default
-  const globalDefault = settings.find(s => s.id === 'global-default') || {
-    id: 'global-default',
-    maxOffAllowed: 2
-  };
-  return globalDefault;
+  // Priority 3: global default
+  return settings.find(s => s.id === 'global-default') ?? { id: 'global-default', maxOffAllowed: 2 };
 };
+
+/** Single-date capacity lookup (kept for backwards compat, fetches all settings internally) */
+export const getDayCapacitySetting = async (dateString: string): Promise<CapacitySetting> => {
+  const settings = await getAllCapacitySettings();
+  return resolveCapacity(dateString, settings);
+};
+
+// ─── TOKEN TRANSACTIONS ───────────────────────────────────────────────────────
+
+export const getTokenTransactions = async (): Promise<TokenTransaction[]> => {
+  const data = await fetchGraphQL(`
+    query {
+      getTokenTransactions {
+        id userId type amount description relatedDate createdAt
+      }
+    }
+  `);
+  return data?.getTokenTransactions ?? [];
+};
+
+// ─── MUTATIONS ────────────────────────────────────────────────────────────────
 
 export const claimShiftMutation = async (date: string, status: string, details: string) => {
   return await fetchGraphQL(`

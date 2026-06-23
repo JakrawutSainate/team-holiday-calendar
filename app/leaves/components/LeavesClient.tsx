@@ -29,12 +29,17 @@ export default function LeavesClient() {
   }, [controller, user?.id]);
 
   const handleCancelLeave = (leave: CalendarEvent) => {
+    const dateObj = new Date(leave.date);
+    const dayOfWeek = dateObj.getDay();
+    const isMonOrFri = dayOfWeek === 1 || dayOfWeek === 5;
+    const tokensRefunded = isMonOrFri ? 3 : 1;
+
     Swal.fire({
       title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',
       text:
         language === 'th'
-          ? `คุณต้องการยกเลิกการลาในวันที่ ${leave.date} และรับคืน 1 โทเค็นสะสมหรือไม่?`
-          : `Do you want to cancel your leave on ${leave.date} and refund 1 token?`,
+          ? `คุณต้องการยกเลิกการลาในวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
+          : `Do you want to cancel your leave on ${leave.date} and refund ${tokensRefunded} tokens?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: language === 'th' ? 'ยืนยันยกเลิก' : 'Confirm Cancel',
@@ -55,8 +60,8 @@ export default function LeavesClient() {
           title: language === 'th' ? 'ยกเลิกสำเร็จ' : 'Leave Cancelled',
           text:
             language === 'th'
-              ? 'คืน 1 โทเค็นสะสมของคุณเรียบร้อยแล้ว'
-              : 'Refunded 1 token to your balance successfully!',
+              ? `คืน ${tokensRefunded} โทเค็นสะสมของคุณเรียบร้อยแล้ว`
+              : `Refunded ${tokensRefunded} tokens to your balance successfully!`,
           icon: 'success',
           confirmButtonColor: '#09090b'
         });
