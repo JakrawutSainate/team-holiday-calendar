@@ -16,6 +16,10 @@ export async function getSession() {
   return session;
 }
 
+// Base URL for all backend calls — set INTERNAL_API_URL to just the host, e.g.
+// "https://mybackend.railway.app"  (no trailing slash, no path)
+const BACKEND_BASE = (process.env.INTERNAL_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
+
 export async function loginAction(emailInput: string, passwordInput: string) {
   // Input Validation / Sanitization using Zod (OWASP Prevention against Injection / Improper Inputs)
   const validation = loginSchema.safeParse({ email: emailInput, password: passwordInput });
@@ -26,7 +30,7 @@ export async function loginAction(emailInput: string, passwordInput: string) {
   const { email, password } = validation.data;
 
   try {
-    const API_URL = process.env.INTERNAL_API_URL || 'http://localhost:8080/api/v1/auth/login';
+    const API_URL = `${BACKEND_BASE}/api/v1/auth/login`;
 
     // Perform Server-to-Server API Request (BFF pattern hides the actual backend endpoint and tokens)
     const response = await fetch(API_URL, {
@@ -87,7 +91,7 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
     const session = await getSession();
     const token = session.token;
 
-    const backendUrl = process.env.INTERNAL_API_URL || 'http://localhost:8080/api/v1/graphql';
+    const backendUrl = `${BACKEND_BASE}/api/v1/graphql`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

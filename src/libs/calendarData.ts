@@ -91,11 +91,24 @@ export const botHolidays2026: BOHoliday[] = [
 import { runGraphQLAction } from '@/src/actions/auth';
 import { broadcastCalendarUpdate } from '@/src/actions/events';
 
+// Tracks whether we've already dispatched the backend-down event this session
+let _backendNotified = false;
+
 async function fetchGraphQL(query: string, variables: Record<string, unknown> = {}) {
   try {
     const json = await runGraphQLAction(query, variables);
     if (json.errors && json.errors.length > 0) {
-      throw new Error(json.errors[0].message);
+      const msg: string = json.errors[0].message;
+      if (msg === 'Failed to communicate with backend services.' && typeof window !== 'undefined' && !_backendNotified) {
+        _backendNotified = true;
+        window.dispatchEvent(new CustomEvent('backend:unavailable'));
+      }
+      throw new Error(msg);
+    }
+    // Backend responded — if we previously notified, dismiss the warning
+    if (_backendNotified && typeof window !== 'undefined') {
+      _backendNotified = false;
+      window.dispatchEvent(new CustomEvent('backend:available'));
     }
     return json.data;
   } catch (error) {

@@ -6,6 +6,7 @@ import { LanguageProvider } from '@/src/components/LanguageContext';
 import { RoleProvider } from '@/src/components/RoleContext';
 import { AuthProvider } from '@/src/components/AuthContext';
 import { ConfirmProvider } from '@/src/components/ConfirmDialog';
+import { BackendStatusMonitor } from '@/src/components/BackendStatusMonitor';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <RoleProvider>
           <ConfirmProvider>
+            <BackendStatusMonitor />
             {children}
             <Toaster
               position="top-right"
