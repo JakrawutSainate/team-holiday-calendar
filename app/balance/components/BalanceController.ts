@@ -3,6 +3,7 @@ import { Transaction, TokenTransaction, getTeamMembers, getTokenTransactions } f
 export class BalanceController {
   private tokens: number;
   private transactions: Transaction[];
+  private loading: boolean = false;
   private updateCallback: () => void;
   private userId: string;
 
@@ -15,6 +16,7 @@ export class BalanceController {
 
   public getTokens(): number { return Math.floor(this.tokens); }
   public getTransactions(): Transaction[] { return this.transactions; }
+  public isLoading(): boolean { return this.loading; }
 
   public setUserId(userId: string): void {
     this.userId = userId;
@@ -24,6 +26,8 @@ export class BalanceController {
     if (typeof window === 'undefined') return;
 
     const effectiveUserId = userId || this.userId;
+    this.loading = true;
+    this.updateCallback();
 
     try {
       // Fetch token balance and transactions in parallel
@@ -53,9 +57,10 @@ export class BalanceController {
 
     } catch (e) {
       console.error('Failed to load balance state from database:', e);
+    } finally {
+      this.loading = false;
+      this.updateCallback();
     }
-
-    this.updateCallback();
   }
 
   public async redeemTokens(

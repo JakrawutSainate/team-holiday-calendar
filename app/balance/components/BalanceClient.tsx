@@ -8,6 +8,9 @@ import { Transaction } from '@/src/libs/calendarData';
 import { redeemTokensAction } from '../actions';
 import { BalanceController } from './BalanceController';
 import Swal from 'sweetalert2';
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+import BalanceSkeleton from '@/src/components/skeletons/BalanceSkeleton';
+import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 
 import BalanceHeader from './BalanceHeader';
 import BalanceCard from './BalanceCard';
@@ -39,6 +42,8 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
       controller.loadState();
     }
   }, [controller, user?.id]);
+
+  useRealtimeSync(() => controller.loadState(user?.id));
 
   const handleRedeem = async () => {
     if (!user) {
@@ -89,10 +94,14 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
     });
   };
 
-  // Prefer the live balance from AuthContext user if available
   const displayTokens = user ? Math.floor(user.tokensBalance) : controller.getTokens();
 
+  if (controller.isLoading() && controller.getTransactions().length === 0) {
+    return <BalanceSkeleton />;
+  }
+
   return (
+    <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchTransactions')} />
 
@@ -112,5 +121,6 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

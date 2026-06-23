@@ -6,6 +6,7 @@ export class OverviewController {
   private burnoutRisk: number[];
   private tokens: number;
   private events: CalendarEvent[];
+  private loading: boolean = false;
   private updateCallback: () => void;
   private userId: string;
   private userName: string;
@@ -48,6 +49,8 @@ export class OverviewController {
   public getTokens(): number {
     return Math.floor(this.tokens);
   }
+
+  public isLoading(): boolean { return this.loading; }
 
   public getUpcomingHolidaysAndShifts(language: 'th' | 'en' = 'en'): { title: string; subtitle?: string; type: string }[] {
     const now = new Date();
@@ -146,20 +149,24 @@ export class OverviewController {
     if (typeof window === 'undefined') return;
 
     const effectiveUserId = userId || this.userId;
+    this.loading = true;
+    this.updateCallback();
 
     try {
-      const members = await getTeamMembers();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+
+      // Both fetches in parallel — members and events are independent.
+      const [members, allEvents] = await Promise.all([
+        getTeamMembers(),
+        getCalendarEvents(year, month),
+      ]);
 
       // Use logged-in user's balance, fall back to first member
       const currentUser = members.find(m => m.id === effectiveUserId) || members[0];
       this.tokens = currentUser?.tokensBalance ?? 0;
 
-      // Get current date details
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-
-      const allEvents = await getCalendarEvents(year, month);
       this.events = allEvents;
 
       const tzOffset = now.getTimezoneOffset() * 60000;
@@ -222,9 +229,10 @@ export class OverviewController {
       }
     } catch (err) {
       console.error('Failed to load DB state for dashboard:', err);
+    } finally {
+      this.loading = false;
+      this.updateCallback();
     }
-
-    this.updateCallback();
   }
 
   public async syncCalendar(

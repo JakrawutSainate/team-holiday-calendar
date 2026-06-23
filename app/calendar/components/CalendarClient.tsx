@@ -9,6 +9,9 @@ import CalendarHeader from './CalendarHeader';
 import DateCell from './DateCell';
 import Swal from 'sweetalert2';
 import { CalendarController } from './CalendarController';
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+import CalendarSkeleton from '@/src/components/skeletons/CalendarSkeleton';
+import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 
 interface CalendarClientProps {
   year: number;
@@ -21,14 +24,16 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { user, openLogin } = useAuth();
   const [, setTick] = useState(0);
   const [controller] = useState<CalendarController>(
-    () => new CalendarController(year, month, user?.id ?? '', () => setTick((tick) => tick + 1))
+    () => new CalendarController(year, month, user?.id ?? '', () => setTick((tick) => tick + 1), user?.name ?? '')
   );
 
-  // React to change in year/month or user
   useEffect(() => {
-    controller.updateParams(year, month, user?.id ?? '');
+    controller.updateParams(year, month, user?.id ?? '', user?.name ?? '');
     controller.loadState();
   }, [year, month, user?.id, controller]);
+
+  // Re-sync when another client mutates calendar data
+  useRealtimeSync(() => controller.loadState());
 
   const handleCellClick = (dateString: string) => {
     if (!user) {
@@ -242,7 +247,12 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
     });
   };
 
+  if (controller.isLoading() && controller.getGridCells().length === 0) {
+    return <CalendarSkeleton />;
+  }
+
   return (
+    <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchTeamOrDates')} />
 
@@ -322,5 +332,6 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

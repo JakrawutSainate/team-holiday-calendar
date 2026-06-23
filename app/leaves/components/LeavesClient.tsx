@@ -8,6 +8,9 @@ import TopNavBar from '@/src/components/TopNavBar';
 import Swal from 'sweetalert2';
 import { LeavesController } from './LeavesController';
 import { CalendarEvent } from '@/src/libs/calendarData';
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+import LeavesSkeleton from '@/src/components/skeletons/LeavesSkeleton';
+import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 
 export default function LeavesClient() {
   const { t, language } = useTranslation();
@@ -27,6 +30,8 @@ export default function LeavesClient() {
       controller.loadState(user.id);
     }
   }, [controller, user?.id]);
+
+  useRealtimeSync(() => { if (user?.id) controller.loadState(user.id); });
 
   const handleCancelLeave = (leave: CalendarEvent) => {
     const tokensRefunded = 1;
@@ -71,7 +76,12 @@ export default function LeavesClient() {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedLeaves = leaves.slice(startIndex, startIndex + pageSize);
 
+  if (controller.isLoading() && controller.getLeaves().length === 0) {
+    return <LeavesSkeleton />;
+  }
+
   return (
+    <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchPlaceholder')} />
 
@@ -255,5 +265,6 @@ export default function LeavesClient() {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

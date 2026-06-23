@@ -6,6 +6,9 @@ import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { Activity } from '@/src/libs/calendarData';
 import { OverviewController } from './OverviewController';
+import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+import OverviewSkeleton from '@/src/components/skeletons/OverviewSkeleton';
+import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 
 // Components
 import OverviewHeader from './OverviewHeader';
@@ -42,11 +45,17 @@ export default function OverviewClient({
   ));
 
   useEffect(() => {
-    // Load state with current user's ID so token balance is accurate
     controller.loadState(user?.id || '');
   }, [controller, user?.id]);
 
+  useRealtimeSync(() => controller.loadState(user?.id || ''));
+
+  if (controller.isLoading() && controller.getActivities().length === 0) {
+    return <OverviewSkeleton />;
+  }
+
   return (
+    <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
       <TopNavBar placeholder={t('searchTeamOrDates')} />
 
@@ -80,5 +89,6 @@ export default function OverviewClient({
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

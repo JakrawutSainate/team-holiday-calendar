@@ -3,6 +3,7 @@ import { CalendarEvent, getCalendarEvents, getTeamMembers, cancelLeaveMutation }
 export class LeavesController {
   private leaves: CalendarEvent[] = [];
   private tokens: number = 0;
+  private loading: boolean = false;
   private updateCallback: () => void;
   private userId: string;
 
@@ -11,13 +12,9 @@ export class LeavesController {
     this.userId = userId;
   }
 
-  public getLeaves(): CalendarEvent[] {
-    return this.leaves;
-  }
-
-  public getTokens(): number {
-    return Math.floor(this.tokens);
-  }
+  public getLeaves(): CalendarEvent[] { return this.leaves; }
+  public getTokens(): number { return Math.floor(this.tokens); }
+  public isLoading(): boolean { return this.loading; }
 
   public setUserId(userId: string): void {
     this.userId = userId;
@@ -27,28 +24,30 @@ export class LeavesController {
     if (typeof window === 'undefined') return;
 
     const effectiveUserId = userId || this.userId;
+    this.loading = true;
+    this.updateCallback();
 
     try {
-      // Fetch current user token balance from backend
-      const members = await getTeamMembers();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+
+      // All three fetches in parallel; the two getCalendarEvents calls share
+      // the same in-flight Promise inside CalendarDataService (inflight dedup).
+      const [members, currentEvents, prevEvents] = await Promise.all([
+        getTeamMembers(),
+        getCalendarEvents(year, month),
+        getCalendarEvents(prevYear, prevMonth),
+      ]);
+
       const currentUser = members.find(m => m.id === effectiveUserId);
       if (currentUser) {
         this.tokens = currentUser.tokensBalance;
       }
 
-      // Fetch all events from backend and filter for current user
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      const allEvents = await getCalendarEvents(year, month);
-
-      // Also fetch last 2 months worth of events to show full history
-      const prevMonth = month === 1 ? 12 : month - 1;
-      const prevYear = month === 1 ? year - 1 : year;
-      const prevMonthEvents = await getCalendarEvents(prevYear, prevMonth);
-
-      // Combine and filter to current user's leave/off events only
-      const combined = [...allEvents, ...prevMonthEvents];
+      const combined = [...currentEvents, ...prevEvents];
       const userLeaves = combined.filter(
         (e: CalendarEvent) =>
           e.userId === effectiveUserId &&
@@ -61,19 +60,31 @@ export class LeavesController {
     } catch (err) {
       console.error('Failed to load leaves from backend:', err);
       this.leaves = [];
+    } finally {
+      this.loading = false;
+      this.updateCallback();
     }
-
-    this.updateCallback();
   }
 
   public async cancelLeave(leave: CalendarEvent): Promise<void> {
+    const prevLeaves = this.leaves;
+    const prevTokens = this.tokens;
+
+    // Optimistic: remove from list and refund token immediately
+    this.leaves = this.leaves.filter(l => l.id !== leave.id);
+    this.tokens += 1;
+    this.updateCallback();
+
     try {
       await cancelLeaveMutation(leave.id);
+      await this.loadState();
     } catch (err) {
+      // Rollback on error
+      this.leaves = prevLeaves;
+      this.tokens = prevTokens;
+      this.updateCallback();
       console.error('Failed to cancel leave:', err);
+      throw err;
     }
-
-    // Refresh state from backend
-    await this.loadState();
   }
 }
