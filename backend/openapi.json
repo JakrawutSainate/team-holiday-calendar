@@ -1,0 +1,172 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HolidayHQ Team Holiday Calendar API",
+    "description": "เอกสารและข้อกำหนดของระบบ HolidayHQ API\n\n### 1. กฎการรับ-จ่ายโทเค็น (Token Pool & Accumulation Rules)\n* **การเคลมเวรทำงาน (Claim Shift)**: เมื่อสมาชิกเคลมเวรทำงานในวันเสาร์-อาทิตย์ (WEEKEND_WORK) หรือวันหยุดนักขัตฤกษ์ (HOLIDAY_WORK) จะได้รับเพิ่ม **+1.0 โทเค็น**\n* **การลาหยุดชดเชย (Request Leave)**: การลาหยุดจะใช้โทเค็นหักจากบัญชีผู้ใช้ตามเงื่อนไขวัน:\n  * ลาตรงกับ **วันจันทร์ หรือ วันศุกร์** (วันติดวันหยุดสุดสัปดาห์): หัก **3.0 โทเค็น**\n  * ลาตรงกับ **วันอังคาร วันพุธ หรือ วันพฤหัสบดี**: หัก **1.0 โทเค็น**\n  * ไม่สามารถขอลาในวันเสาร์หรืออาทิตย์ได้\n* **การยกเลิกวันลา (Cancel Leave)**: เมื่อยกเลิกวันลาที่อนุมัติแล้ว ระบบจะทำการคืนโทเค็นให้เต็มตามอัตราที่หักไปจริง (คืน 3.0 โทเค็นสำหรับจันทร์/ศุกร์ และ 1.0 โทเค็นสำหรับวันอื่นๆ)\n* **การแลกเปลี่ยนโทเค็น (Redeem/Rollover)**: สมาชิกสามารถยื่นแลกเปลี่ยนโทเค็นสะสมคงเหลือเพื่อทบยอด หรือขอเบิกจ่ายได้ โดยระบบจะหักโทเค็นออกจากกระเป๋าและบันทึกประวัติการเงินอย่างครบถ้วนในฐานข้อมูล\n\n### 2. ระบบคำนวณโควตาการลาแบบลำดับขั้น (Dynamic Capacity Guardrails)\n* ระบบจำกัดสิทธิ์การลาพร้อมกันในแต่ละวันเพื่อป้องกันปัญหาขาดคนปฏิบัติงาน โดยมีการตรวจสอบลำดับความสำคัญ (Priority Check):\n  1. **สิทธิ์เฉพาะวันที่ (Specific Date overrides)**: ตั้งค่ารายวันเจาะจง (เช่น 25 มิ.ย. 2026 ลาได้ 0 คน)\n  2. **สิทธิ์ตามวันในสัปดาห์ (Day-of-Week Pattern overrides)**: เช่น ทุกวันศุกร์ให้ลาได้สูงสุด 1 คน\n  3. **ค่าเริ่มต้นระบบ (Global System Default)**: หากไม่มีการตั้งค่าสองส่วนบน จะอิงตามค่าเริ่มต้นระบบ (สูงสุด 2 คน)\n* วันหยุดนักขัตฤกษ์ของธนาคารแห่งประเทศไทย (Bank of Thailand Holidays) จะมีค่าโควตาการลาเป็น 0 เสมอ (ล็อกอัตโนมัติ)\n* หากมีสมาชิกลาจนถึงจำนวนโควตาสูงสุดแล้ว วันนั้นๆ ในปฏิทินจะขึ้นสถานะ **Locked (Capacity Reached)** และระบบจะปิดไม่ให้ยื่นขอลาในวันดังกล่าว",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Server"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "ตรวจสอบสถานะการทำงานของเซิร์ฟเวอร์หลังบ้าน",
+        "responses": {
+          "200": {
+            "description": "System health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "OK"
+                    },
+                    "database": {
+                      "type": "string",
+                      "example": "Connected"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "User Login",
+        "description": "ลงชื่อเข้าใช้ระบบเพื่อรับ JWT Token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "admin"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "123456789aB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login and authentication token details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "example": "admin" },
+                        "name": { "type": "string", "example": "Admin" },
+                        "email": { "type": "string", "example": "admin" },
+                        "role": { "type": "string", "example": "ADMIN" },
+                        "tokensBalance": { "type": "number", "example": 99.0 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/v1/graphql": {
+      "post": {
+        "summary": "GraphQL API Endpoint",
+        "description": "ใช้สำหรับการดึงข้อมูลและปรับเปลี่ยนข้อมูลผ่าน GraphQL ในแบบรวมคำสั่งเดียว (Single Endpoint)\n\n### รายการ Query ที่รองรับ (Queries):\n1. **getTeamMembers**: รายชื่อสมาชิกทีมงานทั้งหมดและจำนวนโทเค็นสะสม\n   ```graphql\n   query { getTeamMembers { id name email role avatarUrl department title tokensBalance } }\n   ```\n2. **getEvents**: รายชื่อวันลา เวรทำงานพิเศษ และวันหยุดนักขัตฤกษ์ในระบบ\n   ```graphql\n   query { getEvents { id userId userName date status details } }\n   ```\n3. **getCapacitySettings**: การตั้งค่าขีดจำกัดวันลาพักรายวัน (รายวัน, วันในสัปดาห์, ส่วนกลาง)\n   ```graphql\n   query { getCapacitySettings { id date dayOfWeek maxOffAllowed description } }\n   ```\n4. **getTokenTransactions**: ประวัติการรับ-จ่ายเงินโทเค็นของผู้ใช้งานที่ล็อกอินอยู่\n   ```graphql\n   query { getTokenTransactions { id userId type amount description relatedDate createdAt } }\n   ```\n\n### รายการ Mutation ที่รองรับ (Mutations - ต้องแนบ Bearer Token ใน Header):\n1. **claimShift**: เคลมการปฏิบัติงานในวันหยุดเพื่อรับ +1 โทเค็น (WEEKEND_WORK หรือ HOLIDAY_WORK)\n   ```graphql\n   mutation { claimShift(date: \"2026-06-27\", status: \"WEEKEND_WORK\", details: \"Claimed Weekend Shift\") { id } }\n   ```\n2. **requestLeave**: ใช้โทเค็นยื่นใบลาหยุดชดเชย (หัก 3 โทเค็นสำหรับวันจันทร์/ศุกร์, หัก 1 โทเค็นสำหรับวันอังคาร/พุธ/พฤหัส)\n   ```graphql\n   mutation { requestLeave(date: \"2026-06-25\") { id } }\n   ```\n3. **cancelLeave**: ยกเลิกวันลาหยุด/เวรทำงาน และคืนโทเค็นกลับสู่กระเป๋าตามจำนวนที่หักไปจริง\n   ```graphql\n   mutation { cancelLeave(id: \"event-uuid\") }\n   ```\n4. **redeemTokens**: แลกเปลี่ยนโทเค็นสะสมคงเหลือเพื่อทบยอด/ถอนเงิน\n   ```graphql\n   mutation { redeemTokens(amount: 1.0, description: \"Token Payout Request\") { id } }\n   ```\n5. **updateMaxOffAllowed**: ปรับขีดจำกัดจำนวนคนหยุดลาสูงสุดพร้อมกันต่อวัน (เฉพาะ ADMIN)\n   ```graphql\n   mutation { updateMaxOffAllowed(maxOffAllowed: 3.0) { id } }\n   ```",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "แนบ Bearer Token เช่น `Bearer <JWT_TOKEN>` สำหรับ Mutation และ Query ข้อมูลส่วนตัว",
+            "schema": {
+              "type": "string",
+              "example": "Bearer eyJhbGciOiJIUzI1Ni..."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "example": "query { getTeamMembers { id name role tokensBalance } }"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "example": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GraphQL Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
