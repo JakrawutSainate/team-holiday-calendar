@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model TeamMember {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  role          String
+  passwordHash  String   @default("")
+  avatarUrl     String?
+  department    String
+  title         String
+  tokensBalance Float    @default(0.0)
+}
+
+model CalendarEvent {
+  id       String  @id @default(uuid())
+  userId   String
+  userName String
+  date     String
+  status   String
+  details  String?
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+}
+
+model TokenTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String
+  amount      Float
+  description String
+  relatedDate String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model CapacitySetting {
+  id            String  @id @default(uuid())
+  date          String?
+  dayOfWeek     Int?
+  maxOffAllowed Int
+  description   String?
+}

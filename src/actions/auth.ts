@@ -4,6 +4,7 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/src/libs/session';
 import { z } from 'zod';
+import { loginUser, resolveGraphQL } from '@/src/libs/db/resolvers';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required'),
@@ -16,12 +17,7 @@ export async function getSession() {
   return session;
 }
 
-// Base URL for all backend calls — set INTERNAL_API_URL to just the host, e.g.
-// "https://mybackend.railway.app"  (no trailing slash, no path)
-const BACKEND_BASE = (process.env.INTERNAL_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
-
 export async function loginAction(emailInput: string, passwordInput: string) {
-  // Input Validation / Sanitization using Zod (OWASP Prevention against Injection / Improper Inputs)
   const validation = loginSchema.safeParse({ email: emailInput, password: passwordInput });
   if (!validation.success) {
     return { success: false, error: validation.error.issues[0].message };
@@ -30,45 +26,26 @@ export async function loginAction(emailInput: string, passwordInput: string) {
   const { email, password } = validation.data;
 
   try {
-    const API_URL = `${BACKEND_BASE}/api/v1/auth/login`;
+    const user = await loginUser(email, password);
 
-    // Perform Server-to-Server API Request (BFF pattern hides the actual backend endpoint and tokens)
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      return { success: false, error: errData.error || 'Invalid credentials' };
-    }
-
-    const data = await response.json(); // { token, user }
-
-    // Save to iron-session (Secure encrypted cookie, HttpOnly, SameSite=Strict)
     const session = await getSession();
-    session.token = data.token;
+    session.token = null;
     session.user = {
-      id: data.user.id,
-      name: data.user.name,
-      email: data.user.email,
-      role: data.user.role,
-      avatarUrl: data.user.avatarUrl,
-      department: data.user.department,
-      title: data.user.title,
-      tokensBalance: data.user.tokensBalance,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatarUrl: user.avatarUrl ?? null,
+      department: user.department,
+      title: user.title,
+      tokensBalance: user.tokensBalance,
     };
     await session.save();
 
-    // Send only public user profile back, masked JWT stays safely in the cookie
     return { success: true, user: session.user };
   } catch (error: any) {
-    console.error('BFF Login Error:', error);
-    return { success: false, error: 'Connection failed. Please check backend server status.' };
+    console.error('Login Error:', error);
+    return { success: false, error: error.message || 'Connection failed.' };
   }
 }
 
@@ -80,39 +57,18 @@ export async function logoutAction() {
 
 export async function getCurrentUserAction() {
   const session = await getSession();
-  if (!session.user) {
-    return null;
-  }
+  if (!session.user) return null;
   return session.user;
 }
 
-export async function runGraphQLAction(query: string, variables: Record<string, any> = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function runGraphQLAction(query: string, variables: Record<string, any> = {}): Promise<any> {
   try {
     const session = await getSession();
-    const token = session.token;
-
-    const backendUrl = `${BACKEND_BASE}/api/v1/graphql`;
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(backendUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query, variables }),
-      cache: 'no-store',
-    });
-
-    const data = await response.json();
-    return data;
+    const data = await resolveGraphQL(query, variables, session.user?.id);
+    return { data };
   } catch (error: any) {
-    console.error('BFF Action GraphQL Error:', error);
-    return { errors: [{ message: 'Failed to communicate with backend services.' }] };
+    console.error('GraphQL Action Error:', error);
+    return { errors: [{ message: error.message || 'Failed to communicate with backend services.' }] };
   }
 }
-
