@@ -17,7 +17,19 @@ export async function getSession() {
   return session;
 }
 
-const INTERNAL_API_URL = process.env.INTERNAL_API_URL ? process.env.INTERNAL_API_URL.replace(/\/+$/, '') : '';
+const getInternalApiUrl = (): string => {
+  let url = process.env.INTERNAL_API_URL || '';
+  if (url) {
+    url = url
+      .replace(/\/api\/v1\/auth\/login\/?$/, '')
+      .replace(/\/api\/v1\/graphql\/?$/, '')
+      .replace(/\/api\/v1\/?$/, '')
+      .replace(/\/+$/, '');
+  }
+  return url;
+};
+
+const INTERNAL_API_URL = getInternalApiUrl();
 
 export async function loginAction(emailInput: string, passwordInput: string) {
   const validation = loginSchema.safeParse({ email: emailInput, password: passwordInput });
@@ -37,30 +49,29 @@ export async function loginAction(emailInput: string, passwordInput: string) {
         cache: 'no-store',
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json(); // { token, user }
+        const session = await getSession();
+        session.token = data.token;
+        session.user = {
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          avatarUrl: data.user.avatarUrl ?? null,
+          department: data.user.department,
+          title: data.user.title,
+          tokensBalance: data.user.tokensBalance,
+        };
+        await session.save();
+        return { success: true, user: session.user };
+      } else {
         const errData = await response.json().catch(() => ({}));
         return { success: false, error: errData.error || 'Invalid credentials' };
       }
-
-      const data = await response.json(); // { token, user }
-      const session = await getSession();
-      session.token = data.token;
-      session.user = {
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role,
-        avatarUrl: data.user.avatarUrl ?? null,
-        department: data.user.department,
-        title: data.user.title,
-        tokensBalance: data.user.tokensBalance,
-      };
-      await session.save();
-
-      return { success: true, user: session.user };
     } catch (error: any) {
-      console.error('BFF Login Error:', error);
-      return { success: false, error: 'Connection failed. Please check backend server status.' };
+      console.warn('BFF Login failed to connect to Go backend, falling back to local Prisma:', error);
+      // Fall through to local Prisma resolver below
     }
   }
 
@@ -122,11 +133,16 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
         cache: 'no-store',
       });
 
-      const data = await response.json();
-      return data;
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        return { errors: [{ message: errData.error || 'Backend request failed.' }] };
+      }
     } catch (error: any) {
-      console.error('BFF Action GraphQL Error:', error);
-      return { errors: [{ message: 'Failed to communicate with backend services.' }] };
+      console.warn('BFF Action GraphQL Error (falling back to local Prisma):', error);
+      // Fall through to local Prisma resolver below
     }
   }
 
