@@ -26,6 +26,23 @@ model CalendarEvent {
   date     String  // YYYY-MM-DD
   status   String  // NORMAL, WEEKEND_WORK, COMPENSATORY_OFF, PUBLIC_HOLIDAY, HOLIDAY_WORK
   details  String?
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+}
+
+model TokenTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // EARN | SPEND
+  amount      Float
+  description String
+  relatedDate String?  // YYYY-MM-DD of the related shift/leave
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model CapacitySetting {

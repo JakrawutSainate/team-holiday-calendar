@@ -46,12 +46,14 @@ func (s *DatabaseService) Disconnect() {
 	}
 }
 
-// Seed populates the database with initial mock data if the database is empty (OOP MVC pattern)
+// Seed populates the database with initial data only if it is empty (safe for production restarts)
 func (s *DatabaseService) Seed(ctx context.Context) {
-	log.Println("Cleaning existing records for fresh seed...")
-	_, _ = s.Client.CalendarEvent.FindMany().Delete().Exec(ctx)
-	_, _ = s.Client.TeamMember.FindMany().Delete().Exec(ctx)
-	_, _ = s.Client.CapacitySetting.FindMany().Delete().Exec(ctx)
+	// Check if data already exists — skip seeding if DB is populated
+	existing, err := s.Client.TeamMember.FindMany().Exec(ctx)
+	if err == nil && len(existing) > 0 {
+		log.Printf("Database already has %d team members — skipping seed.", len(existing))
+		return
+	}
 
 	log.Println("Seeding database with default team members...")
 

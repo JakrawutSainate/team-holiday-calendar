@@ -7,10 +7,24 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 	"backend/models"
 	"backend/db"
 	"backend/services"
 )
+
+// getLeaveTokenCost returns 3.0 tokens for Monday or Friday, and 1.0 for other days.
+func getLeaveTokenCost(dateStr string) float64 {
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return 1.0 // fallback
+	}
+	weekday := t.Weekday()
+	if weekday == time.Monday || weekday == time.Friday {
+		return 3.0
+	}
+	return 1.0
+}
 
 type contextKey string
 const userContextKey contextKey = "user"
@@ -122,37 +136,8 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return user, nil
 	}
 
-	// 1. MUTATION: Login (Public Endpoint)
-	if strings.Contains(queryClean, "login") {
-		email, ok1 := vars["email"].(string)
-		password, ok2 := vars["password"].(string)
-		if !ok1 || !ok2 {
-			return nil, errors.New("missing variables: email or password")
-		}
+	// ─── PUBLIC QUERIES ────────────────────────────────────────────────────────
 
-		user, err := g.dbService.Client.TeamMember.FindUnique(
-			db.TeamMember.Email.Equals(email),
-		).Exec(ctx)
-		if err != nil {
-			return nil, errors.New("invalid email or password")
-		}
-
-		if user.PasswordHash != models.HashPassword(password) {
-			return nil, errors.New("invalid email or password")
-		}
-
-		// Generate mock session token: session-<userId>-<dummy>
-		token := fmt.Sprintf("session-%s-123456789", user.ID)
-
-		return map[string]interface{}{
-			"login": map[string]interface{}{
-				"token": token,
-				"user":  user,
-			},
-		}, nil
-	}
-
-	// QUERIES (Public Access)
 	if strings.Contains(queryClean, "getTeamMembers") {
 		members, err := g.dbService.Client.TeamMember.FindMany().Exec(ctx)
 		if err != nil {
@@ -177,7 +162,26 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return map[string]interface{}{"getCapacitySettings": settings}, nil
 	}
 
-	// MUTATIONS (Protected Access)
+	// ─── AUTHENTICATED QUERIES ─────────────────────────────────────────────────
+
+	if strings.Contains(queryClean, "getTokenTransactions") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		txns, err := g.dbService.Client.TokenTransaction.FindMany(
+			db.TokenTransaction.UserID.Equals(authUser.ID),
+		).OrderBy(
+			db.TokenTransaction.CreatedAt.Order(db.DESC),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"getTokenTransactions": txns}, nil
+	}
+
+	// ─── MUTATIONS (Protected) ─────────────────────────────────────────────────
+
 	if strings.Contains(queryClean, "claimShift") {
 		authUser, err := getAuthUser()
 		if err != nil {
@@ -191,7 +195,12 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, errors.New("missing variables: date or status")
 		}
 
-		// Create a claim event under the authenticated user
+		// Only WEEKEND_WORK and HOLIDAY_WORK earn tokens
+		if status != "WEEKEND_WORK" && status != "HOLIDAY_WORK" {
+			return nil, errors.New("claimShift only supports WEEKEND_WORK or HOLIDAY_WORK")
+		}
+
+		// Create calendar event
 		event, err := g.dbService.Client.CalendarEvent.CreateOne(
 			db.CalendarEvent.UserID.Set(authUser.ID),
 			db.CalendarEvent.UserName.Set(authUser.Name),
@@ -203,18 +212,28 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
-		// Award tokens for claim
-		multiplier := 1.0
-		if status == "WEEKEND_WORK" || status == "HOLIDAY_WORK" {
-			_, err = g.dbService.Client.TeamMember.FindUnique(
-				db.TeamMember.ID.Equals(authUser.ID),
-			).Update(
-				db.TeamMember.TokensBalance.Increment(multiplier),
-			).Exec(ctx)
-			if err != nil {
-				return nil, err
-			}
+		// Award 1 token
+		_, err = g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(authUser.ID),
+		).Update(
+			db.TeamMember.TokensBalance.Increment(1.0),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
 		}
+
+		// Record token transaction
+		label := "Weekend Coverage"
+		if status == "HOLIDAY_WORK" {
+			label = "Holiday Coverage"
+		}
+		_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+			db.TokenTransaction.UserID.Set(authUser.ID),
+			db.TokenTransaction.Type.Set("EARN"),
+			db.TokenTransaction.Amount.Set(1.0),
+			db.TokenTransaction.Description.Set(label),
+			db.TokenTransaction.RelatedDate.Set(date),
+		).Exec(ctx)
 
 		return map[string]interface{}{"claimShift": event}, nil
 	}
@@ -230,12 +249,20 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, errors.New("missing variables: date")
 		}
 
-		// Check token balance
-		if authUser.TokensBalance < 1.0 {
-			return nil, errors.New("insufficient tokens")
+		// Re-fetch user for latest balance
+		freshUser, err := g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(authUser.ID),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
 		}
 
-		// Create a leave request under the authenticated user
+		tokensNeeded := getLeaveTokenCost(date)
+		if freshUser.TokensBalance < tokensNeeded {
+			return nil, fmt.Errorf("insufficient tokens: you need at least %.1f tokens to request leave on this day", tokensNeeded)
+		}
+
+		// Create leave event
 		event, err := g.dbService.Client.CalendarEvent.CreateOne(
 			db.CalendarEvent.UserID.Set(authUser.ID),
 			db.CalendarEvent.UserName.Set(authUser.Name),
@@ -246,15 +273,24 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
-		// Deduct token from authenticated user
+		// Deduct tokens
 		_, err = g.dbService.Client.TeamMember.FindUnique(
 			db.TeamMember.ID.Equals(authUser.ID),
 		).Update(
-			db.TeamMember.TokensBalance.Decrement(1.0),
+			db.TeamMember.TokensBalance.Decrement(tokensNeeded),
 		).Exec(ctx)
 		if err != nil {
 			return nil, err
 		}
+
+		// Record token transaction
+		_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+			db.TokenTransaction.UserID.Set(authUser.ID),
+			db.TokenTransaction.Type.Set("SPEND"),
+			db.TokenTransaction.Amount.Set(tokensNeeded),
+			db.TokenTransaction.Description.Set("Compensatory Leave Request"),
+			db.TokenTransaction.RelatedDate.Set(date),
+		).Exec(ctx)
 
 		return map[string]interface{}{"requestLeave": event}, nil
 	}
@@ -270,7 +306,7 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, errors.New("missing variables: id")
 		}
 
-		// Fetch the event to check authorization
+		// Fetch event to verify ownership
 		event, err := g.dbService.Client.CalendarEvent.FindUnique(
 			db.CalendarEvent.ID.Equals(id),
 		).Exec(ctx)
@@ -278,9 +314,9 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
-		// Authorization Check: Admin can cancel any leave, Member can only cancel their own leaves
+		// Authorization: Admin can cancel any leave, Member only their own
 		if authUser.Role != "ADMIN" && event.UserID != authUser.ID {
-			return nil, errors.New("forbidden: you cannot cancel another member's leaves")
+			return nil, errors.New("forbidden: you cannot cancel another member's leave")
 		}
 
 		// Delete the event
@@ -291,19 +327,80 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
-		// Refund token if it was a leave
-		if event.Status == "COMPENSATORY_OFF" || event.Status == "NORMAL" {
+		// Refund tokens if it was a leave (COMPENSATORY_OFF or NORMAL)
+		isLeave := event.Status == "COMPENSATORY_OFF" || event.Status == "NORMAL"
+		if isLeave {
+			tokensRefunded := getLeaveTokenCost(event.Date)
 			_, err = g.dbService.Client.TeamMember.FindUnique(
 				db.TeamMember.ID.Equals(event.UserID),
 			).Update(
-				db.TeamMember.TokensBalance.Increment(1.0),
+				db.TeamMember.TokensBalance.Increment(tokensRefunded),
 			).Exec(ctx)
 			if err != nil {
 				return nil, err
 			}
+
+			// Record refund transaction
+			_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+				db.TokenTransaction.UserID.Set(event.UserID),
+				db.TokenTransaction.Type.Set("EARN"),
+				db.TokenTransaction.Amount.Set(tokensRefunded),
+				db.TokenTransaction.Description.Set("Leave Cancellation Refund"),
+				db.TokenTransaction.RelatedDate.Set(event.Date),
+			).Exec(ctx)
 		}
 
 		return map[string]interface{}{"cancelLeave": true}, nil
+	}
+
+	if strings.Contains(queryClean, "redeemTokens") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		amount, ok := vars["amount"].(float64)
+		description, _ := vars["description"].(string)
+		if !ok {
+			return nil, errors.New("missing variables: amount")
+		}
+		if description == "" {
+			description = "Token Rollover/Payout Request"
+		}
+
+		// Re-fetch user for latest balance
+		freshUser, err := g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(authUser.ID),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if freshUser.TokensBalance < amount {
+			return nil, fmt.Errorf("insufficient tokens: you need at least %.1f tokens to redeem", amount)
+		}
+
+		// Deduct tokens
+		_, err = g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(authUser.ID),
+		).Update(
+			db.TeamMember.TokensBalance.Decrement(amount),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Record token transaction
+		txn, err := g.dbService.Client.TokenTransaction.CreateOne(
+			db.TokenTransaction.UserID.Set(authUser.ID),
+			db.TokenTransaction.Type.Set("SPEND"),
+			db.TokenTransaction.Amount.Set(amount),
+			db.TokenTransaction.Description.Set(description),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"redeemTokens": txn}, nil
 	}
 
 	if strings.Contains(queryClean, "updateMaxOffAllowed") {
@@ -312,7 +409,6 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
-		// Role Check: Only Admin can update global capacity settings
 		if authUser.Role != "ADMIN" {
 			return nil, errors.New("forbidden: only administrators can modify capacity settings")
 		}
@@ -328,7 +424,7 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			db.CapacitySetting.MaxOffAllowed.Set(int(maxOff)),
 		).Exec(ctx)
 		if err != nil {
-			// If not exists, create it
+			// Create if not exists
 			setting, err = g.dbService.Client.CapacitySetting.CreateOne(
 				db.CapacitySetting.MaxOffAllowed.Set(int(maxOff)),
 				db.CapacitySetting.ID.Set("global-default"),
@@ -342,5 +438,5 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return map[string]interface{}{"updateMaxOffAllowed": setting}, nil
 	}
 
-	return nil, fmt.Errorf("unsupported GraphQL query: %s", queryClean)
+	return nil, fmt.Errorf("unsupported GraphQL operation")
 }
