@@ -27,9 +27,14 @@ If the current number of approved leaves on a date meets or exceeds the resolved
 - Visual remaining capacity tracker (e.g., "0/2", "1/2", or "Locked" / "Capacity Reached").
 
 ### Holiday Pool Tracking & Tokens
-- Users start with a set pool of leave tokens.
-- Weekend coverage shifts accrue tokens based on weekend multipliers.
-- Standard leave bookings deduct tokens (e.g., 3 tokens per weekend-adjacent day like Monday or Friday).
+- Users start with a set pool of leave tokens (seeded by default, e.g. 99 tokens for Admins, 0 tokens for Members).
+- Weekend / Holiday shift claims accrue **+1.0 token** per shift worked.
+- Leave bookings (Compensatory Off) deduct tokens based on the weekday of the leave:
+  - **Monday or Friday** leaves (weekend-adjacent): deduct **3.0 tokens** per day.
+  - **Tuesday, Wednesday, or Thursday** leaves: deduct **1.0 token** per day.
+  - Leaves cannot be requested on weekends (Saturday or Sunday).
+- Canceling a leave request refunds the exact amount of tokens that were originally deducted (e.g. 3.0 tokens for Monday/Friday leaves, and 1.0 token for other weekdays).
+- Token Redemptions/Rollovers allow users to request payouts of their tokens, which immediately deducts the selected amount from their active balance and logs the transaction.
 
 ### Earn Rate Multipliers
 - Configurable multipliers for working weekends or public holidays (e.g., 1.5x earn rate).
