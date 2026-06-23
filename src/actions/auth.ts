@@ -17,6 +17,8 @@ export async function getSession() {
   return session;
 }
 
+const INTERNAL_API_URL = process.env.INTERNAL_API_URL ? process.env.INTERNAL_API_URL.replace(/\/+$/, '') : '';
+
 export async function loginAction(emailInput: string, passwordInput: string) {
   const validation = loginSchema.safeParse({ email: emailInput, password: passwordInput });
   if (!validation.success) {
@@ -24,6 +26,43 @@ export async function loginAction(emailInput: string, passwordInput: string) {
   }
 
   const { email, password } = validation.data;
+
+  if (INTERNAL_API_URL) {
+    try {
+      const loginUrl = `${INTERNAL_API_URL}/api/v1/auth/login`;
+      const response = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        return { success: false, error: errData.error || 'Invalid credentials' };
+      }
+
+      const data = await response.json(); // { token, user }
+      const session = await getSession();
+      session.token = data.token;
+      session.user = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        avatarUrl: data.user.avatarUrl ?? null,
+        department: data.user.department,
+        title: data.user.title,
+        tokensBalance: data.user.tokensBalance,
+      };
+      await session.save();
+
+      return { success: true, user: session.user };
+    } catch (error: any) {
+      console.error('BFF Login Error:', error);
+      return { success: false, error: 'Connection failed. Please check backend server status.' };
+    }
+  }
 
   try {
     const user = await loginUser(email, password);
@@ -63,8 +102,35 @@ export async function getCurrentUserAction() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function runGraphQLAction(query: string, variables: Record<string, any> = {}): Promise<any> {
+  const session = await getSession();
+
+  if (INTERNAL_API_URL) {
+    try {
+      const graphqlUrl = `${INTERNAL_API_URL}/api/v1/graphql`;
+      const token = session.token;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, variables }),
+        cache: 'no-store',
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error('BFF Action GraphQL Error:', error);
+      return { errors: [{ message: 'Failed to communicate with backend services.' }] };
+    }
+  }
+
   try {
-    const session = await getSession();
     const data = await resolveGraphQL(query, variables, session.user?.id);
     return { data };
   } catch (error: any) {
