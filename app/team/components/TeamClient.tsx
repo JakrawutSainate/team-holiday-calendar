@@ -8,6 +8,7 @@ import { TeamMember, getTeamMembers } from '@/src/libs/calendarData';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { inviteMemberAction, downloadTeamReportAction } from '../actions';
 import { TeamController } from './TeamController';
+import TeamSkeleton from '@/src/components/skeletons/TeamSkeleton';
 
 // Components
 import TeamHeader from './TeamHeader';
@@ -28,6 +29,8 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
   const { user } = useAuth();
 
   const [, setTick] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const hasMounted = useRef(false);
 
   const [controller] = useState<TeamController>(() => new TeamController(
     initialMembers,
@@ -37,6 +40,11 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
 
   // React to searchTerm parameter changing
   useEffect(() => {
+    const firstMount = !hasMounted.current;
+    hasMounted.current = true;
+
+    if (!firstMount) setIsSearching(true);
+
     getTeamMembers().then(members => {
       const term = searchTerm.toLowerCase();
       const filtered = members.filter(
@@ -45,8 +53,10 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
              m.department.toLowerCase().includes(term)
       );
       controller.setMembers(filtered);
-    });
+    }).finally(() => setIsSearching(false));
   }, [searchTerm, controller]);
+
+  if (isSearching) return <TeamSkeleton />;
 
   const handleSearch = (term: string) => {
     const params = new URLSearchParams(searchParams.toString());

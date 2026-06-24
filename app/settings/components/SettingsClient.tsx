@@ -7,16 +7,18 @@ import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { saveProfileSettings, saveWorkspaceSettings } from '../actions';
 import { SettingsController } from './SettingsController';
+import SettingsSkeleton from '@/src/components/skeletons/SettingsSkeleton';
 
 export default function SettingsClient() {
   const { t } = useTranslation();
   const { role } = useRole();
   const { user } = useAuth();
   const [, setTick] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new SettingsController(() => setTick((tick) => tick + 1)));
 
   useEffect(() => {
-    controller.loadState();
+    controller.loadState().finally(() => setIsLoading(false));
   }, [controller]);
 
   // Pre-fill profile fields from logged-in user
@@ -32,6 +34,8 @@ export default function SettingsClient() {
 
   const messageText = controller.getMessageText();
   const messageType = controller.getMessageType();
+
+  if (isLoading) return <SettingsSkeleton />;
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
