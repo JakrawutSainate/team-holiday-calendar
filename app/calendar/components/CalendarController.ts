@@ -78,7 +78,7 @@ export class CalendarController {
   public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    this.gridCells = this.buildGridCells();
+    this.gridCells = [];
     this.loading = true;
     this.updateCallback();
 
@@ -88,6 +88,9 @@ export class CalendarController {
         getCalendarEvents(this.year, this.month),
         getAllCapacitySettings(),
       ]);
+
+      // Build grid cells after data loads so calendar + events appear together
+      this.gridCells = this.buildGridCells();
 
       const currentUser = members.find(m => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;
