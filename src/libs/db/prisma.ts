@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function makePrismaClient() {
   const neonPool = new Pool({ connectionString: process.env.DATABASE_URL! });
-  const adapter = new PrismaNeon(neonPool);
+  const adapter = new PrismaNeon(neonPool as any);
   return new PrismaClient({ adapter });
 }
 
