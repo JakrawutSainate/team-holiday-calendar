@@ -200,5 +200,29 @@ export async function resolveGraphQL(
     return { updateMaxOffAllowed: setting };
   }
 
+  if (q.includes('adminAddTokens')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') {
+      throw new Error('forbidden: only administrators can add tokens to users');
+    }
+
+    const targetUserId = variables.userId as string;
+    const amount = variables.amount as number;
+    const description = (variables.description as string) || 'Admin manual token credit';
+
+    if (!targetUserId || amount == null) throw new Error('missing variables: userId or amount');
+
+    const targetUser = await prisma.teamMember.update({
+      where: { id: targetUserId },
+      data: { tokensBalance: { increment: amount } },
+    });
+
+    await prisma.tokenTransaction.create({
+      data: { userId: targetUserId, type: 'EARN', amount, description },
+    });
+
+    return { adminAddTokens: targetUser };
+  }
+
   throw new Error('unsupported GraphQL operation');
 }
