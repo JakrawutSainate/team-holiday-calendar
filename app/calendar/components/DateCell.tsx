@@ -80,6 +80,13 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
     }
   }
 
+  const today = new Date();
+  const yearStr = today.getFullYear();
+  const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+  const dayStr = String(today.getDate()).padStart(2, '0');
+  const todayString = `${yearStr}-${monthStr}-${dayStr}`;
+  const isToday = !isMuted && dateString === todayString;
+
   return (
     <div className={cellClass} title={tooltipText}>
       {tooltipText && (
@@ -90,7 +97,13 @@ export default function DateCell({ day, isMuted, dateString, events, capacity, o
       )}
 
       <div className="flex justify-between items-start mb-2 animate-fade-in">
-        <span className={`text-base ${dayNumberClass}`}>{day}</span>
+        {isToday ? (
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm shadow-md ring-4 ring-indigo-100 -ml-1 -mt-1.5">
+            {day}
+          </span>
+        ) : (
+          <span className={`text-base ${dayNumberClass}`}>{day}</span>
+        )}
         {holidayEvent ? (
           <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/50 px-1.5 py-0.5 rounded-md shadow-xs">
             {t('publicHoliday')}

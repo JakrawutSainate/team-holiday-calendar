@@ -3,17 +3,25 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
-import { exportCalendarExcel } from '../actions';
-
 interface CalendarHeaderProps {
   year: number;
   month: number;
   role: 'ADMIN' | 'USER';
   tokens: number;
   onRequestLeave: () => void;
+  onExportExcel: () => void;
+  onExportPdf: () => void;
 }
 
-export default function CalendarHeader({ year, month, role, tokens, onRequestLeave }: CalendarHeaderProps) {
+export default function CalendarHeader({
+  year,
+  month,
+  role,
+  tokens,
+  onRequestLeave,
+  onExportExcel,
+  onExportPdf
+}: CalendarHeaderProps) {
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
@@ -56,13 +64,6 @@ export default function CalendarHeader({ year, month, role, tokens, onRequestLea
       navigateToMonth(year + 1, 1);
     } else {
       navigateToMonth(year, month + 1);
-    }
-  };
-
-  const handleExport = async () => {
-    const res = await exportCalendarExcel(year, month);
-    if (res.success) {
-      alert(`Excel exported! File location: ${res.downloadUrl}`);
     }
   };
 
@@ -113,10 +114,16 @@ export default function CalendarHeader({ year, month, role, tokens, onRequestLea
         )}
 
         {user && (
-          <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
-            <span className="material-symbols-outlined">download</span>
-            {t('exportExcel')}
-          </button>
+          <>
+            <button onClick={onExportExcel} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
+              <span className="material-symbols-outlined">download</span>
+              {language === 'th' ? 'ส่งออก Excel' : 'Export Excel'}
+            </button>
+            <button onClick={onExportPdf} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
+              <span className="material-symbols-outlined">print</span>
+              {language === 'th' ? 'ส่งออก PDF' : 'Export PDF'}
+            </button>
+          </>
         )}
       </div>
     </section>

@@ -14,6 +14,7 @@ import CalendarSkeleton from '@/src/components/skeletons/CalendarSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { useConfirm } from '@/src/components/ConfirmDialog';
 import { LeaveFormDialog } from '@/src/components/LeaveFormDialog';
+import { ExcelExporter, PdfExporter } from '../utils/CalendarExporter';
 
 interface CalendarClientProps {
   year: number;
@@ -172,6 +173,14 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
               role={role}
               tokens={controller.getTokens()}
               onRequestLeave={() => setShowLeaveForm(true)}
+              onExportExcel={() => {
+                const exporter = new ExcelExporter(year, month, controller.getEvents(), controller.getMembers(), language);
+                exporter.export();
+              }}
+              onExportPdf={() => {
+                const exporter = new PdfExporter(year, month, controller.getEvents(), controller.getMembers(), language);
+                exporter.export();
+              }}
             />
           </div>
 
@@ -198,7 +207,6 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
                   onChange={(e) => handleMaxOffChange(Number(e.target.value))}
                   className="p-2.5 border border-zinc-200 rounded-xl bg-white text-sm hover:bg-zinc-50 transition-colors cursor-pointer outline-none font-bold text-zinc-900 w-32 shadow-xs"
                 >
-                  <option value={1}>1 คน (1 person)</option>
                   <option value={2}>2 คน (2 people)</option>
                   <option value={3}>3 คน (3 people)</option>
                   <option value={4}>4 คน (4 people)</option>

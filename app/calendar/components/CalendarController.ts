@@ -7,12 +7,14 @@ import {
   resolveCapacity,
   claimShiftMutation,
   requestLeaveMutation,
-  updateMaxOffAllowedMutation
+  updateMaxOffAllowedMutation,
+  TeamMember
 } from '@/src/libs/calendarData';
 import { CalendarGridCell } from '../types';
 
 export class CalendarController {
   private events: CalendarEvent[] = [];
+  private members: TeamMember[] = [];
   private capacities: Record<string, CapacitySetting> = {};
   private gridCells: CalendarGridCell[] = [];
   private tokens: number = 0;
@@ -41,6 +43,7 @@ export class CalendarController {
 
   // Getters
   public getEvents(): CalendarEvent[] { return this.events; }
+  public getMembers(): TeamMember[] { return this.members; }
   public getCapacities(): Record<string, CapacitySetting> { return this.capacities; }
   public getGridCells(): CalendarGridCell[] { return this.gridCells; }
   public getTokens(): number { return Math.floor(this.tokens); }
@@ -95,6 +98,7 @@ export class CalendarController {
       const currentUser = members.find(m => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;
       this.events = events;
+      this.members = members;
 
       const resolved: Record<string, CapacitySetting> = {};
       for (const cell of this.gridCells) {

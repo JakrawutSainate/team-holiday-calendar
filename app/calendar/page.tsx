@@ -9,8 +9,9 @@ interface PageProps {
 
 export default async function CalendarPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
-  const year = resolvedParams.year ? parseInt(resolvedParams.year) : 2026;
-  const month = resolvedParams.month ? parseInt(resolvedParams.month) : 6;
+  const today = new Date();
+  const year = resolvedParams.year ? parseInt(resolvedParams.year) : today.getFullYear();
+  const month = resolvedParams.month ? parseInt(resolvedParams.month) : (today.getMonth() + 1);
 
   return (
     <Suspense
