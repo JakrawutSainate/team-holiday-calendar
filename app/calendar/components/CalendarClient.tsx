@@ -13,10 +13,12 @@ import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 import CalendarSkeleton from '@/src/components/skeletons/CalendarSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { useConfirm } from '@/src/components/ConfirmDialog';
-import { LeaveFormDialog } from '@/src/components/LeaveFormDialog';
-import { LeaveDetailsDialog } from '@/src/components/LeaveDetailsDialog';
-import { ExportDialog } from '@/src/components/ExportDialog';
+import dynamic from 'next/dynamic';
 import { ExcelExporter, PdfExporter } from '../utils/CalendarExporter';
+
+const LeaveFormDialog = dynamic(() => import('@/src/components/LeaveFormDialog').then((mod) => mod.LeaveFormDialog), { ssr: false });
+const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
+const ExportDialog = dynamic(() => import('@/src/components/ExportDialog').then((mod) => mod.ExportDialog), { ssr: false });
 
 interface CalendarClientProps {
   year: number;

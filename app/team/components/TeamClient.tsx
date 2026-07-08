@@ -15,8 +15,10 @@ import TeamHeader from './TeamHeader';
 import TeamSummaryFooter from './TeamSummaryFooter';
 
 import { useAuth } from '@/src/components/AuthContext';
-import { AddTokenDialog } from '@/src/components/AddTokenDialog';
 import { adminAddTokensMutation } from '@/src/libs/calendarData';
+import dynamic from 'next/dynamic';
+
+const AddTokenDialog = dynamic(() => import('@/src/components/AddTokenDialog').then((mod) => mod.AddTokenDialog), { ssr: false });
 
 interface TeamClientProps {
   initialMembers: TeamMember[];

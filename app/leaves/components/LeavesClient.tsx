@@ -12,7 +12,9 @@ import { CalendarEvent } from '@/src/libs/calendarData';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 import LeavesSkeleton from '@/src/components/skeletons/LeavesSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
-import { LeaveDetailsDialog } from '@/src/components/LeaveDetailsDialog';
+import dynamic from 'next/dynamic';
+
+const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
 
 export default function LeavesClient() {
   const { t, language } = useTranslation();

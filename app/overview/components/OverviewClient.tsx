@@ -15,7 +15,9 @@ import OverviewHeader from './OverviewHeader';
 import UpcomingHolidaysCard from './UpcomingHolidaysCard';
 import YourTokenBalanceCard from './YourTokenBalanceCard';
 import RecentActivityCard from './RecentActivityCard';
-import PulseChart from './PulseChart';
+import dynamic from 'next/dynamic';
+
+const PulseChart = dynamic(() => import('./PulseChart'), { ssr: false });
 
 interface OverviewClientProps {
   initialActivities: Activity[];

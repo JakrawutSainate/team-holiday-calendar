@@ -7,6 +7,9 @@ import { RoleProvider } from '@/src/components/RoleContext';
 import { AuthProvider } from '@/src/components/AuthContext';
 import { ConfirmProvider } from '@/src/components/ConfirmDialog';
 import { BackendStatusMonitor } from '@/src/components/BackendStatusMonitor';
+import dynamic from 'next/dynamic';
+
+const LoginModal = dynamic(() => import('@/src/components/LoginModal'), { ssr: false });
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <ConfirmProvider>
             <BackendStatusMonitor />
             {children}
+            <LoginModal />
             <Toaster
               position="top-right"
               richColors
