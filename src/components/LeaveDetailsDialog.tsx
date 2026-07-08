@@ -143,7 +143,7 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
           <div className="page bg-[#fffef8] border border-[#c5b99b] shadow-[0_4px_24px_rgba(0,0,0,0.12)]"
             style={{ fontFamily: "'Sarabun','Noto Sans Thai',sans-serif" }}>
 
-            <div className="gold-bar h-1.5 bg-gradient-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
+            <div className="gold-bar h-1.5 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
 
             <div className="content px-8 md:px-10 py-7 space-y-4" style={{ lineHeight: 2, fontSize: 13 }}>
 
@@ -279,7 +279,7 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
               </div>
             </div>
 
-            <div className="gold-bar h-1 bg-gradient-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
+            <div className="gold-bar h-1 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
           </div>
         </div>
 

@@ -189,7 +189,7 @@ export function LeaveFormDialog({ open, onClose, onSubmit, tokens, language, pre
           style={{ fontFamily: "'Sarabun', 'Noto Sans Thai', sans-serif" }}
         >
           {/* Gold header bar */}
-          <div className="h-1.5 bg-gradient-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
+          <div className="h-1.5 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
 
           <div className="px-8 md:px-10 py-7 space-y-5">
 
@@ -431,7 +431,7 @@ export function LeaveFormDialog({ open, onClose, onSubmit, tokens, language, pre
           </div>
 
           {/* Gold footer bar */}
-          <div className="h-1 bg-gradient-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
+          <div className="h-1 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914]" />
         </div>
       </div>
     </div>
