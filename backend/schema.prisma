@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator db {
@@ -20,16 +19,28 @@ model TeamMember {
 }
 
 model CalendarEvent {
-  id       String  @id @default(uuid())
-  userId   String
-  userName String
-  date     String  // YYYY-MM-DD
-  status   String  // NORMAL, WEEKEND_WORK, COMPENSATORY_OFF, PUBLIC_HOLIDAY, HOLIDAY_WORK
-  details  String?
+  id           String        @id @default(uuid())
+  userId       String
+  userName     String
+  date         String  // YYYY-MM-DD
+  status       String  // NORMAL, WEEKEND_WORK, COMPENSATORY_OFF, PUBLIC_HOLIDAY, HOLIDAY_WORK
+  details      String?
+  leaveRequest LeaveRequest?
 
   @@index([userId])
   @@index([date])
   @@index([status])
+}
+
+model LeaveRequest {
+  id              String        @id @default(uuid())
+  eventId         String        @unique
+  reason          String?
+  signatureType   String        // "DRAW" | "TEXT"
+  signatureText   String?
+  signatureImage  String?       // Base64 String
+  attachmentImage String?       // Base64 String
+  event           CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model TokenTransaction {

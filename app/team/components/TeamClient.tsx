@@ -15,6 +15,8 @@ import TeamHeader from './TeamHeader';
 import TeamSummaryFooter from './TeamSummaryFooter';
 
 import { useAuth } from '@/src/components/AuthContext';
+import { AddTokenDialog } from '@/src/components/AddTokenDialog';
+import { adminAddTokensMutation } from '@/src/libs/calendarData';
 
 interface TeamClientProps {
   initialMembers: TeamMember[];
@@ -32,11 +34,32 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
   const [isSearching, setIsSearching] = useState(false);
   const hasMounted = useRef(false);
 
+  const [selectedTargetMember, setSelectedTargetMember] = useState<TeamMember | null>(null);
+  const [showAddTokenModal, setShowAddTokenModal] = useState(false);
+
   const [controller] = useState<TeamController>(() => new TeamController(
     initialMembers,
     searchTerm,
     () => setTick((tick) => tick + 1)
   ));
+
+  const handleConfirmAddTokens = async (amount: number, description: string) => {
+    if (!selectedTargetMember) return;
+    try {
+      await adminAddTokensMutation(selectedTargetMember.id, amount, description);
+      // Reload members list
+      const members = await getTeamMembers();
+      const term = searchTerm.toLowerCase();
+      const filtered = members.filter(
+        m => m.name.toLowerCase().includes(term) ||
+             m.title.toLowerCase().includes(term) ||
+             m.department.toLowerCase().includes(term)
+      );
+      controller.setMembers(filtered);
+    } catch (e: any) {
+      alert(e.message || 'Failed to add tokens');
+    }
+  };
 
   // React to searchTerm parameter changing
   useEffect(() => {
@@ -115,7 +138,15 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {managementMembers.map((member) => (
-                    <MemberCard key={member.id} member={member} />
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      showAdminActions={user?.role === 'ADMIN'}
+                      onAddTokens={() => {
+                        setSelectedTargetMember(member);
+                        setShowAddTokenModal(true);
+                      }}
+                    />
                   ))}
                 </div>
               </section>
@@ -133,7 +164,15 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {engineeringMembers.map((member) => (
-                    <MemberCard key={member.id} member={member} />
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      showAdminActions={user?.role === 'ADMIN'}
+                      onAddTokens={() => {
+                        setSelectedTargetMember(member);
+                        setShowAddTokenModal(true);
+                      }}
+                    />
                   ))}
                 </div>
               </section>
@@ -151,7 +190,15 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {designMembers.map((member) => (
-                    <MemberCard key={member.id} member={member} />
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      showAdminActions={user?.role === 'ADMIN'}
+                      onAddTokens={() => {
+                        setSelectedTargetMember(member);
+                        setShowAddTokenModal(true);
+                      }}
+                    />
                   ))}
                 </div>
               </section>
@@ -179,6 +226,16 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
           <span className="material-symbols-outlined text-[28px]">person_add</span>
         </button>
       )}
+
+      <AddTokenDialog
+        open={showAddTokenModal}
+        onClose={() => {
+          setShowAddTokenModal(false);
+          setSelectedTargetMember(null);
+        }}
+        memberName={selectedTargetMember?.name || ''}
+        onConfirm={handleConfirmAddTokens}
+      />
     </div>
   );
 }

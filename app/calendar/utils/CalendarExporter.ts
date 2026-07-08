@@ -21,13 +21,28 @@ export abstract class CalendarExporter {
   protected events: CalendarEvent[];
   protected members: TeamMember[];
   protected language: 'en' | 'th';
+  protected selectedUserId?: string;
 
-  constructor(year: number, month: number, events: CalendarEvent[], members: TeamMember[], language: 'en' | 'th' = 'th') {
+  constructor(
+    year: number,
+    month: number,
+    events: CalendarEvent[],
+    members: TeamMember[],
+    language: 'en' | 'th' = 'th',
+    selectedUserId?: string
+  ) {
     this.year = year;
     this.month = month;
-    this.events = events;
-    this.members = members;
     this.language = language;
+    this.selectedUserId = selectedUserId;
+    
+    if (selectedUserId && selectedUserId !== 'all') {
+      this.members = members.filter(m => m.id === selectedUserId);
+      this.events = events.filter(e => e.userId === selectedUserId || e.userId === 'system-holiday');
+    } else {
+      this.members = members;
+      this.events = events;
+    }
   }
 
   protected t(key: string): string {

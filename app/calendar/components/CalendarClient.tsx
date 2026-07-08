@@ -14,6 +14,8 @@ import CalendarSkeleton from '@/src/components/skeletons/CalendarSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { useConfirm } from '@/src/components/ConfirmDialog';
 import { LeaveFormDialog } from '@/src/components/LeaveFormDialog';
+import { LeaveDetailsDialog } from '@/src/components/LeaveDetailsDialog';
+import { ExportDialog } from '@/src/components/ExportDialog';
 import { ExcelExporter, PdfExporter } from '../utils/CalendarExporter';
 
 interface CalendarClientProps {
@@ -28,9 +30,25 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const confirm = useConfirm();
   const [, setTick] = useState(0);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [selectedLeaveDate, setSelectedLeaveDate] = useState('');
+  const [leaveFormPrefillDate, setLeaveFormPrefillDate] = useState('');
+  const [viewingLeaveEvent, setViewingLeaveEvent] = useState<any>(null);
+  
+  const [showExportModal, setShowExportModal] = useState(false);
+
   const [controller] = useState<CalendarController>(
     () => new CalendarController(year, month, user?.id ?? '', () => setTick((tick) => tick + 1), user?.name ?? '')
   );
+
+  const handleConfirmExport = (format: 'PDF' | 'EXCEL', selectedUserId: string) => {
+    if (format === 'EXCEL') {
+      const exporter = new ExcelExporter(year, month, controller.getEvents(), controller.getMembers(), language, selectedUserId);
+      exporter.export();
+    } else {
+      const exporter = new PdfExporter(year, month, controller.getEvents(), controller.getMembers(), language, selectedUserId);
+      exporter.export();
+    }
+  };
 
   useEffect(() => {
     controller.updateParams(year, month, user?.id ?? '', user?.name ?? '');
@@ -85,48 +103,38 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         );
       }
     } else {
-      const isAlreadyOff = controller
+      const leaveEvent = controller
         .getEvents()
-        .some((e) => e.date === dateString && e.userId === user?.id && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
-      if (isAlreadyOff) {
-        toast.info(
-          language === 'th' ? 'มีวันหยุดอยู่แล้ว' : 'Leave Already Booked',
-          { description: language === 'th' ? 'คุณมีกำหนดวันหยุดในวันนี้อยู่แล้ว' : 'You already have a leave on this day.' }
-        );
+        .find((e) => e.date === dateString && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
+        
+      if (leaveEvent) {
+        setViewingLeaveEvent(leaveEvent);
         return;
       }
 
       const tokensNeeded = 1;
-      const ok = await confirm({
-        title: language === 'th' ? 'ส่งใบลาด้วยโทเค็น?' : 'Request Leave?',
-        text: language === 'th'
-          ? `ใช้ ${tokensNeeded} โทเค็นในการลาหยุดวันที่ ${dateString}? (โทเค็นของคุณ: ${controller.getTokens()})`
-          : `Spend ${tokensNeeded} token to request leave on ${dateString}? (Balance: ${controller.getTokens()} tokens)`,
-        confirmText: language === 'th' ? 'ส่งใบลา' : 'Request Leave',
-        cancelText: t('cancel'),
-      });
-      if (ok) {
-        if (controller.getTokens() < tokensNeeded) {
-          toast.error(
-            language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
-            { description: language === 'th'
-                ? `ต้องการ ${tokensNeeded} โทเค็น แต่มีเพียง ${controller.getTokens()} โทเค็น`
-                : `You need ${tokensNeeded} tokens but only have ${controller.getTokens()}.` }
-          );
-          return;
-        }
-        controller.requestLeave(dateString);
-        toast.success(
-          language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
+      if (controller.getTokens() < tokensNeeded) {
+        toast.error(
+          language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
           { description: language === 'th'
-              ? `หัก ${tokensNeeded} โทเค็นและลงทะเบียนวันลาเรียบร้อยแล้ว`
-              : `Deducted ${tokensNeeded} token and registered your leave!` }
+              ? `ต้องการ ${tokensNeeded} โทเค็น แต่มีเพียง ${controller.getTokens()} โทเค็น`
+              : `You need ${tokensNeeded} tokens but only have ${controller.getTokens()}.` }
         );
+        return;
       }
+      setLeaveFormPrefillDate(dateString);
+      setShowLeaveForm(true);
     }
   };
 
-  const handleLeaveFormSubmit = (selectedDate: string) => {
+  const handleLeaveFormSubmit = (
+    selectedDate: string,
+    reason: string,
+    signatureType: 'DRAW' | 'TEXT',
+    signatureText: string,
+    signatureImage: string,
+    attachmentImage: string
+  ) => {
     const tokensNeeded = 1;
     if (controller.getTokens() < tokensNeeded) {
       toast.error(
@@ -137,7 +145,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
       );
       return;
     }
-    controller.requestLeave(selectedDate);
+    controller.requestLeave(selectedDate, reason, signatureType, signatureText, signatureImage, attachmentImage);
     toast.success(
       language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
       { description: language === 'th'
@@ -172,15 +180,11 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
               month={month}
               role={role}
               tokens={controller.getTokens()}
-              onRequestLeave={() => setShowLeaveForm(true)}
-              onExportExcel={() => {
-                const exporter = new ExcelExporter(year, month, controller.getEvents(), controller.getMembers(), language);
-                exporter.export();
+              onRequestLeave={() => {
+                setLeaveFormPrefillDate('');
+                setShowLeaveForm(true);
               }}
-              onExportPdf={() => {
-                const exporter = new PdfExporter(year, month, controller.getEvents(), controller.getMembers(), language);
-                exporter.export();
-              }}
+              onOpenExport={() => setShowExportModal(true)}
             />
           </div>
 
@@ -255,6 +259,22 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         onSubmit={handleLeaveFormSubmit}
         tokens={controller.getTokens()}
         language={language}
+        prefillDate={leaveFormPrefillDate}
+      />
+
+      <LeaveDetailsDialog
+        open={!!viewingLeaveEvent}
+        onClose={() => setViewingLeaveEvent(null)}
+        leaveDate={viewingLeaveEvent?.date || ''}
+        userName={viewingLeaveEvent?.userName || ''}
+        leaveRequest={viewingLeaveEvent?.leaveRequest}
+      />
+
+      <ExportDialog
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        members={controller.getMembers()}
+        onConfirmExport={handleConfirmExport}
       />
     </ErrorBoundary>
   );

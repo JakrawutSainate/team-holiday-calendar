@@ -138,7 +138,9 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 	}
 
 	if strings.Contains(queryClean, "getEvents") {
-		events, err := g.dbService.Client.CalendarEvent.FindMany().Exec(ctx)
+		events, err := g.dbService.Client.CalendarEvent.FindMany().With(
+			db.CalendarEvent.LeaveRequest.Fetch(),
+		).Exec(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -240,6 +242,16 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, errors.New("missing variables: date")
 		}
 
+		reason, _ := vars["reason"].(string)
+		signatureType, _ := vars["signatureType"].(string)
+		signatureText, _ := vars["signatureText"].(string)
+		signatureImage, _ := vars["signatureImage"].(string)
+		attachmentImage, _ := vars["attachmentImage"].(string)
+
+		if signatureType == "" {
+			signatureType = "TEXT"
+		}
+
 		// Re-fetch user for latest balance
 		freshUser, err := g.dbService.Client.TeamMember.FindUnique(
 			db.TeamMember.ID.Equals(authUser.ID),
@@ -264,6 +276,23 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			return nil, err
 		}
 
+		// Create LeaveRequest details
+		_, err = g.dbService.Client.LeaveRequest.CreateOne(
+			db.LeaveRequest.SignatureType.Set(signatureType),
+			db.LeaveRequest.Event.Link(
+				db.CalendarEvent.ID.Equals(event.ID),
+			),
+			db.LeaveRequest.Reason.Set(reason),
+			db.LeaveRequest.SignatureText.Set(signatureText),
+			db.LeaveRequest.SignatureImage.Set(signatureImage),
+			db.LeaveRequest.AttachmentImage.Set(attachmentImage),
+		).Exec(ctx)
+		if err != nil {
+			// Rollback event if request creation fails
+			_, _ = g.dbService.Client.CalendarEvent.FindUnique(db.CalendarEvent.ID.Equals(event.ID)).Delete().Exec(ctx)
+			return nil, err
+		}
+
 		// Deduct tokens
 		_, err = g.dbService.Client.TeamMember.FindUnique(
 			db.TeamMember.ID.Equals(authUser.ID),
@@ -282,6 +311,16 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 			db.TokenTransaction.Description.Set("Compensatory Leave Request"),
 			db.TokenTransaction.RelatedDate.Set(date),
 		).Exec(ctx)
+
+		// Fetch event again to return with LeaveRequest relation
+		eventWithRelation, err := g.dbService.Client.CalendarEvent.FindUnique(
+			db.CalendarEvent.ID.Equals(event.ID),
+		).With(
+			db.CalendarEvent.LeaveRequest.Fetch(),
+		).Exec(ctx)
+		if err == nil {
+			return map[string]interface{}{"requestLeave": eventWithRelation}, nil
+		}
 
 		return map[string]interface{}{"requestLeave": event}, nil
 	}
@@ -392,6 +431,47 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		}
 
 		return map[string]interface{}{"redeemTokens": txn}, nil
+	}
+
+	if strings.Contains(queryClean, "adminAddTokens") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		if authUser.Role != "ADMIN" {
+			return nil, errors.New("forbidden: only administrators can add tokens to users")
+		}
+
+		targetUserID, ok1 := vars["userId"].(string)
+		amount, ok2 := vars["amount"].(float64)
+		description, _ := vars["description"].(string)
+
+		if !ok1 || !ok2 {
+			return nil, errors.New("missing variables: userId or amount")
+		}
+		if description == "" {
+			description = "Admin manual token credit"
+		}
+
+		// Award tokens to target user
+		targetUser, err := g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(targetUserID),
+		).Update(
+			db.TeamMember.TokensBalance.Increment(amount),
+		).Exec(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update user tokens: %w", err)
+		}
+
+		// Record token transaction
+		_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+			db.TokenTransaction.UserID.Set(targetUserID),
+			db.TokenTransaction.Type.Set("EARN"),
+			db.TokenTransaction.Amount.Set(amount),
+			db.TokenTransaction.Description.Set(description),
+		).Exec(ctx)
+
+		return map[string]interface{}{"adminAddTokens": targetUser}, nil
 	}
 
 	if strings.Contains(queryClean, "updateMaxOffAllowed") {

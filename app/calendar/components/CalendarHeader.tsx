@@ -9,8 +9,7 @@ interface CalendarHeaderProps {
   role: 'ADMIN' | 'USER';
   tokens: number;
   onRequestLeave: () => void;
-  onExportExcel: () => void;
-  onExportPdf: () => void;
+  onOpenExport?: () => void;
 }
 
 export default function CalendarHeader({
@@ -19,8 +18,7 @@ export default function CalendarHeader({
   role,
   tokens,
   onRequestLeave,
-  onExportExcel,
-  onExportPdf
+  onOpenExport
 }: CalendarHeaderProps) {
   const { t, language } = useTranslation();
   const { user } = useAuth();
@@ -114,16 +112,13 @@ export default function CalendarHeader({
         )}
 
         {user && (
-          <>
-            <button onClick={onExportExcel} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
-              <span className="material-symbols-outlined">download</span>
-              {language === 'th' ? 'ส่งออก Excel' : 'Export Excel'}
-            </button>
-            <button onClick={onExportPdf} className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer">
-              <span className="material-symbols-outlined">print</span>
-              {language === 'th' ? 'ส่งออก PDF' : 'Export PDF'}
-            </button>
-          </>
+          <button
+            onClick={onOpenExport}
+            className="flex items-center gap-2 px-6 py-3 bg-surface-container-low border border-outline-variant text-primary rounded-xl text-base font-semibold hover:bg-surface-container transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined">download</span>
+            {language === 'th' ? 'ส่งออกข้อมูล' : 'Export Report'}
+          </button>
         )}
       </div>
     </section>

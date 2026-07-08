@@ -12,6 +12,7 @@ import { CalendarEvent } from '@/src/libs/calendarData';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
 import LeavesSkeleton from '@/src/components/skeletons/LeavesSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
+import { LeaveDetailsDialog } from '@/src/components/LeaveDetailsDialog';
 
 export default function LeavesClient() {
   const { t, language } = useTranslation();
@@ -20,6 +21,7 @@ export default function LeavesClient() {
   const confirm = useConfirm();
   const [, setTick] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewingLeaveEvent, setViewingLeaveEvent] = useState<CalendarEvent | null>(null);
   const pageSize = 5;
 
   const [controller] = useState<LeavesController>(
@@ -190,7 +192,14 @@ export default function LeavesClient() {
                                 {language === 'th' ? 'อนุมัติแล้ว' : 'Approved'}
                               </span>
                             </td>
-                            <td className="p-4 pr-6 text-right">
+                            <td className="p-4 pr-6 text-right flex justify-end gap-2">
+                              <button
+                                onClick={() => setViewingLeaveEvent(leave)}
+                                className="px-4 py-2 border border-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold hover:bg-zinc-50 transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                {language === 'th' ? 'ดูใบลา' : 'View Document'}
+                              </button>
                               <button
                                 onClick={() => handleCancelLeave(leave)}
                                 className="px-4 py-2 border border-zinc-200 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
@@ -255,6 +264,14 @@ export default function LeavesClient() {
           )}
         </div>
       </main>
+
+      <LeaveDetailsDialog
+        open={!!viewingLeaveEvent}
+        onClose={() => setViewingLeaveEvent(null)}
+        leaveDate={viewingLeaveEvent?.date || ''}
+        userName={viewingLeaveEvent?.userName || ''}
+        leaveRequest={viewingLeaveEvent?.leaveRequest}
+      />
     </div>
     </ErrorBoundary>
   );

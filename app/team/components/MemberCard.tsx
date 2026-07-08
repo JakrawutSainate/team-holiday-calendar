@@ -5,9 +5,11 @@ import { useTranslation } from '@/src/components/LanguageContext';
 
 interface MemberCardProps {
   member: TeamMember;
+  onAddTokens?: () => void;
+  showAdminActions?: boolean;
 }
 
-export default function MemberCard({ member }: MemberCardProps) {
+export default function MemberCard({ member, onAddTokens, showAdminActions }: MemberCardProps) {
   const { t } = useTranslation();
   const isAdmin = member.role === 'ADMIN' || member.role === 'LEAD';
 
@@ -44,9 +46,20 @@ export default function MemberCard({ member }: MemberCardProps) {
           <span className="text-xs text-zinc-400 font-medium">Balance</span>
           <span className="text-sm font-bold text-zinc-900 mt-0.5">{member.tokensBalance} {t('tokens')}</span>
         </div>
-        <button className="p-2 text-zinc-600 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer">
-          <span className="material-symbols-outlined text-base">event_note</span>
-        </button>
+        <div className="flex gap-1.5">
+          {showAdminActions && onAddTokens && (
+            <button
+              onClick={onAddTokens}
+              title="Add Tokens"
+              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-base">add_circle</span>
+            </button>
+          )}
+          <button className="p-2 text-zinc-600 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer flex items-center justify-center">
+            <span className="material-symbols-outlined text-base">event_note</span>
+          </button>
+        </div>
       </div>
     </div>
   );

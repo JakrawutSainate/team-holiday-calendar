@@ -13,6 +13,16 @@ export interface TeamMember {
 
 export type CalendarEventStatus = 'NORMAL' | 'WEEKEND_WORK' | 'COMPENSATORY_OFF' | 'PUBLIC_HOLIDAY' | 'HOLIDAY_WORK';
 
+export interface LeaveRequest {
+  id: string;
+  eventId: string;
+  reason?: string;
+  signatureType: 'DRAW' | 'TEXT';
+  signatureText?: string;
+  signatureImage?: string; // Base64
+  attachmentImage?: string; // Base64
+}
+
 export interface CalendarEvent {
   id: string;
   userId: string;
@@ -20,6 +30,7 @@ export interface CalendarEvent {
   date: string; // YYYY-MM-DD format
   status: CalendarEventStatus;
   details?: string;
+  leaveRequest?: LeaveRequest;
 }
 
 export interface CapacitySetting {
@@ -207,7 +218,7 @@ class CalendarDataService {
     if (this.allEventsFlight) return this.allEventsFlight;
 
     this.allEventsFlight = fetchGraphQL(`
-      query { getEvents { id userId userName date status details } }
+      query { getEvents { id userId userName date status details leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } } }
     `).then(data => {
       const result: CalendarEvent[] = data?.getEvents ?? [];
       this.allEventsCache = { data: result, expiresAt: Date.now() + this.TTL };
@@ -300,10 +311,35 @@ class CalendarDataService {
     return result;
   }
 
-  public async requestLeave(date: string): Promise<unknown> {
+  public async requestLeave(
+    date: string,
+    reason?: string,
+    signatureType?: 'DRAW' | 'TEXT',
+    signatureText?: string,
+    signatureImage?: string,
+    attachmentImage?: string
+  ): Promise<unknown> {
     const result = await fetchGraphQL(`
-      mutation requestLeave($date: String!) { requestLeave(date: $date) { id } }
-    `, { date });
+      mutation requestLeave(
+        $date: String!,
+        $reason: String,
+        $signatureType: String,
+        $signatureText: String,
+        $signatureImage: String,
+        $attachmentImage: String
+      ) {
+        requestLeave(
+          date: $date,
+          reason: $reason,
+          signatureType: $signatureType,
+          signatureText: $signatureText,
+          signatureImage: $signatureImage,
+          attachmentImage: $attachmentImage
+        ) {
+          id
+        }
+      }
+    `, { date, reason, signatureType, signatureText, signatureImage, attachmentImage });
     this.invalidateAll();
     await broadcastCalendarUpdate();
     return result;
@@ -325,6 +361,17 @@ class CalendarDataService {
       }
     `, { maxOffAllowed });
     this.invalidateCapacities();
+    await broadcastCalendarUpdate();
+    return result;
+  }
+
+  public async adminAddTokens(userId: string, amount: number, description?: string): Promise<unknown> {
+    const result = await fetchGraphQL(`
+      mutation adminAddTokens($userId: String!, $amount: Float!, $description: String) {
+        adminAddTokens(userId: $userId, amount: $amount, description: $description) { id tokensBalance }
+      }
+    `, { userId, amount, description });
+    this.invalidateAll();
     await broadcastCalendarUpdate();
     return result;
   }
@@ -358,11 +405,21 @@ export const getDayCapacitySetting = async (dateString: string): Promise<Capacit
 export const claimShiftMutation = (date: string, status: string, details: string): Promise<unknown> =>
   calendarDataService.claimShift(date, status, details);
 
-export const requestLeaveMutation = (date: string): Promise<unknown> =>
-  calendarDataService.requestLeave(date);
+export const requestLeaveMutation = (
+  date: string,
+  reason?: string,
+  signatureType?: 'DRAW' | 'TEXT',
+  signatureText?: string,
+  signatureImage?: string,
+  attachmentImage?: string
+): Promise<unknown> =>
+  calendarDataService.requestLeave(date, reason, signatureType, signatureText, signatureImage, attachmentImage);
 
 export const cancelLeaveMutation = (id: string): Promise<unknown> =>
   calendarDataService.cancelLeave(id);
 
 export const updateMaxOffAllowedMutation = (maxOffAllowed: number): Promise<unknown> =>
   calendarDataService.updateMaxOffAllowed(maxOffAllowed);
+
+export const adminAddTokensMutation = (userId: string, amount: number, description?: string): Promise<unknown> =>
+  calendarDataService.adminAddTokens(userId, amount, description);

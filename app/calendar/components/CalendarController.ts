@@ -149,7 +149,14 @@ export class CalendarController {
     }
   }
 
-  public async requestLeave(dateString: string): Promise<void> {
+  public async requestLeave(
+    dateString: string,
+    reason?: string,
+    signatureType?: 'DRAW' | 'TEXT',
+    signatureText?: string,
+    signatureImage?: string,
+    attachmentImage?: string
+  ): Promise<void> {
     const optimisticId = `optimistic-${Date.now()}`;
     const prevEvents = this.events;
     const prevTokens = this.tokens;
@@ -161,13 +168,13 @@ export class CalendarController {
       userName: this.userName || 'You',
       date: dateString,
       status: 'COMPENSATORY_OFF' as const,
-      details: 'Leave request (pending)',
+      details: reason || 'Leave request (pending)',
     }];
     this.tokens = Math.max(0, this.tokens - 1);
     this.updateCallback();
 
     try {
-      await requestLeaveMutation(dateString);
+      await requestLeaveMutation(dateString, reason, signatureType, signatureText, signatureImage, attachmentImage);
       await this.loadState();
     } catch (e) {
       // Rollback on error
