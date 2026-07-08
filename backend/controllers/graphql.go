@@ -13,7 +13,7 @@ import (
 )
 
 // getLeaveTokenCost returns 1.0 tokens for all days.
-func getLeaveTokenCost(dateStr string) float64 {
+func getLeaveTokenCost(_ string) float64 {
 	return 1.0
 }
 
@@ -509,5 +509,393 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return map[string]interface{}{"updateMaxOffAllowed": setting}, nil
 	}
 
+	if strings.Contains(queryClean, "updateProfileSignature") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		var signature *string
+		if sigVal, exists := vars["signature"]; exists && sigVal != nil {
+			if sigStr, ok := sigVal.(string); ok {
+				signature = &sigStr
+			}
+		}
+
+		var user *db.TeamMemberModel
+		if signature == nil {
+			user, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(authUser.ID),
+			).Update(
+				db.TeamMember.SavedSignature.SetOptional(nil),
+			).Exec(ctx)
+		} else {
+			user, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(authUser.ID),
+			).Update(
+				db.TeamMember.SavedSignature.Set(*signature),
+			).Exec(ctx)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"updateProfileSignature": user}, nil
+	}
+
+	// ─── LEAVE DOCUMENT CRUD RESOLVERS ──────────────────────────────────────────
+
+	if strings.Contains(queryClean, "getLeaveDocuments") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		var docs []db.LeaveDocumentModel
+		if authUser.Role == "ADMIN" {
+			docs, err = g.dbService.Client.LeaveDocument.FindMany().OrderBy(
+				db.LeaveDocument.CreatedAt.Order(db.DESC),
+			).Exec(ctx)
+		} else {
+			docs, err = g.dbService.Client.LeaveDocument.FindMany(
+				db.LeaveDocument.Or(
+					db.LeaveDocument.UserID.Equals(authUser.ID),
+					db.LeaveDocument.Status.Equals("APPROVED"),
+				),
+			).OrderBy(
+				db.LeaveDocument.CreatedAt.Order(db.DESC),
+			).Exec(ctx)
+		}
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"getLeaveDocuments": docs}, nil
+	}
+
+	if strings.Contains(queryClean, "createLeaveDocument") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		leaveDate, ok1 := vars["leaveDate"].(string)
+		leaveType, ok2 := vars["leaveType"].(string)
+		reason, ok3 := vars["reason"].(string)
+		signature, ok4 := vars["signature"].(string)
+		attachment, _ := vars["attachment"].(string)
+
+		if !ok1 || !ok2 || !ok3 || !ok4 {
+			return nil, errors.New("missing variables: leaveDate, leaveType, reason, or signature")
+		}
+
+		var attachmentOpt *string
+		if attachment != "" {
+			attachmentOpt = &attachment
+		}
+
+		var doc *db.LeaveDocumentModel
+		if attachmentOpt == nil {
+			doc, err = g.dbService.Client.LeaveDocument.CreateOne(
+				db.LeaveDocument.UserID.Set(authUser.ID),
+				db.LeaveDocument.UserName.Set(authUser.Name),
+				db.LeaveDocument.Department.Set(authUser.Department),
+				db.LeaveDocument.Title.Set(authUser.Title),
+				db.LeaveDocument.LeaveDate.Set(leaveDate),
+				db.LeaveDocument.LeaveType.Set(leaveType),
+				db.LeaveDocument.Reason.Set(reason),
+				db.LeaveDocument.Signature.Set(signature),
+				db.LeaveDocument.Status.Set("PENDING"),
+			).Exec(ctx)
+		} else {
+			doc, err = g.dbService.Client.LeaveDocument.CreateOne(
+				db.LeaveDocument.UserID.Set(authUser.ID),
+				db.LeaveDocument.UserName.Set(authUser.Name),
+				db.LeaveDocument.Department.Set(authUser.Department),
+				db.LeaveDocument.Title.Set(authUser.Title),
+				db.LeaveDocument.LeaveDate.Set(leaveDate),
+				db.LeaveDocument.LeaveType.Set(leaveType),
+				db.LeaveDocument.Reason.Set(reason),
+				db.LeaveDocument.Signature.Set(signature),
+				db.LeaveDocument.Status.Set("PENDING"),
+				db.LeaveDocument.Attachment.Set(*attachmentOpt),
+			).Exec(ctx)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"createLeaveDocument": doc}, nil
+	}
+
+	if strings.Contains(queryClean, "approveLeaveDocument") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		if authUser.Role != "ADMIN" {
+			return nil, errors.New("forbidden: only administrators can approve leave documents")
+		}
+
+		id, ok := vars["id"].(string)
+		if !ok {
+			return nil, errors.New("missing variables: id")
+		}
+
+		doc, err := g.dbService.Client.LeaveDocument.FindUnique(
+			db.LeaveDocument.ID.Equals(id),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if doc.Status != "PENDING" {
+			return nil, errors.New("leave document is already processed")
+		}
+
+		// 1. Quota check & deduction
+		switch doc.LeaveType {
+		case "COMPENSATORY":
+			applicant, err := g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if applicant.TokensBalance < 1.0 {
+				return nil, errors.New("insufficient tokens: the applicant does not have enough tokens")
+			}
+
+			_, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Update(
+				db.TeamMember.TokensBalance.Decrement(1.0),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+				db.TokenTransaction.UserID.Set(doc.UserID),
+				db.TokenTransaction.Type.Set("SPEND"),
+				db.TokenTransaction.Amount.Set(1.0),
+				db.TokenTransaction.Description.Set(fmt.Sprintf("Compensatory Leave (Approved: %s)", doc.ID)),
+				db.TokenTransaction.RelatedDate.Set(doc.LeaveDate),
+			).Exec(ctx)
+		case "SICK":
+			applicant, err := g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if applicant.SickLeaveBalance < 1 {
+				return nil, errors.New("insufficient sick leave quota: the applicant does not have enough sick leave balance")
+			}
+
+			_, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Update(
+				db.TeamMember.SickLeaveBalance.Decrement(1),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+		case "ANNUAL":
+			applicant, err := g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if applicant.AnnualLeaveBalance < 1 {
+				return nil, errors.New("insufficient annual leave quota: the applicant does not have enough annual leave balance")
+			}
+
+			_, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(doc.UserID),
+			).Update(
+				db.TeamMember.AnnualLeaveBalance.Decrement(1),
+			).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// 2. Create calendar event
+		eventStatus := "NORMAL"
+		if doc.LeaveType == "COMPENSATORY" {
+			eventStatus = "COMPENSATORY_OFF"
+		}
+		typeLabel := "Compensatory Off"
+		switch doc.LeaveType {
+		case "SICK":
+			typeLabel = "Sick Leave"
+		case "CASUAL":
+			typeLabel = "Casual Leave"
+		case "ANNUAL":
+			typeLabel = "Annual Leave"
+		}
+
+		_, err = g.dbService.Client.CalendarEvent.CreateOne(
+			db.CalendarEvent.UserID.Set(doc.UserID),
+			db.CalendarEvent.UserName.Set(doc.UserName),
+			db.CalendarEvent.Date.Set(doc.LeaveDate),
+			db.CalendarEvent.Status.Set(eventStatus),
+			db.CalendarEvent.Details.Set(fmt.Sprintf("%s: %s", typeLabel, doc.Reason)),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// 3. Update document status
+		updatedDoc, err := g.dbService.Client.LeaveDocument.FindUnique(
+			db.LeaveDocument.ID.Equals(id),
+		).Update(
+			db.LeaveDocument.Status.Set("APPROVED"),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"approveLeaveDocument": updatedDoc}, nil
+	}
+
+	if strings.Contains(queryClean, "rejectLeaveDocument") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		if authUser.Role != "ADMIN" {
+			return nil, errors.New("forbidden: only administrators can reject leave documents")
+		}
+
+		id, ok := vars["id"].(string)
+		rejectReason, _ := vars["rejectReason"].(string)
+		if !ok {
+			return nil, errors.New("missing variables: id")
+		}
+
+		doc, err := g.dbService.Client.LeaveDocument.FindUnique(
+			db.LeaveDocument.ID.Equals(id),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if doc.Status != "PENDING" {
+			return nil, errors.New("leave document is already processed")
+		}
+
+		var rejectReasonOpt *string
+		if rejectReason != "" {
+			rejectReasonOpt = &rejectReason
+		}
+
+		var updatedDoc *db.LeaveDocumentModel
+		if rejectReasonOpt == nil {
+			updatedDoc, err = g.dbService.Client.LeaveDocument.FindUnique(
+				db.LeaveDocument.ID.Equals(id),
+			).Update(
+				db.LeaveDocument.Status.Set("REJECTED"),
+				db.LeaveDocument.RejectReason.SetOptional(nil),
+			).Exec(ctx)
+		} else {
+			updatedDoc, err = g.dbService.Client.LeaveDocument.FindUnique(
+				db.LeaveDocument.ID.Equals(id),
+			).Update(
+				db.LeaveDocument.Status.Set("REJECTED"),
+				db.LeaveDocument.RejectReason.Set(*rejectReasonOpt),
+			).Exec(ctx)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"rejectLeaveDocument": updatedDoc}, nil
+	}
+
+	if strings.Contains(queryClean, "deleteLeaveDocument") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		id, ok := vars["id"].(string)
+		if !ok {
+			return nil, errors.New("missing variables: id")
+		}
+
+		doc, err := g.dbService.Client.LeaveDocument.FindUnique(
+			db.LeaveDocument.ID.Equals(id),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if authUser.Role != "ADMIN" && doc.UserID != authUser.ID {
+			return nil, errors.New("forbidden: you cannot delete this leave document")
+		}
+		if authUser.Role != "ADMIN" && doc.Status != "PENDING" {
+			return nil, errors.New("forbidden: you can only delete pending leave documents")
+		}
+
+		// Refund and remove events if approved
+		if doc.Status == "APPROVED" {
+			eventStatus := "NORMAL"
+			if doc.LeaveType == "COMPENSATORY" {
+				eventStatus = "COMPENSATORY_OFF"
+			}
+
+			// Find and delete calendar event
+			events, err := g.dbService.Client.CalendarEvent.FindMany(
+				db.CalendarEvent.UserID.Equals(doc.UserID),
+				db.CalendarEvent.Date.Equals(doc.LeaveDate),
+				db.CalendarEvent.Status.Equals(eventStatus),
+			).Take(1).Exec(ctx)
+			if err == nil && len(events) > 0 {
+				_, _ = g.dbService.Client.CalendarEvent.FindUnique(
+					db.CalendarEvent.ID.Equals(events[0].ID),
+				).Delete().Exec(ctx)
+			}
+
+			switch doc.LeaveType {
+			case "COMPENSATORY":
+				_, _ = g.dbService.Client.TeamMember.FindUnique(
+					db.TeamMember.ID.Equals(doc.UserID),
+				).Update(
+					db.TeamMember.TokensBalance.Increment(1.0),
+				).Exec(ctx)
+
+				_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+					db.TokenTransaction.UserID.Set(doc.UserID),
+					db.TokenTransaction.Type.Set("EARN"),
+					db.TokenTransaction.Amount.Set(1.0),
+					db.TokenTransaction.Description.Set("Leave Document Deletion Refund"),
+					db.TokenTransaction.RelatedDate.Set(doc.LeaveDate),
+				).Exec(ctx)
+			case "SICK":
+				_, _ = g.dbService.Client.TeamMember.FindUnique(
+					db.TeamMember.ID.Equals(doc.UserID),
+				).Update(
+					db.TeamMember.SickLeaveBalance.Increment(1),
+				).Exec(ctx)
+			case "ANNUAL":
+				_, _ = g.dbService.Client.TeamMember.FindUnique(
+					db.TeamMember.ID.Equals(doc.UserID),
+				).Update(
+					db.TeamMember.AnnualLeaveBalance.Increment(1),
+				).Exec(ctx)
+			}
+		}
+
+		_, err = g.dbService.Client.LeaveDocument.FindUnique(
+			db.LeaveDocument.ID.Equals(id),
+		).Delete().Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{"deleteLeaveDocument": true}, nil
+	}
+
 	return nil, fmt.Errorf("unsupported GraphQL operation")
 }
+

@@ -36,6 +36,7 @@ export async function resolveGraphQL(
       select: {
         id: true, name: true, email: true, role: true,
         avatarUrl: true, department: true, title: true, tokensBalance: true,
+        savedSignature: true, sickLeaveBalance: true, annualLeaveBalance: true,
       },
     });
     return { getTeamMembers: members };
@@ -222,6 +223,229 @@ export async function resolveGraphQL(
     });
 
     return { adminAddTokens: targetUser };
+  }
+
+  if (q.includes('updateProfileSignature')) {
+    const authUser = await requireAuth();
+    const signature = variables.signature as string | null;
+    const user = await prisma.teamMember.update({
+      where: { id: authUser.id },
+      data: { savedSignature: signature }
+    });
+    return { updateProfileSignature: user };
+  }
+
+  // ─── LEAVE DOCUMENT CRUD RESOLVERS ──────────────────────────────────────────
+
+  if (q.includes('getLeaveDocuments')) {
+    const authUser = await requireAuth();
+    let docs;
+    if (authUser.role === 'ADMIN') {
+      docs = await prisma.leaveDocument.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+    } else {
+      docs = await prisma.leaveDocument.findMany({
+        where: { userId: authUser.id },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+    return { getLeaveDocuments: docs };
+  }
+
+  if (q.includes('createLeaveDocument')) {
+    const authUser = await requireAuth();
+    const leaveDate = variables.leaveDate as string;
+    const leaveType = variables.leaveType as string;
+    const reason = variables.reason as string;
+    const signature = variables.signature as string;
+    const attachment = variables.attachment as string | null;
+
+    if (!leaveDate || !leaveType || !reason || !signature) {
+      throw new Error('missing variables: leaveDate, leaveType, reason, or signature');
+    }
+
+    const doc = await prisma.leaveDocument.create({
+      data: {
+        userId: authUser.id,
+        userName: authUser.name,
+        department: authUser.department,
+        title: authUser.title,
+        leaveDate,
+        leaveType,
+        reason,
+        signature,
+        attachment,
+        status: 'PENDING'
+      }
+    });
+
+    return { createLeaveDocument: doc };
+  }
+
+  if (q.includes('approveLeaveDocument')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') {
+      throw new Error('forbidden: only administrators can approve leave documents');
+    }
+
+    const id = variables.id as string;
+    if (!id) throw new Error('missing variables: id');
+
+    const doc = await prisma.leaveDocument.findUnique({ where: { id } });
+    if (!doc) throw new Error('leave document not found');
+    if (doc.status !== 'PENDING') throw new Error('leave document is already processed');
+
+    // 1. Quota check & deduction
+    if (doc.leaveType === 'COMPENSATORY') {
+      const applicant = await prisma.teamMember.findUnique({ where: { id: doc.userId } });
+      if (!applicant) throw new Error('applicant member not found');
+      if (applicant.tokensBalance < 1.0) {
+        throw new Error('insufficient tokens: the applicant does not have enough tokens');
+      }
+
+      await prisma.teamMember.update({
+        where: { id: doc.userId },
+        data: { tokensBalance: { decrement: 1.0 } }
+      });
+
+      await prisma.tokenTransaction.create({
+        data: {
+          userId: doc.userId,
+          type: 'SPEND',
+          amount: 1.0,
+          description: `Compensatory Leave (Approved: ${doc.id})`,
+          relatedDate: doc.leaveDate
+        }
+      });
+    } else if (doc.leaveType === 'SICK') {
+      const applicant = await prisma.teamMember.findUnique({ where: { id: doc.userId } });
+      if (!applicant) throw new Error('applicant member not found');
+      if (applicant.sickLeaveBalance < 1) {
+        throw new Error('insufficient sick leave quota: the applicant does not have enough sick leave balance');
+      }
+      await prisma.teamMember.update({
+        where: { id: doc.userId },
+        data: { sickLeaveBalance: { decrement: 1 } }
+      });
+    } else if (doc.leaveType === 'ANNUAL') {
+      const applicant = await prisma.teamMember.findUnique({ where: { id: doc.userId } });
+      if (!applicant) throw new Error('applicant member not found');
+      if (applicant.annualLeaveBalance < 1) {
+        throw new Error('insufficient annual leave quota: the applicant does not have enough annual leave balance');
+      }
+      await prisma.teamMember.update({
+        where: { id: doc.userId },
+        data: { annualLeaveBalance: { decrement: 1 } }
+      });
+    }
+
+    // 2. Create calendar event
+    const eventStatus = doc.leaveType === 'COMPENSATORY' ? 'COMPENSATORY_OFF' : 'NORMAL';
+    const typeLabel = doc.leaveType === 'SICK' ? 'Sick Leave' : doc.leaveType === 'CASUAL' ? 'Casual Leave' : doc.leaveType === 'ANNUAL' ? 'Annual Leave' : 'Compensatory Off';
+
+    await prisma.calendarEvent.create({
+      data: {
+        userId: doc.userId,
+        userName: doc.userName,
+        date: doc.leaveDate,
+        status: eventStatus,
+        details: `${typeLabel}: ${doc.reason}`
+      }
+    });
+
+    // 3. Update document status
+    const updatedDoc = await prisma.leaveDocument.update({
+      where: { id },
+      data: { status: 'APPROVED' }
+    });
+
+    return { approveLeaveDocument: updatedDoc };
+  }
+
+  if (q.includes('rejectLeaveDocument')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') {
+      throw new Error('forbidden: only administrators can reject leave documents');
+    }
+
+    const id = variables.id as string;
+    const rejectReason = variables.rejectReason as string | null;
+    if (!id) throw new Error('missing variables: id');
+
+    const doc = await prisma.leaveDocument.findUnique({ where: { id } });
+    if (!doc) throw new Error('leave document not found');
+    if (doc.status !== 'PENDING') throw new Error('leave document is already processed');
+
+    const updatedDoc = await prisma.leaveDocument.update({
+      where: { id },
+      data: {
+        status: 'REJECTED',
+        rejectReason: rejectReason || null
+      }
+    });
+
+    return { rejectLeaveDocument: updatedDoc };
+  }
+
+  if (q.includes('deleteLeaveDocument')) {
+    const authUser = await requireAuth();
+    const id = variables.id as string;
+    if (!id) throw new Error('missing variables: id');
+
+    const doc = await prisma.leaveDocument.findUnique({ where: { id } });
+    if (!doc) throw new Error('leave document not found');
+
+    if (authUser.role !== 'ADMIN' && doc.userId !== authUser.id) {
+      throw new Error('forbidden: you cannot delete this leave document');
+    }
+    if (authUser.role !== 'ADMIN' && doc.status !== 'PENDING') {
+      throw new Error('forbidden: you can only delete pending leave documents');
+    }
+
+    // Refund and remove events if approved
+    if (doc.status === 'APPROVED') {
+      const eventStatus = doc.leaveType === 'COMPENSATORY' ? 'COMPENSATORY_OFF' : 'NORMAL';
+      const event = await prisma.calendarEvent.findFirst({
+        where: {
+          userId: doc.userId,
+          date: doc.leaveDate,
+          status: eventStatus
+        }
+      });
+      if (event) {
+        await prisma.calendarEvent.delete({ where: { id: event.id } });
+      }
+
+      if (doc.leaveType === 'COMPENSATORY') {
+        await prisma.teamMember.update({
+          where: { id: doc.userId },
+          data: { tokensBalance: { increment: 1.0 } }
+        });
+        await prisma.tokenTransaction.create({
+          data: {
+            userId: doc.userId,
+            type: 'EARN',
+            amount: 1.0,
+            description: `Leave Document Deletion Refund`,
+            relatedDate: doc.leaveDate
+          }
+        });
+      } else if (doc.leaveType === 'SICK') {
+        await prisma.teamMember.update({
+          where: { id: doc.userId },
+          data: { sickLeaveBalance: { increment: 1 } }
+        });
+      } else if (doc.leaveType === 'ANNUAL') {
+        await prisma.teamMember.update({
+          where: { id: doc.userId },
+          data: { annualLeaveBalance: { increment: 1 } }
+        });
+      }
+    }
+
+    await prisma.leaveDocument.delete({ where: { id } });
+    return { deleteLeaveDocument: true };
   }
 
   throw new Error('unsupported GraphQL operation');

@@ -3,6 +3,7 @@ import {
   CapacitySetting,
   getTeamMembers,
   getCalendarEvents,
+  getLeaveDocuments,
   getAllCapacitySettings,
   resolveCapacity,
   claimShiftMutation,
@@ -15,6 +16,7 @@ import { CalendarGridCell } from '../types';
 export class CalendarController {
   private events: CalendarEvent[] = [];
   private members: TeamMember[] = [];
+  private leaveDocuments: any[] = [];
   private capacities: Record<string, CapacitySetting> = {};
   private gridCells: CalendarGridCell[] = [];
   private tokens: number = 0;
@@ -44,11 +46,13 @@ export class CalendarController {
   // Getters
   public getEvents(): CalendarEvent[] { return this.events; }
   public getMembers(): TeamMember[] { return this.members; }
+  public getLeaveDocuments(): any[] { return this.leaveDocuments; }
   public getCapacities(): Record<string, CapacitySetting> { return this.capacities; }
   public getGridCells(): CalendarGridCell[] { return this.gridCells; }
   public getTokens(): number { return Math.floor(this.tokens); }
   public getCapacityLimit(): number { return this.capacityLimit; }
   public isLoading(): boolean { return this.loading; }
+
 
   private buildGridCells(): CalendarGridCell[] {
     const cells: CalendarGridCell[] = [];
@@ -86,10 +90,11 @@ export class CalendarController {
     this.updateCallback();
 
     try {
-      const [members, events, allSettings] = await Promise.all([
+      const [members, events, allSettings, leaveDocs] = await Promise.all([
         getTeamMembers(),
         getCalendarEvents(this.year, this.month),
         getAllCapacitySettings(),
+        getLeaveDocuments(),
       ]);
 
       // Build grid cells after data loads so calendar + events appear together
@@ -99,6 +104,7 @@ export class CalendarController {
       this.tokens = currentUser?.tokensBalance ?? 0;
       this.events = events;
       this.members = members;
+      this.leaveDocuments = leaveDocs;
 
       const resolved: Record<string, CapacitySetting> = {};
       for (const cell of this.gridCells) {

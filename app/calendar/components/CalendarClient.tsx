@@ -243,6 +243,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
                     isMuted={cell.isMuted}
                     dateString={cell.dateString}
                     events={controller.getEvents().filter((e) => e.date === cell.dateString)}
+                    leaveDocuments={controller.getLeaveDocuments().filter((d) => d.leaveDate === cell.dateString)}
                     capacity={
                       controller.getCapacities()[cell.dateString] || { id: 'default', maxOffAllowed: 2 }
                     }

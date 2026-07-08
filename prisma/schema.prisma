@@ -7,15 +7,18 @@ datasource db {
 }
 
 model TeamMember {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  role          String
-  passwordHash  String   @default("")
-  avatarUrl     String?
-  department    String
-  title         String
-  tokensBalance Float    @default(0.0)
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  role               String
+  passwordHash       String   @default("")
+  avatarUrl          String?
+  department         String
+  title              String
+  tokensBalance      Float    @default(0.0)
+  savedSignature     String?  // Base64 image data
+  sickLeaveBalance   Int      @default(30)
+  annualLeaveBalance Int      @default(6)
 }
 
 model CalendarEvent {
@@ -62,4 +65,25 @@ model CapacitySetting {
   dayOfWeek     Int?
   maxOffAllowed Int
   description   String?
+}
+
+model LeaveDocument {
+  id           String   @id @default(uuid())
+  userId       String
+  userName     String
+  department   String
+  title        String
+  leaveDate    String   // YYYY-MM-DD
+  leaveType    String   // SICK, CASUAL, ANNUAL, COMPENSATORY
+  reason       String
+  signature    String   // Base64 image data
+  status       String   // PENDING, APPROVED, REJECTED
+  attachment   String?  // Base64 encoded image
+  rejectReason String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([leaveDate])
+  @@index([status])
 }

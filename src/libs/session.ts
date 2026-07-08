@@ -10,6 +10,9 @@ export interface SessionData {
     department: string;
     title: string;
     tokensBalance: number;
+    savedSignature?: string | null;
+    sickLeaveBalance?: number;
+    annualLeaveBalance?: number;
   } | null;
   token: string | null;
 }

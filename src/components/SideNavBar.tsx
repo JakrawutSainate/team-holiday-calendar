@@ -11,8 +11,9 @@ import { useConfirm } from './ConfirmDialog';
 export default function SideNavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { role } = useRole();
+
   const { user, logout, openLogin } = useAuth();
   const confirm = useConfirm();
 
@@ -20,10 +21,12 @@ export default function SideNavBar() {
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
     { name: t('calendar'), href: '/calendar', icon: 'calendar_month' },
     { name: t('myLeaves'), href: '/leaves', icon: 'event_busy' },
+    { name: language === 'th' ? 'เอกสารใบลางาน' : 'Leave Documents', href: '/leave-documents', icon: 'description' },
     { name: t('balance'), href: '/balance', icon: 'account_balance_wallet' },
     { name: t('team'), href: '/team', icon: 'group' },
     { name: t('settings'), href: '/settings', icon: 'settings' },
   ];
+
 
   // Filter items based on login status and role
   const filteredItems = navItems.filter((item) => {

@@ -62,6 +62,9 @@ export async function loginAction(emailInput: string, passwordInput: string) {
           department: data.user.department,
           title: data.user.title,
           tokensBalance: data.user.tokensBalance,
+          savedSignature: data.user.savedSignature ?? null,
+          sickLeaveBalance: data.user.sickLeaveBalance ?? 30,
+          annualLeaveBalance: data.user.annualLeaveBalance ?? 6,
         };
         await session.save();
         return { success: true, user: session.user };
@@ -89,6 +92,9 @@ export async function loginAction(emailInput: string, passwordInput: string) {
       department: user.department,
       title: user.title,
       tokensBalance: user.tokensBalance,
+      savedSignature: user.savedSignature ?? null,
+      sickLeaveBalance: user.sickLeaveBalance ?? 30,
+      annualLeaveBalance: user.annualLeaveBalance ?? 6,
     };
     await session.save();
 

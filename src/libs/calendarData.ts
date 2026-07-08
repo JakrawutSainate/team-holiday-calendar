@@ -268,6 +268,27 @@ class CalendarDataService {
     return [...dbEvents, ...holidayEvents];
   }
 
+  public async getLeaveDocuments(): Promise<any[]> {
+    const result = await fetchGraphQL(`
+      query {
+        getLeaveDocuments {
+          id
+          userId
+          userName
+          department
+          title
+          leaveDate
+          leaveType
+          reason
+          signature
+          status
+          createdAt
+        }
+      }
+    `);
+    return result?.getLeaveDocuments ?? [];
+  }
+
   public async getAllCapacitySettings(): Promise<CapacitySetting[]> {
     if (this.isFresh(this.capacityCache)) return this.capacityCache.data;
     if (this.capacityFlight) return this.capacityFlight;
@@ -390,6 +411,9 @@ export const getTeamMembers = (): Promise<TeamMember[]> =>
 
 export const getCalendarEvents = (year: number, month: number): Promise<CalendarEvent[]> =>
   calendarDataService.getCalendarEvents(year, month);
+
+export const getLeaveDocuments = (): Promise<any[]> =>
+  calendarDataService.getLeaveDocuments();
 
 export const getAllCapacitySettings = (): Promise<CapacitySetting[]> =>
   calendarDataService.getAllCapacitySettings();

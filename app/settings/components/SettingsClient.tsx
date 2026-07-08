@@ -5,14 +5,16 @@ import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
 import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { saveProfileSettings, saveWorkspaceSettings } from '../actions';
+import { saveProfileSettings, saveWorkspaceSettings, saveSignatureAction } from '../actions';
 import { SettingsController } from './SettingsController';
 import SettingsSkeleton from '@/src/components/skeletons/SettingsSkeleton';
+import SignatureCanvas from '@/src/components/SignatureCanvas';
 
 export default function SettingsClient() {
   const { t } = useTranslation();
   const { role } = useRole();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [newSignature, setNewSignature] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new SettingsController(() => setTick((tick) => tick + 1)));
@@ -125,6 +127,78 @@ export default function SettingsClient() {
                   />
                 </div>
               </div>
+
+              {/* Saved Signature Section */}
+              <div className="border-t border-zinc-100 pt-6 space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900">Saved Signature (ลายเซ็นที่บันทึกไว้)</h4>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    ใช้ลายเซ็นนี้สำหรับลงนามคำขอลาอัตโนมัติ เพื่อความสะดวกในการยื่นเอกสาร
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <div>
+                    <label className="text-xs font-semibold text-zinc-400 block mb-2">
+                      ลายเซ็นปัจจุบัน (Current Signature)
+                    </label>
+                    <div className="h-36 bg-zinc-50 border border-zinc-200/60 rounded-xl flex items-center justify-center overflow-hidden">
+                      {user?.savedSignature ? (
+                        <img
+                          src={user.savedSignature}
+                          alt="Saved Signature"
+                          className="max-h-full max-w-full object-contain filter invert"
+                        />
+                      ) : (
+                        <span className="text-sm text-zinc-400 font-medium">ยังไม่มีลายเซ็นที่บันทึก (No saved signature)</span>
+                      )}
+                    </div>
+                    {user?.savedSignature && (
+                      <button
+                        onClick={async () => {
+                          const res = await saveSignatureAction(null);
+                          if (res.success) {
+                            await refreshUser();
+                          } else {
+                            alert(res.error);
+                          }
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 font-bold mt-2 flex items-center gap-1 cursor-pointer bg-transparent border-0 outline-none"
+                      >
+                        <span className="material-symbols-outlined text-xs">delete</span> ลบลายเซ็นที่บันทึกไว้
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-xs font-semibold text-zinc-400 block">
+                      วาดลายเซ็นใหม่ (Draw New Signature)
+                    </label>
+                    <div className="border border-dashed border-zinc-200 rounded-xl overflow-hidden bg-white">
+                      <SignatureCanvas onChange={(dataUrl) => setNewSignature(dataUrl)} />
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!newSignature) {
+                          alert('กรุณาวาดลายเซ็นก่อนกดบันทึก');
+                          return;
+                        }
+                        const res = await saveSignatureAction(newSignature);
+                        if (res.success) {
+                          await refreshUser();
+                          alert('บันทึกลายเซ็นเรียบร้อยแล้ว!');
+                        } else {
+                          alert(res.error);
+                        }
+                      }}
+                      className="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-2.5 rounded-lg text-xs font-semibold tracking-wider transition-colors cursor-pointer border-0 outline-none"
+                    >
+                      บันทึกลายเซ็นใหม่ (Save New Signature)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
