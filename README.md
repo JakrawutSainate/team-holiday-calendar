@@ -33,11 +33,13 @@
 ## 🛠️ โครงสร้างสถาปัตยกรรม (Architecture Stack)
 
 ### หน้าบ้าน (Frontend)
+
 - **Framework:** Next.js 16 (App Router) & React 19
 - **CSS / Theme:** Tailwind CSS 4 & HeroUI
 - **Language:** ระบบเลือกสลับภาษา ไทย / อังกฤษ (i18n)
 
 ### หลังบ้าน (Backend - Go API)
+
 - **Framework:** Go (Standard Library `net/http`) ออกแบบตามโครงสร้าง **OOP** และ **MVC**
 - **Database ORM:** SQLite ร่วมกับ **Prisma Client Go** (`prisma-client-go`)
 - **API Spec:** Expose บริการในรูปแบบ **GraphQL** และมีระบบ **Health Endpoint** ในตัว
@@ -47,6 +49,7 @@
 ## 🔌 รายการ API (Endpoints)
 
 หลังบ้านของ Go จะทำงานอยู่ที่พอร์ต `8080` โดยรองรับบริการดังนี้:
+
 - **`GET /api/health`**: สำหรับตรวจสอบสถานะการทำงานของหลังบ้านและฐานข้อมูล (Health Check)
 - **`POST /api/v1/graphql`**: จุดเชื่อมต่อหลักของ GraphQL สำหรับคิวรีและทำ Mutation เชื่อมหน้าบ้าน
 
@@ -57,12 +60,15 @@
 คุณสามารถเปิดใช้งานทั้งระบบหน้าบ้าน (Next.js) และหลังบ้าน (Go) ได้พร้อมกันผ่านคำสั่งเดียว:
 
 #### 1. เปิดใช้ฐานข้อมูล (Database)
+
 หากใช้ Docker Compose สำหรับฐานข้อมูล ให้รันคำสั่งแยก:
+
 ```bash
 docker-compose up -d db
 ```
 
 #### 2. วิธีการรันหน้าบ้านและหลังบ้านพร้อมกัน (Frontend & Backend)
+
 ```bash
 # ติดตั้ง Library ของโปรเจกต์หลัก (รวมถึง concurrently)
 npm install
@@ -75,14 +81,18 @@ cd ..
 # รันหน้าบ้านและหลังบ้านขึ้นมาพร้อมกัน
 npm run dev
 ```
-* หน้าบ้านรันบน: [http://localhost:3000](http://localhost:3000)
-* หลังบ้านรันบน: [http://localhost:8080](http://localhost:8080)
+
+- หน้าบ้านรันบน: [http://localhost:3000](http://localhost:3000)
+- หลังบ้านรันบน: [http://localhost:8080](http://localhost:8080)
 
 ---
 
 ## 🤖 สคริปต์อัตโนมัติ (Git Auto Push Utility)
+
 เรามีสคริปต์ PowerShell สำหรับรันบน Windows เพื่อบันทึกงานและอัปโหลดขึ้น Git ได้ทันทีในขั้นตอนเดียว:
+
 ```powershell
 .\git-push.ps1
 ```
-*(ทำการรันคำสั่ง `git add .`, สร้าง commit อัตโนมัติ และทำการ `git push` ไปยังรีโพสิทอรีทันที)*
+
+_(ทำการรันคำสั่ง `git add .`, สร้าง commit อัตโนมัติ และทำการ `git push` ไปยังรีโพสิทอรีทันที)_
