@@ -4,8 +4,8 @@ import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
 
-const PROTECTED_ROUTES = ['/overview', '/leaves', '/balance', '/settings'];
-const ADMIN_ONLY_ROUTES = ['/settings'];
+const PROTECTED_ROUTES = ['/overview', '/leaves', '/balance', '/settings', '/master-data'];
+const ADMIN_ONLY_ROUTES = ['/settings', '/master-data/audit-logs'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

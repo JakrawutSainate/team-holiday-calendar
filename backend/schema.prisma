@@ -3,6 +3,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 generator db {
   provider = "go run github.com/steebchen/prisma-client-go"
 }
@@ -88,3 +89,15 @@ model LeaveDocument {
   @@index([leaveDate])
   @@index([status])
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  userName  String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+

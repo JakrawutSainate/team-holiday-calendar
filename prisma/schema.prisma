@@ -87,3 +87,15 @@ model LeaveDocument {
   @@index([leaveDate])
   @@index([status])
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  userName  String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+

@@ -108,7 +108,7 @@ let _backendNotified = false;
 async function fetchGraphQL(query: string, variables: Record<string, unknown> = {}) {
   try {
     const json = await runGraphQLAction(query, variables);
-    if (json.errors && json.errors.length > 0) {
+    if (json && json.errors && json.errors.length > 0) {
       const msg: string = json.errors[0].message;
       if (msg === 'Failed to communicate with backend services.' && typeof window !== 'undefined' && !_backendNotified) {
         _backendNotified = true;
@@ -121,7 +121,7 @@ async function fetchGraphQL(query: string, variables: Record<string, unknown> = 
       _backendNotified = false;
       window.dispatchEvent(new CustomEvent('backend:available'));
     }
-    return json.data;
+    return json?.data;
   } catch (error) {
     console.error('GraphQL Fetch Error:', error);
     return null;

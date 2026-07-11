@@ -448,5 +448,16 @@ export async function resolveGraphQL(
     return { deleteLeaveDocument: true };
   }
 
+  if (q.includes('getAuditLogs')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') {
+      throw new Error('forbidden: only administrators can view audit logs');
+    }
+    const logs = await prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return { getAuditLogs: logs };
+  }
+
   throw new Error('unsupported GraphQL operation');
 }

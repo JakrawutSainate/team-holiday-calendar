@@ -7,6 +7,7 @@ import { useRole } from './RoleContext';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { useConfirm } from './ConfirmDialog';
+import { useState, useEffect } from 'react';
 
 export default function SideNavBar() {
   const pathname = usePathname();
@@ -17,6 +18,15 @@ export default function SideNavBar() {
   const { user, logout, openLogin } = useAuth();
   const confirm = useConfirm();
 
+  const [isMasterDataExpanded, setIsMasterDataExpanded] = useState(false);
+
+  // Automatically expand Master Data if active route is under /master-data
+  useEffect(() => {
+    if (pathname.startsWith('/master-data')) {
+      setIsMasterDataExpanded(true);
+    }
+  }, [pathname]);
+
   const navItems = [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
     { name: t('calendar'), href: '/calendar', icon: 'calendar_month' },
@@ -24,9 +34,19 @@ export default function SideNavBar() {
     { name: language === 'th' ? 'เอกสารใบลางาน' : 'Leave Documents', href: '/leave-documents', icon: 'description' },
     { name: t('balance'), href: '/balance', icon: 'account_balance_wallet' },
     { name: t('team'), href: '/team', icon: 'group' },
+    { name: t('masterData'), href: '/master-data', icon: 'storage' },
     { name: t('settings'), href: '/settings', icon: 'settings' },
   ];
 
+  const masterDataSubItems = [
+    { name: language === 'th' ? 'คลังลายเซ็น' : 'Signature Library', href: '/master-data/signatures', icon: 'draw' },
+    { name: language === 'th' ? 'ข้อมูลผู้ใช้งานและโควตา' : 'User Data & Quotas', href: '/master-data/users', icon: 'badge' },
+    { name: language === 'th' ? 'วันหยุดนักขัตฤกษ์' : 'Public Holidays', href: '/master-data/holidays', icon: 'calendar_today' },
+    { name: language === 'th' ? 'ขีดจำกัดคนลา' : 'Capacity Settings', href: '/master-data/capacities', icon: 'speed' },
+    { name: language === 'th' ? 'แผนกและตำแหน่ง' : 'Departments & Titles', href: '/master-data/departments', icon: 'schema' },
+    { name: language === 'th' ? 'ประเภทการลา' : 'Leave Types', href: '/master-data/leave-types', icon: 'format_list_bulleted' },
+    ...(role === 'ADMIN' ? [{ name: language === 'th' ? 'ประวัติระบบ' : 'Audit Logs', href: '/master-data/audit-logs', icon: 'history' }] : []),
+  ];
 
   // Filter items based on login status and role
   const filteredItems = navItems.filter((item) => {
@@ -39,6 +59,20 @@ export default function SideNavBar() {
       return false;
     }
     return true;
+  });
+
+  // Keep mobile bottom bar to exactly 5 key items to avoid overflow/crowding
+  const mobileFilteredItems = filteredItems.filter((item) => {
+    if (!user) {
+      return item.href === '/calendar' || item.href === '/team';
+    }
+    return (
+      item.href === '/calendar' ||
+      item.href === '/leaves' ||
+      item.href === '/leave-documents' ||
+      item.href === '/balance' ||
+      item.href === '/master-data'
+    );
   });
 
   const handleLogout = async () => {
@@ -69,17 +103,75 @@ export default function SideNavBar() {
           </Link>
         </div>
 
-        <nav className="flex flex-col gap-2 grow">
+        <nav className="flex flex-col gap-1.5 grow">
           {filteredItems.map((item) => {
             const isActive = pathname === item.href;
+
+            if (item.href === '/master-data') {
+              const isMasterActive = pathname.startsWith('/master-data');
+              return (
+                <div key={item.href} className="flex flex-col gap-1">
+                  <div className={`flex items-center justify-between rounded-lg transition-colors ${
+                    isMasterActive ? 'bg-zinc-50 text-zinc-900 font-semibold' : 'text-zinc-500 hover:bg-zinc-50/50'
+                  }`}>
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-2.5 grow text-sm"
+                    >
+                      <span
+                        className="material-symbols-outlined"
+                        style={isMasterActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.name}
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsMasterDataExpanded(!isMasterDataExpanded);
+                      }}
+                      className="p-2.5 text-zinc-400 hover:text-zinc-950 transition-colors flex items-center justify-center cursor-pointer"
+                    >
+                      <span className={`material-symbols-outlined text-lg transition-transform duration-200 ${isMasterDataExpanded ? 'rotate-180' : ''}`}>
+                        keyboard_arrow_down
+                      </span>
+                    </button>
+                  </div>
+                  {isMasterDataExpanded && (
+                    <div className="flex flex-col gap-1 pl-4 ml-6 border-l border-zinc-100 mt-0.5 mb-1.5 animate-slide-down">
+                      {masterDataSubItems.map((subItem) => {
+                        const isSubActive = pathname === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-semibold ${
+                              isSubActive
+                                ? 'text-zinc-900 bg-zinc-100 font-bold'
+                                : 'text-zinc-500 hover:bg-zinc-50/50'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-sm">{subItem.icon}</span>
+                            {subItem.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
                   isActive
                     ? 'text-zinc-900 bg-zinc-100 font-semibold'
-                    : 'text-zinc-500 hover:bg-zinc-50'
+                    : 'text-zinc-500 hover:bg-zinc-50/50'
                 }`}
               >
                 <span
@@ -131,14 +223,14 @@ export default function SideNavBar() {
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100/80 px-4 py-2 flex justify-between items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-        <div className="flex justify-around items-center flex-1 flex-wrap">
-          {filteredItems.map((item) => {
-            const isActive = pathname === item.href;
+        <div className="flex justify-around items-center flex-1">
+          {mobileFilteredItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 py-1 px-2.5 transition-colors ${
+                className={`flex flex-col items-center gap-1 py-1 px-2 transition-colors ${
                   isActive ? 'text-zinc-900 font-semibold' : 'text-zinc-400'
                 }`}
               >
@@ -148,7 +240,7 @@ export default function SideNavBar() {
                 >
                   {item.icon}
                 </span>
-                <span className="text-[10px]">{item.name}</span>
+                <span className="text-[10px] tracking-tight">{item.name}</span>
               </Link>
             );
           })}
@@ -157,18 +249,18 @@ export default function SideNavBar() {
           {user ? (
             <button
               onClick={handleLogout}
-              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400 cursor-pointer"
+              className="flex flex-col items-center gap-1 py-1 px-2 text-zinc-400 cursor-pointer bg-transparent border-0 outline-none"
             >
               <span className="material-symbols-outlined text-2xl">logout</span>
-              <span className="text-[10px]">{t('logout') || 'Sign Out'}</span>
+              <span className="text-[10px] tracking-tight">{t('logout') || 'Sign Out'}</span>
             </button>
           ) : (
             <button
               onClick={openLogin}
-              className="flex flex-col items-center gap-1 py-1 px-2.5 text-zinc-400 cursor-pointer"
+              className="flex flex-col items-center gap-1 py-1 px-2 text-zinc-400 cursor-pointer bg-transparent border-0 outline-none"
             >
               <span className="material-symbols-outlined text-2xl">login</span>
-              <span className="text-[10px]">{t('login') || 'Sign In'}</span>
+              <span className="text-[10px] tracking-tight">{t('login') || 'Sign In'}</span>
             </button>
           )}
         </div>

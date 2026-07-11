@@ -5,6 +5,22 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/src/libs/session';
 import { z } from 'zod';
 import { loginUser, resolveGraphQL } from '@/src/libs/db/resolvers';
+import { prisma } from '@/src/libs/db/prisma';
+
+async function createAuditLog(userId: string, userName: string, action: string, details: string) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        userName,
+        action,
+        details,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to create audit log:', err);
+  }
+}
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required'),
@@ -120,8 +136,14 @@ export async function getCurrentUserAction() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function runGraphQLAction(query: string, variables: Record<string, any> = {}): Promise<any> {
   const session = await getSession();
+  const queryClean = query.trim();
 
-  if (INTERNAL_API_URL) {
+  // 1. Bypass Go backend for new queries not defined in Go
+  const shouldBypassBFF = queryClean.includes('getAuditLogs');
+
+  let result: any = null;
+
+  if (INTERNAL_API_URL && !shouldBypassBFF) {
     try {
       const graphqlUrl = `${INTERNAL_API_URL}/api/v1/graphql`;
       const token = session.token;
@@ -140,11 +162,10 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
       });
 
       if (response.ok) {
-        const data = await response.json();
-        return data;
+        result = await response.json();
       } else {
         const errData = await response.json().catch(() => ({}));
-        return { errors: [{ message: errData.error || 'Backend request failed.' }] };
+        result = { errors: [{ message: errData.error || 'Backend request failed.' }] };
       }
     } catch (error: any) {
       console.warn('BFF Action GraphQL Error (falling back to local Prisma):', error);
@@ -152,11 +173,55 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
     }
   }
 
-  try {
-    const data = await resolveGraphQL(query, variables, session.user?.id);
-    return { data };
-  } catch (error: any) {
-    console.error('GraphQL Action Error:', error);
-    return { errors: [{ message: error.message || 'Failed to communicate with backend services.' }] };
+  if (!result) {
+    try {
+      const data = await resolveGraphQL(query, variables, session.user?.id);
+      result = { data };
+    } catch (error: any) {
+      console.error('GraphQL Action Error:', error);
+      result = { errors: [{ message: error.message || 'Failed to communicate with backend services.' }] };
+    }
   }
+
+  // 2. Intercept and log admin changes if action is successful
+  if (result && !result.errors && session.user) {
+    if (queryClean.includes('updateMaxOffAllowed')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'UPDATE_CAPACITY',
+        `Changed global capacity limit to ${variables.maxOffAllowed} people`
+      );
+    } else if (queryClean.includes('adminAddTokens')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'ADD_TOKENS',
+        `Added ${variables.amount} tokens to user ID ${variables.userId}. Description: ${variables.description || 'N/A'}`
+      );
+    } else if (queryClean.includes('approveLeaveDocument')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'APPROVE_LEAVE',
+        `Approved leave document ID: ${variables.id}`
+      );
+    } else if (queryClean.includes('rejectLeaveDocument')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'REJECT_LEAVE',
+        `Rejected leave document ID: ${variables.id}. Reason: ${variables.rejectReason || 'N/A'}`
+      );
+    } else if (queryClean.includes('deleteLeaveDocument')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'DELETE_DOCUMENT',
+        `Deleted leave document ID: ${variables.id}`
+      );
+    }
+  }
+
+  return result;
 }

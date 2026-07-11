@@ -94,7 +94,7 @@ export class CalendarController {
         getTeamMembers(),
         getCalendarEvents(this.year, this.month),
         getAllCapacitySettings(),
-        getLeaveDocuments(),
+        this.userId ? getLeaveDocuments() : Promise.resolve([]),
       ]);
 
       // Build grid cells after data loads so calendar + events appear together
