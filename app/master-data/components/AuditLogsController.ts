@@ -3,6 +3,8 @@ import { AuditLog } from '../types';
 export class AuditLogsController {
   private logs: AuditLog[] = [];
   private updateCallback: () => void;
+  private startDate: string = '';
+  private endDate: string = '';
 
   constructor(updateCallback: () => void) {
     this.updateCallback = updateCallback;
@@ -12,6 +14,17 @@ export class AuditLogsController {
     return this.logs;
   }
 
+  public setLogs(data: AuditLog[]): void {
+    this.logs = data;
+    this.updateCallback();
+  }
+
+  public setDateRange(start: string, end: string): void {
+    this.startDate = start;
+    this.endDate = end;
+    this.updateCallback();
+  }
+
   public getFilteredLogs(searchQuery: string, selectedAction: string): AuditLog[] {
     const query = searchQuery.toLowerCase().trim();
     return this.logs.filter((log) => {
@@ -19,7 +32,19 @@ export class AuditLogsController {
         log.userName.toLowerCase().includes(query) ||
         log.details.toLowerCase().includes(query);
       const matchesAction = selectedAction === 'ALL' || log.action === selectedAction;
-      return matchesSearch && matchesAction;
+
+      let matchesDate = true;
+      if (this.startDate) {
+        // Log dates are ISO strings. Compare local date or string start
+        const logDate = new Date(log.createdAt).toLocaleDateString('sv-SE');
+        matchesDate = matchesDate && logDate >= this.startDate;
+      }
+      if (this.endDate) {
+        const logDate = new Date(log.createdAt).toLocaleDateString('sv-SE');
+        matchesDate = matchesDate && logDate <= this.endDate;
+      }
+
+      return matchesSearch && matchesAction && matchesDate;
     });
   }
 
@@ -54,9 +79,10 @@ export class AuditLogsController {
 
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
+    const localDateStr = new Date().toLocaleDateString('sv-SE');
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `system_audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `system_audit_logs_${localDateStr}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

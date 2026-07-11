@@ -3,20 +3,23 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { fetchCapacitySettingsAction } from '../actions';
+import { useMasterData } from './MasterDataContext';
 import { CapacitiesController } from './CapacitiesController';
+import { SkeletonHeader, SkeletonTable } from './Skeleton';
 
 export default function CapacitiesClient() {
   const { language } = useTranslation();
+  const { capacitySettings, isLoading, error, refreshData } = useMasterData();
+
   const [, setTick] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new CapacitiesController(() => setTick(t => t + 1)));
 
+  // Sync context settings into controller
   useEffect(() => {
-    controller.loadData(fetchCapacitySettingsAction).finally(() => {
-      setIsLoading(false);
-    });
-  }, [controller]);
+    if (capacitySettings.length > 0) {
+      controller.loadData(() => Promise.resolve(capacitySettings));
+    }
+  }, [capacitySettings, controller]);
 
   const globalDefault = controller.getGlobalDefault();
   const overrides = controller.getOverrides();
@@ -42,23 +45,50 @@ export default function CapacitiesClient() {
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
           {/* Header */}
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
-              {language === 'th' ? 'ขีดจำกัดคนลาและอัตราการเคลมเวร' : 'Capacity Settings & Multipliers'}
-            </h2>
-            <p className="text-zinc-500 mt-2 text-base">
-              {language === 'th'
-                ? 'ขีดจำกัดโควตาการลาหยุดงานสูงสุดต่อวัน และอัตราค่าตอบแทนโทเค็นเมื่อทำงานวันหยุด'
-                : 'Workspace thresholds for maximum concurrent leaves and weekend shift token earn rates.'}
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
+                  {language === 'th' ? 'ขีดจำกัดคนลาและอัตราการเคลมเวร' : 'Capacity Settings & Multipliers'}
+                </h2>
+                <button
+                  onClick={refreshData}
+                  disabled={isLoading}
+                  className="p-1.5 hover:bg-zinc-100 rounded-xl transition-all border-none outline-none cursor-pointer flex items-center justify-center text-zinc-500 hover:text-zinc-900 active:scale-95 disabled:opacity-50"
+                  title={language === 'th' ? 'รีเฟรชข้อมูล' : 'Refresh Data'}
+                >
+                  <span className={`material-symbols-outlined text-xl ${isLoading ? 'animate-spin' : ''}`}>
+                    refresh
+                  </span>
+                </button>
+              </div>
+              <p className="text-zinc-500 mt-2 text-base">
+                {language === 'th'
+                  ? 'ขีดจำกัดโควตาการลาหยุดงานสูงสุดต่อวัน และอัตราค่าตอบแทนโทเค็นเมื่อทำงานวันหยุด'
+                  : 'Workspace thresholds for maximum concurrent leaves and weekend shift token earn rates.'}
+              </p>
+            </div>
           </div>
 
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {error}
+            </div>
+          )}
+
           {isLoading ? (
-            <div className="p-16 flex flex-col justify-center items-center gap-3 text-zinc-400">
-              <span className="animate-spin rounded-full h-8 w-8 border-4 border-zinc-200 border-t-zinc-900"></span>
-              <span className="text-xs font-semibold">
-                {language === 'th' ? 'กำลังโหลดข้อมูลขีดจำกัด...' : 'Loading capacity constraints...'}
-              </span>
+            <div className="space-y-8">
+              <SkeletonHeader />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="h-32 bg-white border border-zinc-100 rounded-2xl animate-pulse"></div>
+                  <div className="h-32 bg-white border border-zinc-100 rounded-2xl animate-pulse"></div>
+                </div>
+                <div className="lg:col-span-2">
+                  <SkeletonTable rows={4} cols={3} />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -161,7 +191,7 @@ export default function CapacitiesClient() {
                                 <span>{ov.maxOffAllowed} {language === 'th' ? 'คน' : 'People'}</span>
                               )}
                             </td>
-                            <td className="p-4 text-xs text-zinc-500 font-medium">
+                            <td className="p-4 text-xs text-zinc-505 font-medium font-semibold leading-relaxed">
                               {ov.description || '-'}
                             </td>
                           </tr>

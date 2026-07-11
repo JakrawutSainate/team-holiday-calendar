@@ -5,27 +5,27 @@ import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
 import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { fetchTeamMembersAction } from '../actions';
+import { useMasterData } from './MasterDataContext';
 import { UserDataController } from './UserDataController';
+import { SkeletonHeader, SkeletonTable } from './Skeleton';
 
 export default function UserDataClient() {
   const { user } = useAuth();
   const { role } = useRole();
   const { language } = useTranslation();
+  const { members, isLoading, error, refreshData } = useMasterData();
 
   const [, setTick] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('ALL');
-  const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new UserDataController(() => setTick(t => t + 1)));
 
+  // Sync context members into controller
   useEffect(() => {
-    if (user?.id) {
-      controller.loadData(fetchTeamMembersAction).finally(() => {
-        setIsLoading(false);
-      });
+    if (members.length > 0) {
+      controller.setMembers(members);
     }
-  }, [user?.id, controller]);
+  }, [members, controller]);
 
   const filteredMembers = controller.getFilteredMembers(searchQuery, selectedDept);
   const currentUserData = controller.getMembers().find((m) => m.id === user?.id) || user;
@@ -43,9 +43,21 @@ export default function UserDataClient() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
-                {language === 'th' ? 'ข้อมูลผู้ใช้งานและโควตาวันลา' : 'User Data & Quotas'}
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
+                  {language === 'th' ? 'ข้อมูลผู้ใช้งานและโควตาวันลา' : 'User Data & Quotas'}
+                </h2>
+                <button
+                  onClick={refreshData}
+                  disabled={isLoading}
+                  className="p-1.5 hover:bg-zinc-100 rounded-xl transition-all border-none outline-none cursor-pointer flex items-center justify-center text-zinc-500 hover:text-zinc-900 active:scale-95 disabled:opacity-50"
+                  title={language === 'th' ? 'รีเฟรชข้อมูล' : 'Refresh Data'}
+                >
+                  <span className={`material-symbols-outlined text-xl ${isLoading ? 'animate-spin' : ''}`}>
+                    refresh
+                  </span>
+                </button>
+              </div>
               <p className="text-zinc-500 mt-2 text-base">
                 {language === 'th'
                   ? 'ตรวจสอบรายละเอียดผู้ใช้ ยอดคงเหลือ และโควตาสิทธิ์วันลาสะสมประเภทต่าง ๆ'
@@ -63,19 +75,25 @@ export default function UserDataClient() {
             )}
           </div>
 
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {error}
+            </div>
+          )}
+
           {isLoading ? (
-            <div className="p-16 flex flex-col justify-center items-center gap-3 text-zinc-400">
-              <span className="animate-spin rounded-full h-8 w-8 border-4 border-zinc-200 border-t-zinc-900"></span>
-              <span className="text-xs font-semibold">
-                {language === 'th' ? 'กำลังดึงรายชื่อผู้ใช้งาน...' : 'Fetching employee directories...'}
-              </span>
+            <div className="space-y-8">
+              <SkeletonHeader />
+              <div className="h-16 bg-white border border-zinc-100 rounded-2xl animate-pulse"></div>
+              <SkeletonTable rows={6} cols={5} />
             </div>
           ) : (
             <>
               {role === 'ADMIN' ? (
                 <div className="space-y-6">
                   {/* Filters Bar */}
-                  <div className="flex flex-col sm:flex-row gap-4 bg-white border border-zinc-100 rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="flex flex-col sm:flex-row gap-4 bg-white border border-zinc-150 rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                     <div className="flex-1 flex items-center gap-3 px-3 py-2 bg-zinc-50/50 border border-zinc-200/60 rounded-xl">
                       <span className="material-symbols-outlined text-zinc-400 text-lg">search</span>
                       <input
@@ -83,7 +101,7 @@ export default function UserDataClient() {
                         placeholder={language === 'th' ? 'ค้นหาตามชื่อ, อีเมล, ตำแหน่ง...' : 'Search by name, email, title...'}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-805 placeholder-zinc-400"
+                        className="bg-transparent border-none outline-none w-full text-xs font-semibold text-zinc-800 placeholder-zinc-400"
                       />
                     </div>
                     <select

@@ -6,23 +6,25 @@ import { useAuth } from '@/src/components/AuthContext';
 import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import Link from 'next/link';
-import { fetchTeamMembersAction, fetchCapacitySettingsAction } from '../actions';
+import { useMasterData } from './MasterDataContext';
 import { MasterDataHubController } from './MasterDataHubController';
+import { SkeletonHeader, SkeletonCardGrid } from './Skeleton';
 
 export default function MasterDataHubClient() {
   const { user } = useAuth();
   const { role } = useRole();
   const { language } = useTranslation();
+  const { members, capacitySettings, isLoading, error, refreshData } = useMasterData();
 
   const [, setTick] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new MasterDataHubController(() => setTick(t => t + 1)));
 
+  // Sync context data to local OOP controller
   useEffect(() => {
-    controller.loadData(fetchTeamMembersAction, fetchCapacitySettingsAction).finally(() => {
-      setIsLoading(false);
-    });
-  }, [controller]);
+    if (members.length > 0 || capacitySettings.length > 0) {
+      controller.setLocalData(members, capacitySettings);
+    }
+  }, [members, capacitySettings, controller]);
 
   const totalMembers = controller.getTotalMembers();
   const membersWithSignature = controller.getMembersWithSignature();
@@ -30,6 +32,7 @@ export default function MasterDataHubClient() {
   const totalHolidays = controller.getTotalHolidays();
   const uniqueDepartments = controller.getUniqueDepartments();
   const capacityLimit = controller.getCapacityLimit();
+  const totalActiveTokens = controller.getTotalActiveTokens();
 
   const categories = [
     {
@@ -135,30 +138,85 @@ export default function MasterDataHubClient() {
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
           {/* Header */}
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
-              {language === 'th' ? 'ข้อมูลหลัก (Master Data)' : 'Master Data Hub'}
-            </h2>
-            <p className="text-zinc-500 mt-2 text-base">
-              {language === 'th'
-                ? 'แดชบอร์ดศูนย์กลางสำหรับข้อมูลพื้นฐาน เกณฑ์การทำงาน ข้อมูลพนักงาน และวันหยุดนักขัตฤกษ์ขององค์กร'
-                : 'Central dashboard for organizational master data, leaves quotas, active members and rules.'}
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
+                  {language === 'th' ? 'ข้อมูลหลัก (Master Data)' : 'Master Data Hub'}
+                </h2>
+                <button
+                  onClick={refreshData}
+                  disabled={isLoading}
+                  className="p-1.5 hover:bg-zinc-100 rounded-xl transition-all border-none outline-none cursor-pointer flex items-center justify-center text-zinc-500 hover:text-zinc-900 active:scale-95 disabled:opacity-50"
+                  title={language === 'th' ? 'รีเฟรชข้อมูล' : 'Refresh Data'}
+                >
+                  <span className={`material-symbols-outlined text-xl ${isLoading ? 'animate-spin' : ''}`}>
+                    refresh
+                  </span>
+                </button>
+              </div>
+              <p className="text-zinc-500 mt-2 text-base">
+                {language === 'th'
+                  ? 'แดชบอร์ดศูนย์กลางสำหรับข้อมูลพื้นฐาน เกณฑ์การทำงาน ข้อมูลพนักงาน และวันหยุดนักขัตฤกษ์ขององค์กร'
+                  : 'Central dashboard for organizational master data, leaves quotas, active members and rules.'}
+              </p>
+            </div>
           </div>
 
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {error}
+            </div>
+          )}
+
           {isLoading ? (
-            <div className="p-16 flex flex-col justify-center items-center gap-3 text-zinc-400">
-              <span className="animate-spin rounded-full h-8 w-8 border-4 border-zinc-200 border-t-zinc-900"></span>
-              <span className="text-xs font-semibold">
-                {language === 'th' ? 'กำลังดึงข้อมูลระบบ...' : 'Fetching system directories...'}
-              </span>
+            <div className="space-y-8">
+              <SkeletonHeader />
+              <div className="h-24 bg-white border border-zinc-100 rounded-2xl animate-pulse"></div>
+              <SkeletonCardGrid count={6} />
             </div>
           ) : (
             <>
+              {/* Top Summary Cards (Active Tokens summary included) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+                  <span className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase block">
+                    {language === 'th' ? 'สมาชิกทั้งหมด' : 'Total Members'}
+                  </span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-3xl font-black text-zinc-900">{totalMembers}</span>
+                    <span className="material-symbols-outlined text-zinc-300 text-2xl">groups</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+                  <span className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase block">
+                    {language === 'th' ? 'อัตราความครอบคลุมลายเซ็น' : 'Signature Coverage'}
+                  </span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-3xl font-black text-zinc-900">
+                      {Math.round((membersWithSignature / (totalMembers || 1)) * 100)}%
+                    </span>
+                    <span className="material-symbols-outlined text-zinc-300 text-2xl">draw</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+                  <span className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase block">
+                    {language === 'th' ? 'ยอดสะสมโทเค็นรวมทั้งองค์กร' : 'Total Organization Tokens'}
+                  </span>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="text-3xl font-black text-zinc-900">{totalActiveTokens.toFixed(1)}</span>
+                    <span className="material-symbols-outlined text-zinc-300 text-2xl">token</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Signature Verification Alert */}
               <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
                 <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-zinc-650">security</span>
+                  <span className="material-symbols-outlined text-zinc-600">security</span>
                   {language === 'th' ? 'การตรวจสอบระบบลายเซ็น' : 'Signature Compliance Check'}
                 </h3>
 
@@ -232,7 +290,7 @@ export default function MasterDataHubClient() {
                   <Link
                     key={cat.id}
                     href={cat.href}
-                    className="bg-white border border-zinc-100/80 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-zinc-300 transition-all flex flex-col justify-between group"
+                    className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-zinc-300 transition-all flex flex-col justify-between group"
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">

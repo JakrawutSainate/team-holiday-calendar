@@ -38,6 +38,18 @@ export class MasterDataHubController {
     return Array.from(new Set(this.members.map(m => m.department))).length;
   }
 
+  public getTotalActiveTokens(): number {
+    return this.members.reduce((acc, m) => acc + (m.tokensBalance || 0), 0);
+  }
+
+  public setLocalData(membersData: Member[], capacityData: CapacitySetting[]): void {
+    this.members = membersData;
+    const globalDefault = capacityData.find(s => s.id === 'global-default');
+    if (globalDefault) {
+      this.capacityLimit = globalDefault.maxOffAllowed;
+    }
+  }
+
   public async loadData(
     fetchMembers: () => Promise<Member[]>,
     fetchCapacities: () => Promise<CapacitySetting[]>
@@ -47,12 +59,7 @@ export class MasterDataHubController {
         fetchMembers(),
         fetchCapacities()
       ]);
-      this.members = membersData;
-      
-      const globalDefault = capacityData.find(s => s.id === 'global-default');
-      if (globalDefault) {
-        this.capacityLimit = globalDefault.maxOffAllowed;
-      }
+      this.setLocalData(membersData, capacityData);
       this.updateCallback();
     } catch (e) {
       console.error('MasterDataHubController loadData failed:', e);

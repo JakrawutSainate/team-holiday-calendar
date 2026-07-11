@@ -6,27 +6,27 @@ import { useAuth } from '@/src/components/AuthContext';
 import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import Link from 'next/link';
-import { fetchTeamMembersAction } from '../actions';
+import { useMasterData } from './MasterDataContext';
 import { SignatureLibraryController } from './SignatureLibraryController';
+import { SkeletonHeader, SkeletonCardGrid } from './Skeleton';
 
 export default function SignatureLibraryClient() {
   const { user } = useAuth();
   const { role } = useRole();
   const { language } = useTranslation();
+  const { members, isLoading, error, refreshData } = useMasterData();
 
   const [, setTick] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('ALL');
-  const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new SignatureLibraryController(() => setTick(t => t + 1)));
 
+  // Sync context members into controller
   useEffect(() => {
-    if (user?.id) {
-      controller.loadData(fetchTeamMembersAction).finally(() => {
-        setIsLoading(false);
-      });
+    if (members.length > 0) {
+      controller.setMembers(members);
     }
-  }, [user?.id, controller]);
+  }, [members, controller]);
 
   const filteredMembers = controller.getFilteredMembers(searchQuery, selectedDept);
   const currentUserData = controller.getMembers().find((m) => m.id === user?.id) || user;
@@ -38,23 +38,43 @@ export default function SignatureLibraryClient() {
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
           {/* Header */}
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
-              {language === 'th' ? 'คลังลายเซ็นพนักงาน' : 'Signature Library'}
-            </h2>
-            <p className="text-zinc-500 mt-2 text-base">
-              {language === 'th'
-                ? 'ตรวจสอบความถูกต้องของลายเซ็นที่ใช้ในการลงนามคำขอลาอิเล็กทรอนิกส์'
-                : 'Review saved signatures used for automated electronic leave document approvals.'}
-            </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
+                  {language === 'th' ? 'คลังลายเซ็นพนักงาน' : 'Signature Library'}
+                </h2>
+                <button
+                  onClick={refreshData}
+                  disabled={isLoading}
+                  className="p-1.5 hover:bg-zinc-100 rounded-xl transition-all border-none outline-none cursor-pointer flex items-center justify-center text-zinc-500 hover:text-zinc-900 active:scale-95 disabled:opacity-50"
+                  title={language === 'th' ? 'รีเฟรชข้อมูล' : 'Refresh Data'}
+                >
+                  <span className={`material-symbols-outlined text-xl ${isLoading ? 'animate-spin' : ''}`}>
+                    refresh
+                  </span>
+                </button>
+              </div>
+              <p className="text-zinc-500 mt-2 text-base">
+                {language === 'th'
+                  ? 'ตรวจสอบความถูกต้องของลายเซ็นที่ใช้ในการลงนามคำขอลาอิเล็กทรอนิกส์'
+                  : 'Review saved signatures used for automated electronic leave document approvals.'}
+              </p>
+            </div>
           </div>
 
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {error}
+            </div>
+          )}
+
           {isLoading ? (
-            <div className="p-16 flex flex-col justify-center items-center gap-3 text-zinc-400">
-              <span className="animate-spin rounded-full h-8 w-8 border-4 border-zinc-200 border-t-zinc-900"></span>
-              <span className="text-xs font-semibold">
-                {language === 'th' ? 'กำลังโหลดคลังลายเซ็น...' : 'Loading signature directory...'}
-              </span>
+            <div className="space-y-8">
+              <SkeletonHeader />
+              <div className="h-16 bg-white border border-zinc-100 rounded-2xl animate-pulse"></div>
+              <SkeletonCardGrid count={6} />
             </div>
           ) : (
             <>
