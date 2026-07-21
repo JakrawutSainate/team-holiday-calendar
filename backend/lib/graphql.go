@@ -1,16 +1,13 @@
 package lib
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/google/uuid"
 )
+
+// ─── GraphQL wire types ───────────────────────────────────────────────────────
 
 type gqlRequest struct {
 	Query     string                 `json:"query"`
@@ -26,7 +23,27 @@ type gqlError struct {
 	Message string `json:"message"`
 }
 
-func HandleGraphQL(w http.ResponseWriter, r *http.Request) {
+// ─── GraphQLHandler ───────────────────────────────────────────────────────────
+
+// GraphQLHandler handles all GraphQL requests.
+// It delegates query resolution to QueryResolver and MutationResolver.
+type GraphQLHandler struct {
+	db       *Database
+	queries  *QueryResolver
+	mutations *MutationResolver
+}
+
+// NewGraphQLHandler creates a new GraphQLHandler wired to the given Database.
+func NewGraphQLHandler(db *Database) *GraphQLHandler {
+	return &GraphQLHandler{
+		db:        db,
+		queries:   NewQueryResolver(db),
+		mutations: NewMutationResolver(db),
+	}
+}
+
+// ServeHTTP is the HTTP handler for POST /api/v1/graphql.
+func (h *GraphQLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -38,17 +55,16 @@ func HandleGraphQL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract user from Authorization header
+	// Extract caller identity from the JWT (optional — mutations require it).
 	var userID, userRole string
-	authHeader := r.Header.Get("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		if claims, err := ValidateToken(strings.TrimPrefix(authHeader, "Bearer ")); err == nil {
+	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
+		if claims, err := ValidateToken(strings.TrimPrefix(auth, "Bearer ")); err == nil {
 			userID = claims.UserID
 			userRole = claims.Role
 		}
 	}
 
-	data, err := resolveGraphQL(req.Query, req.Variables, userID, userRole)
+	data, err := h.resolve(req.Query, req.Variables, userID, userRole)
 	if err != nil {
 		WriteJSON(w, http.StatusOK, gqlResponse{Errors: []gqlError{{Message: err.Error()}}})
 		return
@@ -56,511 +72,85 @@ func HandleGraphQL(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, gqlResponse{Data: data})
 }
 
-func resolveGraphQL(query string, vars map[string]interface{}, userID, userRole string) (interface{}, error) {
+// resolve dispatches the query to the correct resolver.
+func (h *GraphQLHandler) resolve(
+	query string,
+	vars map[string]interface{},
+	userID, userRole string,
+) (interface{}, error) {
+	ctx := &ResolverContext{
+		UserID:   userID,
+		UserRole: userRole,
+	}
+
 	q := strings.TrimSpace(query)
-	db := GetDB()
 
-	requireAuth := func() error {
-		if userID == "" {
-			return errors.New("unauthorized: you must be logged in to perform this action")
-		}
-		return nil
+	switch {
+	// ── Queries ──────────────────────────────────────────────────────────────
+	case strings.Contains(q, "getTeamMembers"):
+		return h.queries.GetTeamMembers(ctx)
+	case strings.Contains(q, "getEvents"):
+		return h.queries.GetEvents(ctx)
+	case strings.Contains(q, "getCapacitySettings"):
+		return h.queries.GetCapacitySettings(ctx)
+	case strings.Contains(q, "getTokenTransactions"):
+		return h.queries.GetTokenTransactions(ctx)
+	case strings.Contains(q, "getLeaveDocuments"):
+		return h.queries.GetLeaveDocuments(ctx)
+	case strings.Contains(q, "getAuditLogs"):
+		return h.queries.GetAuditLogs(ctx)
+
+	// ── Mutations ─────────────────────────────────────────────────────────────
+	case strings.Contains(q, "claimShift"):
+		return h.mutations.ClaimShift(ctx, vars)
+	case strings.Contains(q, "requestLeave"):
+		return h.mutations.RequestLeave(ctx, vars)
+	case strings.Contains(q, "cancelLeave"):
+		return h.mutations.CancelLeave(ctx, vars)
+	case strings.Contains(q, "redeemTokens"):
+		return h.mutations.RedeemTokens(ctx, vars)
+	case strings.Contains(q, "updateMaxOffAllowed"):
+		return h.mutations.UpdateMaxOffAllowed(ctx, vars)
+	case strings.Contains(q, "updateProfileSignature"):
+		return h.mutations.UpdateProfileSignature(ctx, vars)
+	case strings.Contains(q, "updateTeamMemberProfile"):
+		return h.mutations.UpdateTeamMemberProfile(ctx, vars)
+
+	default:
+		return nil, errors.New("unsupported GraphQL operation")
 	}
+}
 
-	// ─── PUBLIC QUERIES ───────────────────────────────────────────────────────
+// ─── Package-level alias kept for api/index.go ───────────────────────────────
 
-	if strings.Contains(q, "getLeaveDocuments") {
-		// allow bypass for testing
-		userID = "admin"
-		userRole = "ADMIN"
-		
-		var rows *sql.Rows
-		var err error
-		if userRole == "ADMIN" {
-			rows, err = db.Query(`SELECT id, "userId", "userName", department, title, "leaveDate", "leaveType", reason, signature, status, "createdAt" FROM "LeaveDocument" ORDER BY "createdAt" DESC`)
-		} else {
-			rows, err = db.Query(`SELECT id, "userId", "userName", department, title, "leaveDate", "leaveType", reason, signature, status, "createdAt" FROM "LeaveDocument" WHERE "userId" = $1 ORDER BY "createdAt" DESC`, userID)
-		}
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var docs []map[string]interface{}
-		for rows.Next() {
-			var id, uid, userName, dept, title, leaveDate, leaveType, reason, signature, status string
-			var createdAt time.Time
-			if err := rows.Scan(&id, &uid, &userName, &dept, &title, &leaveDate, &leaveType, &reason, &signature, &status, &createdAt); err != nil {
-				return nil, err
-			}
-			docs = append(docs, map[string]interface{}{
-				"id": id, "userId": uid, "userName": userName, "department": dept,
-				"title": title, "leaveDate": leaveDate, "leaveType": leaveType,
-				"reason": reason, "signature": signature, "status": status,
-				"createdAt": createdAt.Format(time.RFC3339),
-			})
-		}
-		if docs == nil {
-			docs = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getLeaveDocuments": docs}, nil
+// HandleGraphQL is the package-level function used by api/index.go.
+func HandleGraphQL(w http.ResponseWriter, r *http.Request) {
+	NewGraphQLHandler(GetDatabase()).ServeHTTP(w, r)
+}
+
+// ─── ResolverContext ──────────────────────────────────────────────────────────
+
+// ResolverContext carries per-request auth data into every resolver method.
+type ResolverContext struct {
+	UserID   string
+	UserRole string
+}
+
+// RequireAuth returns an error when the caller is not authenticated.
+func (c *ResolverContext) RequireAuth() error {
+	if c.UserID == "" {
+		return errors.New("unauthorized: you must be logged in to perform this action")
 	}
+	return nil
+}
 
-	if strings.Contains(q, "getTeamMembers") {
-		rows, err := db.Query(`SELECT id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature", "sickLeaveBalance", "annualLeaveBalance" FROM "TeamMember" ORDER BY name`)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var members []map[string]interface{}
-		for rows.Next() {
-			var id, name, email, role, department, title string
-			var avatarURL, savedSig *string
-			var tokensBalance float64
-			var sickBalance, annualBalance int
-			if err := rows.Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig, &sickBalance, &annualBalance); err != nil {
-				return nil, err
-			}
-			members = append(members, map[string]interface{}{
-				"id": id, "name": name, "email": email, "role": role,
-				"avatarUrl": avatarURL, "department": department, "title": title,
-				"tokensBalance": tokensBalance, "savedSignature": savedSig,
-				"sickLeaveBalance": sickBalance, "annualLeaveBalance": annualBalance,
-			})
-		}
-		if members == nil {
-			members = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getTeamMembers": members}, nil
+// RequireAdmin returns an error unless the caller holds the ADMIN role.
+func (c *ResolverContext) RequireAdmin() error {
+	if err := c.RequireAuth(); err != nil {
+		return err
 	}
-
-	if strings.Contains(q, "getEvents") {
-		rows, err := db.Query(`SELECT id, "userId", "userName", date, status, details FROM "CalendarEvent"`)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var events []map[string]interface{}
-		for rows.Next() {
-			var id, userID, userName, date, status string
-			var details *string
-			if err := rows.Scan(&id, &userID, &userName, &date, &status, &details); err != nil {
-				return nil, err
-			}
-			events = append(events, map[string]interface{}{
-				"id": id, "userId": userID, "userName": userName,
-				"date": date, "status": status, "details": details,
-			})
-		}
-		if events == nil {
-			events = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getEvents": events}, nil
+	if c.UserRole != "ADMIN" {
+		return errors.New("forbidden: only administrators can perform this action")
 	}
-
-	if strings.Contains(q, "getCapacitySettings") {
-		rows, err := db.Query(`SELECT id, date, "dayOfWeek", "maxOffAllowed", description FROM "CapacitySetting"`)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var settings []map[string]interface{}
-		for rows.Next() {
-			var id string
-			var date, description *string
-			var dayOfWeek *int
-			var maxOffAllowed int
-			if err := rows.Scan(&id, &date, &dayOfWeek, &maxOffAllowed, &description); err != nil {
-				return nil, err
-			}
-			settings = append(settings, map[string]interface{}{
-				"id": id, "date": date, "dayOfWeek": dayOfWeek,
-				"maxOffAllowed": maxOffAllowed, "description": description,
-			})
-		}
-		if settings == nil {
-			settings = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getCapacitySettings": settings}, nil
-	}
-
-	// ─── AUTHENTICATED QUERIES ────────────────────────────────────────────────
-
-	if strings.Contains(q, "getTokenTransactions") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		rows, err := db.Query(
-			`SELECT id, "userId", type, amount, description, "relatedDate", "createdAt"
-			 FROM "TokenTransaction" WHERE "userId" = $1 ORDER BY "createdAt" DESC`,
-			userID,
-		)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var txns []map[string]interface{}
-		for rows.Next() {
-			var id, uid, txType, description string
-			var amount float64
-			var relatedDate *string
-			var createdAt time.Time
-			if err := rows.Scan(&id, &uid, &txType, &amount, &description, &relatedDate, &createdAt); err != nil {
-				return nil, err
-			}
-			txns = append(txns, map[string]interface{}{
-				"id": id, "userId": uid, "type": txType, "amount": amount,
-				"description": description, "relatedDate": relatedDate,
-				"createdAt": createdAt.UTC().Format(time.RFC3339),
-			})
-		}
-		if txns == nil {
-			txns = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getTokenTransactions": txns}, nil
-	}
-
-	// ─── MUTATIONS ────────────────────────────────────────────────────────────
-
-	if strings.Contains(q, "claimShift") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		date, _ := vars["date"].(string)
-		status, _ := vars["status"].(string)
-		details, _ := vars["details"].(string)
-		if date == "" || status == "" {
-			return nil, errors.New("missing variables: date or status")
-		}
-		if status != "WEEKEND_WORK" && status != "HOLIDAY_WORK" {
-			return nil, errors.New("claimShift only supports WEEKEND_WORK or HOLIDAY_WORK")
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-
-		var userName string
-		if err := tx.QueryRow(`SELECT name FROM "TeamMember" WHERE id = $1`, userID).Scan(&userName); err != nil {
-			return nil, errors.New("user not found")
-		}
-
-		eventID := uuid.New().String()
-		_, err = tx.Exec(
-			`INSERT INTO "CalendarEvent" (id, "userId", "userName", date, status, details) VALUES ($1,$2,$3,$4,$5,$6)`,
-			eventID, userID, userName, date, status, details,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = "tokensBalance" + 1.0 WHERE id = $1`, userID)
-		if err != nil {
-			return nil, err
-		}
-
-		label := "Weekend Coverage"
-		if status == "HOLIDAY_WORK" {
-			label = "Holiday Coverage"
-		}
-		_, err = tx.Exec(
-			`INSERT INTO "TokenTransaction" (id, "userId", type, amount, description, "relatedDate") VALUES ($1,$2,'EARN',1.0,$3,$4)`,
-			uuid.New().String(), userID, label, date,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"claimShift": map[string]interface{}{
-			"id": eventID, "userId": userID, "userName": userName,
-			"date": date, "status": status, "details": &details,
-		}}, nil
-	}
-
-	if strings.Contains(q, "requestLeave") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		date, _ := vars["date"].(string)
-		if date == "" {
-			return nil, errors.New("missing variables: date")
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-
-		var userName string
-		var tokensBalance float64
-		if err := tx.QueryRow(`SELECT name, "tokensBalance" FROM "TeamMember" WHERE id = $1`, userID).Scan(&userName, &tokensBalance); err != nil {
-			return nil, errors.New("user not found")
-		}
-		if tokensBalance < 1.0 {
-			return nil, errors.New("insufficient tokens: you need at least 1.0 tokens to request leave on this day")
-		}
-
-		eventID := uuid.New().String()
-		_, err = tx.Exec(
-			`INSERT INTO "CalendarEvent" (id, "userId", "userName", date, status) VALUES ($1,$2,$3,$4,'COMPENSATORY_OFF')`,
-			eventID, userID, userName, date,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = "tokensBalance" - 1.0 WHERE id = $1`, userID)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = tx.Exec(
-			`INSERT INTO "TokenTransaction" (id, "userId", type, amount, description, "relatedDate") VALUES ($1,$2,'SPEND',1.0,'Compensatory Leave Request',$3)`,
-			uuid.New().String(), userID, date,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"requestLeave": map[string]interface{}{
-			"id": eventID, "userId": userID, "userName": userName,
-			"date": date, "status": "COMPENSATORY_OFF",
-		}}, nil
-	}
-
-	if strings.Contains(q, "cancelLeave") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		id, _ := vars["id"].(string)
-		if id == "" {
-			return nil, errors.New("missing variables: id")
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-
-		var eventUserID, eventDate, eventStatus string
-		if err := tx.QueryRow(`SELECT "userId", date, status FROM "CalendarEvent" WHERE id = $1`, id).Scan(&eventUserID, &eventDate, &eventStatus); err != nil {
-			if err == sql.ErrNoRows {
-				return nil, errors.New("event not found")
-			}
-			return nil, err
-		}
-
-		if userRole != "ADMIN" && eventUserID != userID {
-			return nil, errors.New("forbidden: you cannot cancel another member's leave")
-		}
-
-		_, err = tx.Exec(`DELETE FROM "CalendarEvent" WHERE id = $1`, id)
-		if err != nil {
-			return nil, err
-		}
-
-		if eventStatus == "COMPENSATORY_OFF" || eventStatus == "NORMAL" {
-			_, err = tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = "tokensBalance" + 1.0 WHERE id = $1`, eventUserID)
-			if err != nil {
-				return nil, err
-			}
-			_, err = tx.Exec(
-				`INSERT INTO "TokenTransaction" (id, "userId", type, amount, description, "relatedDate") VALUES ($1,$2,'EARN',1.0,'Leave Cancellation Refund',$3)`,
-				uuid.New().String(), eventUserID, eventDate,
-			)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"cancelLeave": true}, nil
-	}
-
-	if strings.Contains(q, "redeemTokens") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		amount, _ := vars["amount"].(float64)
-		description, _ := vars["description"].(string)
-		if amount <= 0 {
-			return nil, errors.New("missing variables: amount")
-		}
-		if description == "" {
-			description = "Token Rollover/Payout Request"
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-
-		var tokensBalance float64
-		if err := tx.QueryRow(`SELECT "tokensBalance" FROM "TeamMember" WHERE id = $1`, userID).Scan(&tokensBalance); err != nil {
-			return nil, errors.New("user not found")
-		}
-		if tokensBalance < amount {
-			return nil, fmt.Errorf("insufficient tokens: you need at least %.1f tokens to redeem", amount)
-		}
-
-		_, err = tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = "tokensBalance" - $1 WHERE id = $2`, amount, userID)
-		if err != nil {
-			return nil, err
-		}
-
-		txnID := uuid.New().String()
-		now := time.Now().UTC()
-		_, err = tx.Exec(
-			`INSERT INTO "TokenTransaction" (id, "userId", type, amount, description, "createdAt") VALUES ($1,$2,'SPEND',$3,$4,$5)`,
-			txnID, userID, amount, description, now,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"redeemTokens": map[string]interface{}{
-			"id": txnID, "userId": userID, "type": "SPEND", "amount": amount,
-			"description": description, "createdAt": now.Format(time.RFC3339),
-		}}, nil
-	}
-
-	if strings.Contains(q, "updateMaxOffAllowed") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		if userRole != "ADMIN" {
-			return nil, errors.New("forbidden: only administrators can modify capacity settings")
-		}
-		maxOff, _ := vars["maxOffAllowed"].(float64)
-		if maxOff <= 0 {
-			return nil, errors.New("missing variables: maxOffAllowed")
-		}
-		maxOffInt := int(maxOff)
-
-		_, err := db.Exec(
-			`INSERT INTO "CapacitySetting" (id, "maxOffAllowed", description)
-			 VALUES ('global-default', $1, 'Global default limit')
-			 ON CONFLICT (id) DO UPDATE SET "maxOffAllowed" = EXCLUDED."maxOffAllowed"`,
-			maxOffInt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"updateMaxOffAllowed": map[string]interface{}{
-			"id": "global-default", "maxOffAllowed": maxOffInt, "description": "Global default limit",
-		}}, nil
-	}
-
-	if strings.Contains(q, "updateProfileSignature") {
-		// bypass auth for testing — use first member if no token
-		if userID == "" {
-			row := db.QueryRow(`SELECT id FROM "TeamMember" ORDER BY name LIMIT 1`)
-			if err := row.Scan(&userID); err != nil {
-				return nil, errors.New("unauthorized: no user found")
-			}
-		}
-		var sigPtr *string
-		if sigVal, exists := vars["signature"]; exists && sigVal != nil {
-			if sigStr, ok := sigVal.(string); ok {
-				sigPtr = &sigStr
-			}
-		}
-		var id, name, email, role, department, title string
-		var avatarURL, savedSig *string
-		var tokensBalance float64
-		if sigPtr == nil {
-			err := db.QueryRow(
-				`UPDATE "TeamMember" SET "savedSignature" = NULL WHERE id = $1
-				 RETURNING id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature"`,
-				userID,
-			).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err := db.QueryRow(
-				`UPDATE "TeamMember" SET "savedSignature" = $1 WHERE id = $2
-				 RETURNING id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature"`,
-				*sigPtr, userID,
-			).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return map[string]interface{}{"updateProfileSignature": map[string]interface{}{
-			"id": id, "name": name, "email": email, "role": role,
-			"avatarUrl": avatarURL, "department": department, "title": title,
-			"tokensBalance": tokensBalance, "savedSignature": savedSig,
-		}}, nil
-	}
-
-	if strings.Contains(q, "updateTeamMemberProfile") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		id, _ := vars["id"].(string)
-		name, _ := vars["name"].(string)
-		department, _ := vars["department"].(string)
-		title, _ := vars["title"].(string)
-		if id == "" {
-			return nil, errors.New("missing variable: id")
-		}
-		var retID, retName, retDept, retTitle string
-		err := db.QueryRow(
-			`UPDATE "TeamMember" SET name=$1, department=$2, title=$3 WHERE id=$4
-			 RETURNING id, name, department, title`,
-			name, department, title, id,
-		).Scan(&retID, &retName, &retDept, &retTitle)
-		if err != nil {
-			return nil, err
-		}
-		return map[string]interface{}{"updateTeamMemberProfile": map[string]interface{}{
-			"id": retID, "name": retName, "department": retDept, "title": retTitle,
-		}}, nil
-	}
-
-	if strings.Contains(q, "getAuditLogs") {
-		if err := requireAuth(); err != nil {
-			return nil, err
-		}
-		rows, err := db.Query(`SELECT id, "userId", "userName", action, details, "createdAt" FROM "AuditLog" ORDER BY "createdAt" DESC LIMIT 200`)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var logs []map[string]interface{}
-		for rows.Next() {
-			var id, uid, uName, action, details string
-			var createdAt time.Time
-			if err := rows.Scan(&id, &uid, &uName, &action, &details, &createdAt); err != nil {
-				return nil, err
-			}
-			logs = append(logs, map[string]interface{}{
-				"id": id, "userId": uid, "userName": uName,
-				"action": action, "details": details,
-				"createdAt": createdAt.UTC().Format(time.RFC3339),
-			})
-		}
-		if logs == nil {
-			logs = []map[string]interface{}{}
-		}
-		return map[string]interface{}{"getAuditLogs": logs}, nil
-	}
-
-	return nil, errors.New("unsupported GraphQL operation")
+	return nil
 }

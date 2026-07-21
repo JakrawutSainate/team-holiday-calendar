@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Claims holds the JWT payload.
 type Claims struct {
 	UserID string `json:"userId"`
 	Email  string `json:"email"`
@@ -18,6 +19,17 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// AuthHandler handles authentication HTTP endpoints.
+type AuthHandler struct {
+	db *Database
+}
+
+// NewAuthHandler creates a new AuthHandler.
+func NewAuthHandler(db *Database) *AuthHandler {
+	return &AuthHandler{db: db}
+}
+
+// jwtSecret reads JWT_SECRET from env (falls back to a default for local dev).
 func jwtSecret() []byte {
 	s := os.Getenv("JWT_SECRET")
 	if s == "" {
@@ -26,13 +38,15 @@ func jwtSecret() []byte {
 	return []byte(s)
 }
 
-func hashPassword(password string) string {
+// HashPassword returns the SHA-256 hex digest of the password.
+func HashPassword(password string) string {
 	h := sha256.New()
 	h.Write([]byte(password))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func createToken(userID, email, role string) (string, error) {
+// CreateToken signs a new JWT for the given user.
+func CreateToken(userID, email, role string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		Email:  email,
@@ -44,6 +58,7 @@ func createToken(userID, email, role string) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret())
 }
 
+// ValidateToken parses and validates a JWT string.
 func ValidateToken(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return jwtSecret(), nil
@@ -58,7 +73,8 @@ func ValidateToken(tokenStr string) (*Claims, error) {
 	return claims, nil
 }
 
-func HandleLogin(w http.ResponseWriter, r *http.Request) {
+// HandleLogin is the HTTP handler for POST /api/v1/auth/login.
+func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -73,7 +89,6 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := GetDB()
 	var (
 		id            string
 		name          string
@@ -86,18 +101,18 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		passwordHash  string
 	)
 
-	err := db.QueryRow(
+	err := h.db.DB.QueryRow(
 		`SELECT id, name, email, role, "avatarUrl", department, title, "tokensBalance", "passwordHash"
 		 FROM "TeamMember" WHERE LOWER(email) = LOWER($1)`,
 		body.Email,
 	).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &passwordHash)
 
-	if err != nil || hashPassword(body.Password) != passwordHash {
+	if err != nil || HashPassword(body.Password) != passwordHash {
 		WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
 		return
 	}
 
-	token, err := createToken(id, email, role)
+	token, err := CreateToken(id, email, role)
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to create token"})
 		return
@@ -116,4 +131,9 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 			"tokensBalance": tokensBalance,
 		},
 	})
+}
+
+// HandleLogin is the package-level alias used by api/index.go.
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	NewAuthHandler(GetDatabase()).HandleLogin(w, r)
 }

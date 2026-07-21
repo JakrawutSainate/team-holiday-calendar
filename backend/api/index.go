@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
 	"backend/lib"
-	"backend/models"
 )
 
 // Handler is the Vercel serverless function entry point.
@@ -37,9 +35,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case path == "/" || path == "/health":
 		dbStatus := "connected"
-		dbService := models.GetDatabaseInstance()
-		_, err := dbService.Client.TeamMember.FindMany().Take(1).Exec(context.Background())
-		if err != nil {
+		if err := lib.GetDatabase().DB.Ping(); err != nil {
 			dbStatus = "disconnected"
 		}
 		lib.WriteJSON(w, http.StatusOK, map[string]string{

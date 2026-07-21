@@ -10,24 +10,36 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// Database wraps *sql.DB and is the single shared DB connection.
+type Database struct {
+	DB *sql.DB
+}
+
 var (
-	db   *sql.DB
-	once sync.Once
+	dbInstance *Database
+	dbOnce     sync.Once
 )
 
-func GetDB() *sql.DB {
-	once.Do(func() {
-		var err error
-		db, err = sql.Open("pgx", os.Getenv("DATABASE_URL"))
+// GetDatabase returns the singleton Database instance.
+func GetDatabase() *Database {
+	dbOnce.Do(func() {
+		sqlDB, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
 		if err != nil {
 			panic("failed to open database: " + err.Error())
 		}
-		db.SetMaxOpenConns(5)
-		db.SetMaxIdleConns(2)
+		sqlDB.SetMaxOpenConns(5)
+		sqlDB.SetMaxIdleConns(2)
+		dbInstance = &Database{DB: sqlDB}
 	})
-	return db
+	return dbInstance
 }
 
+// GetDB is a convenience alias kept for compatibility.
+func GetDB() *sql.DB {
+	return GetDatabase().DB
+}
+
+// WriteJSON writes v as JSON with the given HTTP status code.
 func WriteJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
