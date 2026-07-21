@@ -10,7 +10,7 @@ export interface LeaveFormData {
   recipientTitle: string;
   fullName: string;
   position: string;
-  level: string;
+  level?: string;
   department: string;
   leaveType: 'SICK' | 'PERSONAL' | 'MATERNITY';
   reasonText: string;

@@ -28,7 +28,6 @@ export default function LeaveRequestClient() {
   const [recipientTitle, setRecipientTitle] = useState('หัวหน้างาน');
   const [fullName, setFullName] = useState('');
   const [position, setPosition] = useState('');
-  const [level, setLevel] = useState('');
   const [department, setDepartment] = useState('');
   const [leaveType, setLeaveType] = useState<'SICK' | 'PERSONAL' | 'MATERNITY'>('SICK');
   const [reasonText, setReasonText] = useState('');
@@ -214,7 +213,7 @@ export default function LeaveRequestClient() {
         recipientTitle,
         fullName,
         position,
-        level,
+        level: '',
         department,
         leaveType,
         reasonText,
@@ -362,10 +361,6 @@ export default function LeaveRequestClient() {
                     <div>
                       <label className={labelClass}>ตำแหน่ง / Position</label>
                       <input value={position} onChange={(e) => setPosition(e.target.value)} className={inputClass} />
-                    </div>
-                    <div>
-                      <label className={labelClass}>ระดับ / Level</label>
-                      <input value={level} onChange={(e) => setLevel(e.target.value)} placeholder="เช่น ระดับ 1, C3" className={inputClass} />
                     </div>
                     <div>
                       <label className={labelClass}>สังกัด / Department</label>
@@ -641,76 +636,56 @@ export default function LeaveRequestClient() {
                       <div>
                         <span className="font-bold">เรื่อง</span> ขออนุญาตลา
                       </div>
-                      <div className="flex items-end gap-1">
+                      <div className="flex flex-wrap items-center gap-1 w-full">
                         <span className="font-bold">เรียน</span>
-                        <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px]">{recipientTitle || '......................................................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[200px]">{recipientTitle || '......................................................................'}</span>
                       </div>
                     </div>
 
                     {/* ข้อมูลผู้ลา */}
-                    <div className="text-xs space-y-2.5 leading-loose">
-                      <div className="flex flex-wrap items-end gap-y-1.5">
-                        <span className="inline-flex items-end w-full md:w-auto flex-1 gap-1">
-                          <span>ข้าพเจ้า</span>
-                          <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px] px-2">{fullName || '......................................................................'}</span>
-                        </span>
-                        <span className="inline-flex items-end w-full md:w-auto gap-1">
-                          <span className="pl-0 md:pl-2">ตำแหน่ง</span>
-                          <span className="border-b border-dotted border-black w-full md:w-[150px] text-center font-bold min-h-[18px] px-2">{position || '....................................'}</span>
-                        </span>
+                    <div className="text-xs space-y-4 leading-loose text-justify text-zinc-950">
+                      <div className="indent-8">
+                        ข้าพเจ้า <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{fullName || '......................................................................'}</span>
+                        ตำแหน่ง <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[150px] text-center">{position || '....................................'}</span>
+                        สังกัด <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{department || '......................................................................'}</span>
                       </div>
-                      <div className="flex flex-wrap items-end gap-y-1.5">
-                        <span className="inline-flex items-end w-full md:w-auto gap-1">
-                          <span>ระดับ</span>
-                          <span className="border-b border-dotted border-black w-full md:w-[100px] text-center font-bold min-h-[18px] px-2">{level || '....................'}</span>
-                        </span>
-                        <span className="inline-flex items-end w-full md:w-auto flex-1 gap-1">
-                          <span className="pl-0 md:pl-2">สังกัด</span>
-                          <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px] px-2">{department || '......................................................................'}</span>
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* ขอลา... เนื่องจาก... */}
-                    <div className="text-xs leading-loose space-y-2">
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                      <div className="flex flex-wrap items-center gap-y-2">
                         <span>ขอลา</span>
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 ml-4">
                           <input type="checkbox" checked={leaveType === 'SICK'} readOnly className="accent-black" />
                           <span>ป่วย</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 ml-4">
                           <input type="checkbox" checked={leaveType === 'PERSONAL'} readOnly className="accent-black" />
                           <span>กิจส่วนตัว</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 ml-4">
                           <input type="checkbox" checked={leaveType === 'MATERNITY'} readOnly className="accent-black" />
                           <span>คลอดบุตร</span>
                         </span>
-                        <span className="inline-flex items-end flex-1 gap-1 min-w-[200px]">
-                          <span>เนื่องจาก</span>
-                          <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px] px-2">{reasonText || '......................................................................'}</span>
-                        </span>
+                        <span className="ml-4">เนื่องจาก</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[250px]">{reasonText || '................................................................................................'}</span>
                       </div>
 
-                      <div className="flex flex-wrap items-end gap-y-1.5 gap-x-2">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                         <span>ตั้งแต่วันที่</span>
-                        <span className="border-b border-dotted border-black min-w-[130px] text-center font-bold min-h-[18px] px-1">{formatDateLabel(fromDate)}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(fromDate)}</span>
                         <span>ถึงวันที่</span>
-                        <span className="border-b border-dotted border-black min-w-[130px] text-center font-bold min-h-[18px] px-1">{formatDateLabel(toDate)}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(toDate)}</span>
                         <span>มีกำหนด</span>
-                        <span className="border-b border-dotted border-black w-12 text-center font-bold min-h-[18px] px-1">{totalDays}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[40px]">{totalDays}</span>
                         <span>วัน</span>
                       </div>
 
-                      <div className="flex items-end gap-1 w-full">
+                      <div className="flex flex-wrap items-center gap-y-2 w-full">
                         <span>ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่</span>
-                        <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px] px-2">{contactAddress || '................................................................................................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[300px]">{contactAddress || '................................................................................................................'}</span>
                       </div>
 
-                      <div className="flex items-end gap-1 w-full">
+                      <div className="flex flex-wrap items-center gap-y-2 w-full">
                         <span>หมายเลขโทรศัพท์</span>
-                        <span className="border-b border-dotted border-black w-[200px] font-bold min-h-[18px] px-2">{contactPhone || '....................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold inline-block min-w-[180px]">{contactPhone || '....................................'}</span>
                       </div>
                     </div>
 

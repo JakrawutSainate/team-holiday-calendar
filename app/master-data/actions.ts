@@ -68,3 +68,31 @@ export async function fetchAuditLogsAction(): Promise<AuditLog[]> {
     return [];
   }
 }
+
+export async function updateTeamMemberProfileAction(
+  id: string,
+  name: string,
+  department: string,
+  title: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!, $name: String!, $department: String!, $title: String!) {
+        updateTeamMemberProfile(id: $id, name: $name, department: $department, title: $title) {
+          id
+          name
+          department
+          title
+        }
+      }
+    `, { id, name, department, title });
+    
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error('updateTeamMemberProfileAction error:', err);
+    return { success: false, error: err.message || 'Failed to update profile info' };
+  }
+}

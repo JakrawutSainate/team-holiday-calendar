@@ -235,6 +235,29 @@ export async function resolveGraphQL(
     return { updateProfileSignature: user };
   }
 
+  if (q.includes('updateTeamMemberProfile')) {
+    const authUser = await requireAuth();
+    const targetUserId = variables.id as string;
+    const name = variables.name as string;
+    const department = variables.department as string;
+    const title = variables.title as string;
+
+    if (!targetUserId || !name || !department || !title) {
+      throw new Error('missing variables: id, name, department or title');
+    }
+
+    if (authUser.role !== 'ADMIN' && authUser.id !== targetUserId) {
+      throw new Error('unauthorized: you can only update your own profile');
+    }
+
+    const updatedUser = await prisma.teamMember.update({
+      where: { id: targetUserId },
+      data: { name, department, title },
+    });
+
+    return { updateTeamMemberProfile: updatedUser };
+  }
+
   // ─── LEAVE DOCUMENT CRUD RESOLVERS ──────────────────────────────────────────
 
   if (q.includes('getLeaveDocuments')) {

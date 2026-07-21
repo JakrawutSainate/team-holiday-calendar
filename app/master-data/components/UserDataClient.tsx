@@ -5,6 +5,8 @@ import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
 import { useRole } from '@/src/components/RoleContext';
 import TopNavBar from '@/src/components/TopNavBar';
+import { toast } from 'sonner';
+import { updateTeamMemberProfileAction } from '../actions';
 import { useMasterData } from './MasterDataContext';
 import { UserDataController } from './UserDataController';
 import { SkeletonHeader, SkeletonTable } from './Skeleton';
@@ -19,6 +21,51 @@ export default function UserDataClient() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('ALL');
   const [controller] = useState(() => new UserDataController(() => setTick(t => t + 1)));
+
+  // Details dialog state
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<any | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editDepartment, setEditDepartment] = useState('');
+
+  const handleOpenDetails = (u: any) => {
+    setSelectedUserForDetails(u);
+    setIsEditingProfile(false);
+    setEditName(u.name || '');
+    setEditTitle(u.title || '');
+    setEditDepartment(u.department || '');
+  };
+
+  const handleUpdateProfileSubmit = async () => {
+    if (!selectedUserForDetails) return;
+    if (!editName.trim() || !editTitle.trim() || !editDepartment.trim()) {
+      toast.error(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill all fields');
+      return;
+    }
+
+    try {
+      const res = await updateTeamMemberProfileAction(
+        selectedUserForDetails.id,
+        editName.trim(),
+        editDepartment.trim(),
+        editTitle.trim()
+      );
+
+      if (res.success) {
+        toast.success(
+          language === 'th' ? 'แก้ไขข้อมูลผู้ใช้งานสำเร็จ' : 'Profile Updated Successfully'
+        );
+        setSelectedUserForDetails(null);
+        setIsEditingProfile(false);
+        refreshData();
+      } else {
+        toast.error(res.error || 'Failed to update');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error occurred');
+    }
+  };
 
   // Sync context members into controller
   useEffect(() => {
@@ -137,6 +184,9 @@ export default function UserDataClient() {
                             <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-center">
                               {language === 'th' ? 'ยอดโทเค็นสะสม' : 'TOKEN BALANCE'}
                             </th>
+                            <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-center">
+                              {language === 'th' ? 'รายละเอียด' : 'DETAILS'}
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -169,11 +219,19 @@ export default function UserDataClient() {
                                   {m.tokensBalance.toFixed(1)} Tokens
                                 </span>
                               </td>
+                              <td className="p-4 text-center">
+                                <button
+                                  onClick={() => handleOpenDetails(m)}
+                                  className="px-2.5 py-1 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-lg text-xs font-semibold cursor-pointer active:scale-95 transition-all bg-white"
+                                >
+                                  {language === 'th' ? 'รายละเอียด' : 'Details'}
+                                </button>
+                              </td>
                             </tr>
                           ))}
                           {filteredMembers.length === 0 && (
                             <tr>
-                              <td colSpan={5} className="p-12 text-center text-sm text-zinc-400 font-semibold">
+                              <td colSpan={6} className="p-12 text-center text-sm text-zinc-400 font-semibold">
                                 {language === 'th' ? 'ไม่พบข้อมูลตามที่ค้นหา' : 'No employee records found.'}
                               </td>
                             </tr>
@@ -188,9 +246,18 @@ export default function UserDataClient() {
                 <div className="max-w-2xl mx-auto space-y-6">
                   {/* Profile Summary Card */}
                   <div className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
-                    <h3 className="text-lg font-bold text-zinc-900">
-                      {language === 'th' ? 'ข้อมูลของฉัน' : 'My Personal Profile'}
-                    </h3>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-bold text-zinc-900">
+                        {language === 'th' ? 'ข้อมูลของฉัน' : 'My Personal Profile'}
+                      </h3>
+                      <button
+                        onClick={() => handleOpenDetails(currentUserData)}
+                        className="px-3 py-1.5 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-bold cursor-pointer active:scale-95 transition-all bg-white flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-sm">info</span>
+                        {language === 'th' ? 'รายละเอียดโปรไฟล์' : 'Details'}
+                      </button>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <span className="text-[10px] font-semibold text-zinc-400 block uppercase tracking-wide">
@@ -281,6 +348,158 @@ export default function UserDataClient() {
           )}
         </div>
       </main>
+
+      {selectedUserForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setSelectedUserForDetails(null)} />
+          <div className="relative bg-white border border-zinc-150 rounded-3xl w-full max-w-md p-6 shadow-xl animate-fade-in space-y-6">
+            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+              <h3 className="text-lg font-bold text-zinc-900">
+                {language === 'th' ? 'ข้อมูลผู้ใช้งานโดยละเอียด' : 'Detailed User Profile'}
+              </h3>
+              <button
+                onClick={() => setSelectedUserForDetails(null)}
+                className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors border-none outline-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 bg-zinc-50 p-4 rounded-2xl border border-zinc-200/50">
+                <div className="w-16 h-16 rounded-2xl bg-zinc-200 border border-zinc-300 flex items-center justify-center font-bold text-zinc-600 text-2xl select-none uppercase">
+                  {selectedUserForDetails.name?.slice(0, 2) || 'US'}
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{language === 'th' ? 'บทบาท' : 'Role'}</div>
+                  <div className="text-sm font-bold text-zinc-800">
+                    {selectedUserForDetails.role === 'ADMIN' ? 'Admin' : selectedUserForDetails.role === 'LEAD' ? 'Team Lead' : 'Member'}
+                  </div>
+                  <div className="text-xs text-zinc-500 font-medium">{selectedUserForDetails.email}</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {isEditingProfile ? (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                        {language === 'th' ? 'ชื่อ-นามสกุล' : 'Full Name'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 bg-white focus:border-zinc-900 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                        {language === 'th' ? 'ตำแหน่ง' : 'Title'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 bg-white focus:border-zinc-900 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                        {language === 'th' ? 'แผนก' : 'Department'}
+                      </label>
+                      <select
+                        value={editDepartment}
+                        onChange={(e) => setEditDepartment(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 bg-white focus:border-zinc-900 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Engineering">{language === 'th' ? 'ฝ่ายวิศวกรรม (Engineering)' : 'Engineering'}</option>
+                        <option value="Design">{language === 'th' ? 'ฝ่ายออกแบบ (Design)' : 'Design'}</option>
+                        <option value="Management">{language === 'th' ? 'ฝ่ายบริหาร (Management)' : 'Management'}</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">{language === 'th' ? 'ชื่อ-นามสกุล' : 'Full Name'}</span>
+                        <span className="text-xs font-bold text-zinc-800">{selectedUserForDetails.name}</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">{language === 'th' ? 'ตำแหน่ง' : 'Title'}</span>
+                        <span className="text-xs font-semibold text-zinc-700">{selectedUserForDetails.title}</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">{language === 'th' ? 'สังกัด / แผนก' : 'Department'}</span>
+                        <span className="text-xs font-semibold text-zinc-700">{selectedUserForDetails.department}</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">{language === 'th' ? 'อีเมลแอดเดรส' : 'Email'}</span>
+                        <span className="text-xs font-semibold text-zinc-700">{selectedUserForDetails.email}</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-zinc-100 pt-3">
+                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">{language === 'th' ? 'ข้อมูลโควตาวันลาสะสม' : 'Leave Allowance Balances'}</div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="p-2 bg-red-50/50 border border-red-100 rounded-xl">
+                          <div className="text-[9px] font-bold text-red-500 uppercase">{language === 'th' ? 'ลาป่วย' : 'Sick'}</div>
+                          <div className="text-sm font-bold text-red-800 mt-0.5">{selectedUserForDetails.sickLeaveBalance ?? 30} วัน</div>
+                        </div>
+                        <div className="p-2 bg-green-50/50 border border-green-100 rounded-xl">
+                          <div className="text-[9px] font-bold text-green-500 uppercase">{language === 'th' ? 'พักร้อน' : 'Annual'}</div>
+                          <div className="text-sm font-bold text-green-800 mt-0.5">{selectedUserForDetails.annualLeaveBalance ?? 6} วัน</div>
+                        </div>
+                        <div className="p-2 bg-zinc-50 border border-zinc-150 rounded-xl">
+                          <div className="text-[9px] font-bold text-zinc-500 uppercase">Tokens</div>
+                          <div className="text-sm font-bold text-zinc-800 mt-0.5">{selectedUserForDetails.tokensBalance?.toFixed(1) || '0.0'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-zinc-100 pt-4">
+              {isEditingProfile ? (
+                <>
+                  <button
+                    onClick={() => setIsEditingProfile(false)}
+                    className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold transition-all cursor-pointer bg-white text-zinc-700"
+                  >
+                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                  </button>
+                  <button
+                    onClick={handleUpdateProfileSubmit}
+                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
+                  >
+                    {language === 'th' ? 'บันทึก' : 'Submit'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {(user?.role === 'ADMIN' || user?.id === selectedUserForDetails.id) && (
+                    <button
+                      onClick={() => setIsEditingProfile(true)}
+                      className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      {language === 'th' ? 'แก้ไขข้อมูล' : 'Edit'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedUserForDetails(null)}
+                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
+                  >
+                    {language === 'th' ? 'ปิด' : 'Close'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

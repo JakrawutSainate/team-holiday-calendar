@@ -220,6 +220,13 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
         'DELETE_DOCUMENT',
         `Deleted leave document ID: ${variables.id}`
       );
+    } else if (queryClean.includes('updateTeamMemberProfile')) {
+      await createAuditLog(
+        session.user.id,
+        session.user.name,
+        'UPDATE_PROFILE',
+        `Updated profile info for user ID ${variables.id}. New details - Name: ${variables.name}, Dept: ${variables.department}, Title: ${variables.title}`
+      );
     }
   }
 
