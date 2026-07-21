@@ -58,12 +58,17 @@ export async function loginAction(emailInput: string, passwordInput: string) {
   if (INTERNAL_API_URL) {
     try {
       const loginUrl = `${INTERNAL_API_URL}/api/v1/auth/login`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+
       const response = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
         cache: 'no-store',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json(); // { token, user }
@@ -139,7 +144,13 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
   const queryClean = query.trim();
 
   // 1. Bypass Go backend for new queries not defined in Go
-  const shouldBypassBFF = queryClean.includes('getAuditLogs');
+  const shouldBypassBFF =
+    queryClean.includes('getAuditLogs') ||
+    queryClean.includes('getLeaveDocuments') ||
+    queryClean.includes('approveLeaveDocument') ||
+    queryClean.includes('rejectLeaveDocument') ||
+    queryClean.includes('deleteLeaveDocument') ||
+    queryClean.includes('updateTeamMemberProfile');
 
   let result: any = null;
 
@@ -154,15 +165,25 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+
       const response = await fetch(graphqlUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({ query, variables }),
         cache: 'no-store',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
-        result = await response.json();
+        const json = await response.json();
+        if (json && json.errors && json.errors.some((e: any) => e.message?.includes('unsupported GraphQL operation'))) {
+          result = null;
+        } else {
+          result = json;
+        }
       } else {
         const errData = await response.json().catch(() => ({}));
         result = { errors: [{ message: errData.error || 'Backend request failed.' }] };
