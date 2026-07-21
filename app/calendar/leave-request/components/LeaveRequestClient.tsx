@@ -667,12 +667,12 @@ export default function LeaveRequestClient() {
                         <span className="whitespace-nowrap">(เขียนที่)</span>
                         <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px]">{writtenAt || '..................................'}</span>
                       </div>
-                      <div className="flex items-end gap-1 w-full max-w-[280px]">
-                        <span>วันที่</span>
+                      <div className="flex items-end gap-1 w-full max-w-[320px] whitespace-nowrap">
+                        <span className="whitespace-nowrap">วันที่</span>
                         <span className="border-b border-dotted border-black w-10 text-center font-bold min-h-[18px]">{today.getDate()}</span>
-                        <span>เดือน</span>
+                        <span className="whitespace-nowrap">เดือน</span>
                         <span className="border-b border-dotted border-black w-24 text-center font-bold min-h-[18px]">{thaiMonths[today.getMonth()]}</span>
-                        <span>พ.ศ.</span>
+                        <span className="whitespace-nowrap">พ.ศ.</span>
                         <span className="border-b border-dotted border-black w-14 text-center font-bold min-h-[18px]">{today.getFullYear() + 543}</span>
                       </div>
                     </div>

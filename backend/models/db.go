@@ -76,7 +76,7 @@ func (s *DatabaseService) Seed(ctx context.Context) {
 			AvatarURL: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAxqpaUNIleLAD9XYhKsX2Qooc6XptE2clDD2Vk35OtdDPrAbhVDtIBD5grW9dmuu0t_0_76tdEww6kzLNxGg1CNiS2NgIYQTICX6W93GldTrIWnWxYJ-qQvE36Q_1xzfyaK-_ioen7Mbpeau6fhmNuVY4v-QQMP6x6YaT12g4TZGfVVmBrEBT_BEadMETd7nN13afYPgbqP4_Zn0c3eLBOGRF__MXE_indHaUYg9RGaFX72v1Cso3YvGiw-J8tEsIVKjxT2ORvKb_",
 			Dept:      "Management",
 			Title:     "Administrator",
-			Tokens:    99.0,
+			Tokens:    0.0,
 		},
 		{
 			ID:        "usr_big",
