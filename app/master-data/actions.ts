@@ -1,6 +1,6 @@
 'use server';
 
-import { runGraphQLAction } from '@/src/actions/auth';
+import { runGraphQLAction, getSession } from '@/src/actions/auth';
 import { Member, CapacitySetting, AuditLog } from './types';
 
 export async function fetchTeamMembersAction(): Promise<Member[]> {
@@ -90,6 +90,15 @@ export async function updateTeamMemberProfileAction(
     if (res?.errors && res.errors.length > 0) {
       return { success: false, error: res.errors[0].message };
     }
+
+    const session = await getSession();
+    if (session.user && session.user.id === id) {
+      session.user.name = name;
+      session.user.department = department;
+      session.user.title = title;
+      await session.save();
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error('updateTeamMemberProfileAction error:', err);

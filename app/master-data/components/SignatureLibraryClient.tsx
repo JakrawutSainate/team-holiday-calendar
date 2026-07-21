@@ -294,7 +294,7 @@ export default function SignatureLibraryClient() {
                 </div>
               ) : (
                 /* Regular User view: show self signature only */
-                <div className="max-w-lg mx-auto bg-white border border-zinc-150 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col">
+                <div className="w-full max-w-3xl mx-auto bg-white border border-zinc-150 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col">
                   <div className="p-6 border-b border-zinc-100 space-y-4">
                     <h3 className="text-lg font-bold text-zinc-900">
                       {language === 'th' ? 'ลายเซ็นที่บันทึกของฉัน' : 'My Saved Signature'}

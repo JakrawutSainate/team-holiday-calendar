@@ -243,7 +243,7 @@ export default function UserDataClient() {
                 </div>
               ) : (
                 /* Regular user dashboard view */
-                <div className="max-w-2xl mx-auto space-y-6">
+                <div className="w-full max-w-4xl mx-auto space-y-6">
                   {/* Profile Summary Card */}
                   <div className="bg-white border border-zinc-150 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
                     <div className="flex justify-between items-center">

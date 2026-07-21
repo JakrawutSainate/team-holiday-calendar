@@ -141,6 +141,12 @@ export async function getCurrentUserAction() {
       query {
         getTeamMembers {
           id
+          name
+          email
+          role
+          avatarUrl
+          department
+          title
           savedSignature
           tokensBalance
           sickLeaveBalance
@@ -152,6 +158,12 @@ export async function getCurrentUserAction() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const current = members.find((m: any) => m.id === session.user?.id);
     if (current) {
+      session.user.name = current.name ?? session.user.name;
+      session.user.email = current.email ?? session.user.email;
+      session.user.role = current.role ?? session.user.role;
+      session.user.avatarUrl = current.avatarUrl ?? session.user.avatarUrl;
+      session.user.department = current.department ?? session.user.department;
+      session.user.title = current.title ?? session.user.title;
       session.user.savedSignature = current.savedSignature ?? null;
       session.user.tokensBalance = current.tokensBalance ?? session.user.tokensBalance;
       session.user.sickLeaveBalance = current.sickLeaveBalance ?? session.user.sickLeaveBalance;
