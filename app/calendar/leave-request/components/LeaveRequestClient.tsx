@@ -255,8 +255,12 @@ export default function LeaveRequestClient() {
     if (!el) return;
     const win = window.open('', '_blank');
     if (!win) return;
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(x => x.outerHTML)
+      .join('\n');
     win.document.write(`<html><head><title>แบบใบลา - ${fullName}</title>
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+      ${styles}
       <style>
         body { margin:0; padding:40px; font-family:'Sarabun', 'Noto Sans Thai', sans-serif; background:#fff; color:#000; }
         .page { background:#fff; width:100%; max-width:800px; margin:0 auto; padding:0; box-sizing:border-box; color:#000; }
@@ -647,6 +651,8 @@ export default function LeaveRequestClient() {
                       <div className="indent-8">
                         ข้าพเจ้า <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{fullName || '......................................................................'}</span>
                         ตำแหน่ง <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[150px] text-center">{position || '....................................'}</span>
+                      </div>
+                      <div className="indent-8">
                         สังกัด <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{department || '......................................................................'}</span>
                       </div>
 
@@ -664,7 +670,10 @@ export default function LeaveRequestClient() {
                           <input type="checkbox" checked={leaveType === 'MATERNITY'} readOnly className="accent-black" />
                           <span>คลอดบุตร</span>
                         </span>
-                        <span className="ml-4">เนื่องจาก</span>
+                      </div>
+
+                      <div className="flex items-end w-full gap-2">
+                        <span>เนื่องจาก</span>
                         <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[250px]">{reasonText || '................................................................................................'}</span>
                       </div>
 
