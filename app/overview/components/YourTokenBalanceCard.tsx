@@ -3,15 +3,11 @@
 import { useTranslation } from '@/src/components/LanguageContext';
 
 interface YourTokenBalanceCardProps {
-  tokens: number;
-  unclaimedCount?: number;
-  onOpenClaimModal?: () => void;
+  tokens: number | string;
 }
 
 export default function YourTokenBalanceCard({
   tokens,
-  unclaimedCount = 0,
-  onOpenClaimModal,
 }: YourTokenBalanceCardProps) {
   const { t } = useTranslation();
 
@@ -38,28 +34,6 @@ export default function YourTokenBalanceCard({
           <span className="material-symbols-outlined text-3xl text-amber-500 font-medium select-none">toll</span>
         </div>
       </div>
-
-      {/* Unclaimed Special Workdays Banner */}
-      {unclaimedCount > 0 && (
-        <div className="mt-4 pt-4 border-t border-amber-100 z-10 flex items-center justify-between bg-amber-500/10 -mx-8 -mb-8 p-4 px-8 border-b-0 rounded-b-3xl">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-            </span>
-            <span className="text-xs font-bold text-amber-900">
-              {t('unclaimedShiftsCount').replace('{count}', unclaimedCount.toString())}
-            </span>
-          </div>
-          <button
-            onClick={onOpenClaimModal}
-            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-sm">military_tech</span>
-            <span>{t('claimNow')}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }

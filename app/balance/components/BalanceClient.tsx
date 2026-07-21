@@ -78,7 +78,7 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
     }
   };
 
-  const displayTokens = user ? Math.floor(user.tokensBalance) : controller.getTokens();
+  const displayTokens = user?.role === 'ADMIN' ? '---' : (user ? Math.floor(user.tokensBalance) : controller.getTokens());
 
   if (controller.isLoading() && controller.getTransactions().length === 0) {
     return <BalanceSkeleton />;

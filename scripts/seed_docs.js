@@ -2,12 +2,26 @@ const fs = require('fs');
 const path = require('path');
 
 async function seed() {
+  console.log('1. Calling resetAndSeedTokens to clear old tokens & events...');
+
+  const resetRes = await fetch('https://api-team-holiday-calendar.vercel.app/api/v1/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: 'mutation { resetAndSeedTokens }',
+    }),
+  });
+
+  const resetJson = await resetRes.json();
+  console.log('Reset response:', JSON.stringify(resetJson));
+
+  // 2. Load JSON data
   const jsonPath = path.join(__dirname, '..', 'docs', 'weekend_tasks_db_format (1).json');
   const rawData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
-  console.log(`Loaded ${rawData.length} entries from JSON.`);
+  console.log(`Loaded ${rawData.length} raw entries from JSON.`);
 
-  // 1. Fetch team members
+  // 3. Fetch team members
   const resMembers = await fetch('https://api-team-holiday-calendar.vercel.app/api/v1/graphql', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -68,7 +82,7 @@ async function seed() {
     console.log(`Result for ${member.name}:`, JSON.stringify(result));
   }
 
-  console.log('Seeding completed successfully!');
+  console.log('Reset & re-seeding completed successfully!');
 }
 
 seed().catch(console.error);

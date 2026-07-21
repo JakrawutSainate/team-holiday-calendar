@@ -3,7 +3,7 @@
 import { useTranslation } from '@/src/components/LanguageContext';
 
 interface BalanceCardProps {
-  tokens: number;
+  tokens: number | string;
   onRedeem: () => void;
 }
 

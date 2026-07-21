@@ -339,7 +339,7 @@ class CalendarDataService {
   public async requestLeave(
     date: string,
     reason?: string,
-    signatureType?: 'DRAW' | 'TEXT',
+    signatureType?: 'DRAW' | 'TEXT' | 'SAVED',
     signatureText?: string,
     signatureImage?: string,
     attachmentImage?: string
@@ -455,7 +455,7 @@ export const claimShiftMutation = (date: string, status: string, details: string
 export const requestLeaveMutation = (
   date: string,
   reason?: string,
-  signatureType?: 'DRAW' | 'TEXT',
+  signatureType?: 'DRAW' | 'TEXT' | 'SAVED',
   signatureText?: string,
   signatureImage?: string,
   attachmentImage?: string

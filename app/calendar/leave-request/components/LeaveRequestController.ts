@@ -109,7 +109,7 @@ export class LeaveRequestController {
   public async submitLeave(
     dateString: string,
     reasonJson: string,
-    signatureType: 'DRAW' | 'TEXT',
+    signatureType: 'DRAW' | 'TEXT' | 'SAVED',
     signatureText: string,
     signatureImage: string,
     attachmentImage: string

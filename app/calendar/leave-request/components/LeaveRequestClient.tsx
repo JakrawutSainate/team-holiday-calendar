@@ -36,7 +36,7 @@ export default function LeaveRequestClient() {
   const [totalDays, setTotalDays] = useState(1);
   const [contactAddress, setContactAddress] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [signatureType, setSignatureType] = useState<'DRAW' | 'TEXT'>('TEXT');
+  const [signatureType, setSignatureType] = useState<'SAVED' | 'DRAW' | 'TEXT'>('TEXT');
   const [signatureText, setSignatureText] = useState('');
   const [signatureImage, setSignatureImage] = useState('');
   const [attachmentImage, setAttachmentImage] = useState('');
@@ -571,6 +571,12 @@ export default function LeaveRequestClient() {
                   <div className="flex justify-between items-center">
                     <label className={labelClass}>ลงชื่อผู้ยื่นใบลา / Signature</label>
                     <div className="flex border border-zinc-200 rounded-lg p-0.5 text-[10px] bg-zinc-50">
+                      {user?.savedSignature && (
+                        <button type="button" onClick={() => { setSignatureType('SAVED'); setSignatureImage(user.savedSignature || ''); setError(''); }}
+                          className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                            signatureType === 'SAVED' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'
+                          }`}>ใช้ลายเซ็นที่บันทึกไว้ / Saved</button>
+                      )}
                       <button type="button" onClick={() => { setSignatureType('TEXT'); setError(''); }}
                         className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
                           signatureType === 'TEXT' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'
@@ -582,7 +588,15 @@ export default function LeaveRequestClient() {
                     </div>
                   </div>
 
-                  {signatureType === 'TEXT' ? (
+                  {signatureType === 'SAVED' ? (
+                    <div className="flex flex-col items-center gap-1 py-2">
+                      <div className="relative border border-zinc-200 rounded-xl p-3 bg-zinc-50 max-w-[320px] w-full flex items-center justify-center min-h-[100px]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={user?.savedSignature || ''} alt="Saved Signature" className="max-h-[80px] object-contain" />
+                      </div>
+                      <span className="text-[10px] text-zinc-400 mt-1">(ลายเซ็นที่บันทึกไว้ในระบบ)</span>
+                    </div>
+                  ) : signatureType === 'TEXT' ? (
                     <div className="flex flex-col items-center gap-1 py-2">
                       <input type="text" value={signatureText}
                         onChange={(e) => { setSignatureText(e.target.value); setError(''); }}

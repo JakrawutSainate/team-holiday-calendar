@@ -3,7 +3,7 @@ import { sanitize } from '@/src/libs/security';
 export interface LeaveRequestInput {
   fromDate: string;
   fullName: string;
-  signatureType: 'TEXT' | 'DRAW';
+  signatureType: 'TEXT' | 'DRAW' | 'SAVED';
   signatureText?: string;
   signatureImage?: string;
 }
@@ -23,8 +23,8 @@ export class LeaveRequestValidator {
     if (input.signatureType === 'TEXT' && !sigText.trim()) {
       return language === 'th' ? 'กรุณาพิมพ์ลายเซ็น' : 'Please type signature';
     }
-    if (input.signatureType === 'DRAW' && !input.signatureImage) {
-      return language === 'th' ? 'กรุณาวาดลายเซ็น' : 'Please draw signature';
+    if ((input.signatureType === 'DRAW' || input.signatureType === 'SAVED') && !input.signatureImage) {
+      return language === 'th' ? 'กรุณาเซ็นชื่อก่อนส่งใบลา' : 'Please provide signature';
     }
     return '';
   }
