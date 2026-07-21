@@ -651,7 +651,7 @@ export default function LeaveRequestClient() {
                 </div>
 
                 {/* ═══ Document Frame ═══ */}
-                <div ref={printRef} className="overflow-hidden border border-zinc-300 shadow-[0_4px_20px_rgba(0,0,0,0.05)] bg-white text-black leading-relaxed" style={{ fontSize: 13, color: '#000' }}>
+                <div ref={printRef} className="print-page overflow-hidden border border-zinc-300 shadow-[0_4px_20px_rgba(0,0,0,0.05)] bg-white text-black leading-relaxed" style={{ fontSize: 13, color: '#000' }}>
                   <div className="page p-8 md:p-10 space-y-6" style={{ fontFamily: "'Sarabun', 'Noto Sans Thai', sans-serif" }}>
 
                     {/* Header title */}
