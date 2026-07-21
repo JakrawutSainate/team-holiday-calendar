@@ -282,13 +282,25 @@ export default function LeaveRequestClient() {
             border: none !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
+            transform: scale(0.94);
+            transform-origin: top center;
           }
         }
       </style>
     </head><body>${el.innerHTML}</body></html>`);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 600);
+
+    const triggerPrint = () => {
+      win.print();
+      win.close();
+    };
+
+    if (win.document.readyState === 'complete') {
+      setTimeout(triggerPrint, 500);
+    } else {
+      win.onload = () => setTimeout(triggerPrint, 500);
+    }
   };
 
   const today = new Date();
