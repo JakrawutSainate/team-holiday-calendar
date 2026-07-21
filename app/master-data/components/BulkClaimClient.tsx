@@ -9,8 +9,6 @@ import { useMasterData } from './MasterDataContext';
 import { calendarDataService } from '@/src/libs/calendarData';
 
 // ─── Embedded weekend/holiday work data ──────────────────────────────────────
-// Sourced from docs/weekend_tasks_db_format.json.
-// Deduplicated by date (multiple projects on the same day → 1 entry).
 const RAW_ENTRIES: Array<{
   date: string;
   day_of_week: string;
@@ -55,7 +53,6 @@ const RAW_ENTRIES: Array<{
     { date: '2026-07-11', day_of_week: 'Saturday', is_public_holiday: false, holiday_name: null, project: 'amctrainingcenter | E-Bidding_Beatrix-BootStrape', summary: 'feat: GenericSkeleton loader | update version to 1.0.0' },
   ];
 
-  // Deduplicate: collapse same-date entries, merge project names
   const byDate = new Map<string, typeof raw[0] & { projects: string[] }>();
   for (const r of raw) {
     if (!byDate.has(r.date)) {
@@ -76,30 +73,82 @@ function toStatus(entry: typeof RAW_ENTRIES[0]): 'WEEKEND_WORK' | 'HOLIDAY_WORK'
 function formatDate(dateStr: string, lang: 'th' | 'en'): string {
   try {
     const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch { return dateStr; }
+    return d.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      weekday: 'short',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatMonthLabel(yearMonth: string, lang: 'th' | 'en'): string {
+  try {
+    const [y, m] = yearMonth.split('-');
+    const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+    return d.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return yearMonth;
+  }
 }
 
 export default function BulkClaimClient() {
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const { role } = useRole();
-  const { members } = useMasterData();
+  const { members, refreshData } = useMasterData();
   const lang = language as 'th' | 'en';
 
   const [selectedUserId, setSelectedUserId] = useState('');
   const [checkedDates, setCheckedDates] = useState<Set<string>>(new Set());
   const [claiming, setClaiming] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+
+  // Filter States
+  const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
+  const [selectedType, setSelectedType] = useState<'ALL' | 'HOLIDAY' | 'WEEKEND'>('ALL');
 
   const isAdmin = role === 'ADMIN';
 
-  const toggleAll = (val: boolean) => {
-    if (val) setCheckedDates(new Set(RAW_ENTRIES.map(e => e.date)));
-    else setCheckedDates(new Set());
-  };
+  // Unique Month-Year options extracted from RAW_ENTRIES
+  const monthOptions = useMemo(() => {
+    const months = new Set<string>();
+    RAW_ENTRIES.forEach((e) => months.add(e.date.slice(0, 7)));
+    return Array.from(months).sort();
+  }, []);
+
+  // Filtered Entries based on Month and Type
+  const filteredEntries = useMemo(() => {
+    return RAW_ENTRIES.filter((e) => {
+      if (selectedMonth !== 'ALL' && !e.date.startsWith(selectedMonth)) {
+        return false;
+      }
+      if (selectedType === 'HOLIDAY' && !e.is_public_holiday) {
+        return false;
+      }
+      if (selectedType === 'WEEKEND' && e.is_public_holiday) {
+        return false;
+      }
+      return true;
+    });
+  }, [selectedMonth, selectedType]);
+
+  const selectedUser = useMemo(
+    () => members.find((m) => m.id === selectedUserId),
+    [members, selectedUserId]
+  );
+
+  const entriesToClaim = useMemo(
+    () => RAW_ENTRIES.filter((e) => checkedDates.has(e.date)),
+    [checkedDates]
+  );
 
   const toggleDate = (date: string) => {
-    setCheckedDates(prev => {
+    setCheckedDates((prev) => {
       const next = new Set(prev);
       if (next.has(date)) next.delete(date);
       else next.add(date);
@@ -107,34 +156,55 @@ export default function BulkClaimClient() {
     });
   };
 
-  const selectedUser = useMemo(() => members.find(m => m.id === selectedUserId), [members, selectedUserId]);
+  const toggleExpand = (date: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
+    });
+  };
 
-  const entriesToClaim = useMemo(
-    () => RAW_ENTRIES.filter(e => checkedDates.has(e.date)),
-    [checkedDates]
-  );
+  const selectAllVisible = () => {
+    setCheckedDates((prev) => {
+      const next = new Set(prev);
+      filteredEntries.forEach((e) => next.add(e.date));
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setCheckedDates(new Set());
+  };
 
   const handleConfirm = async () => {
     if (!selectedUserId || entriesToClaim.length === 0) return;
     setClaiming(true);
     try {
-      const payload = entriesToClaim.map(e => ({
+      const payload = entriesToClaim.map((e) => ({
         date: e.date,
         status: toStatus(e),
         details: `[${e.projects.join(', ')}] ${e.summary}`.slice(0, 500),
       }));
-      const result = await calendarDataService.adminBulkClaimTokens(selectedUserId, payload);
+      const result = await calendarDataService.adminBulkClaimTokens(
+        selectedUserId,
+        payload
+      );
       if (result) {
         toast.success(
           lang === 'th'
-            ? `เคลมสำเร็จ ${result.claimed} วัน (+${result.claimed} tokens) / ข้ามซ้ำ ${result.skipped} วัน`
-            : `Claimed ${result.claimed} day(s) (+${result.claimed} tokens). Skipped ${result.skipped} duplicate(s).`
+            ? `เคลมสำเร็จ ${result.claimed} วัน (+${result.claimed} tokens) ให้แก่ ${selectedUser?.name}`
+            : `Successfully claimed ${result.claimed} day(s) (+${result.claimed} tokens) for ${selectedUser?.name}`
         );
-        setStep(1);
-        setSelectedUserId('');
         setCheckedDates(new Set());
+        refreshData();
       } else {
-        toast.error(lang === 'th' ? 'เกิดข้อผิดพลาด กรุณาลองใหม่' : 'An error occurred. Please try again.');
+        toast.error(
+          lang === 'th'
+            ? 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+            : 'An error occurred. Please try again.'
+        );
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Unknown error');
@@ -149,9 +219,13 @@ export default function BulkClaimClient() {
         <TopNavBar placeholder="" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-2">
-            <span className="material-symbols-outlined text-5xl text-zinc-300">lock</span>
+            <span className="material-symbols-outlined text-5xl text-zinc-300">
+              lock
+            </span>
             <p className="text-zinc-500 text-sm font-semibold">
-              {lang === 'th' ? 'สงวนสิทธิ์สำหรับ Admin เท่านั้น' : 'Admin access required'}
+              {lang === 'th'
+                ? 'สงวนสิทธิ์สำหรับ Admin เท่านั้น'
+                : 'Admin access required'}
             </p>
           </div>
         </main>
@@ -160,270 +234,348 @@ export default function BulkClaimClient() {
   }
 
   return (
-    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
-      <TopNavBar placeholder={lang === 'th' ? 'เคลม Token...' : 'Bulk Token Claim...'} />
+    <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background pb-32">
+      <TopNavBar
+        placeholder={lang === 'th' ? 'เคลม Token กลุ่ม...' : 'Bulk Token Claim...'}
+      />
 
-      <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-
+      <main className="flex-1 p-6 lg:p-12 overflow-y-auto custom-scrollbar animate-fade-in">
+        <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-4xl font-bold tracking-tight text-zinc-900">
-                {lang === 'th' ? 'เคลม Token วันทำงานพิเศษ' : 'Bulk Token Claim'}
+              <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-3">
+                <span className="material-symbols-outlined text-amber-500 text-3xl font-bold">
+                  military_tech
+                </span>
+                {lang === 'th'
+                  ? 'เคลม Token วันทำงานพิเศษ (Bulk Claim)'
+                  : 'Bulk Token Claim'}
               </h2>
             </div>
-            <p className="text-zinc-500 mt-2 text-base">
+            <p className="text-zinc-500 mt-1 text-sm font-medium">
               {lang === 'th'
-                ? 'Admin เคลม Token ให้ผู้ใช้จากข้อมูลวันทำงานในวันหยุดเสาร์-อาทิตย์และวันหยุดราชการ'
-                : 'Admin claims weekend/holiday tokens for users from historical work data.'}
+                ? 'ระบบแผงควบคุมสำหรับ Admin ในการเคลม Token วันหยุด/เสาร์-อาทิตย์ย้อนหลังให้สมาชิกในทีม'
+                : 'Admin control panel for bulk claiming historical weekend and holiday overtime tokens.'}
             </p>
           </div>
 
-          {/* Step indicator */}
-          <div className="flex items-center gap-2 text-xs font-bold">
-            {([1, 2, 3] as const).map((s) => (
-              <div key={s} className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  step === s ? 'bg-zinc-900 text-white' : step > s ? 'bg-green-500 text-white' : 'bg-zinc-100 text-zinc-400'
-                }`}>
-                  {step > s ? <span className="material-symbols-outlined text-sm">check</span> : s}
-                </div>
-                <span className={step === s ? 'text-zinc-900' : 'text-zinc-400'}>
-                  {s === 1 ? (lang === 'th' ? 'เลือก User' : 'Select User') :
-                   s === 2 ? (lang === 'th' ? 'เลือกวัน' : 'Choose Days') :
-                             (lang === 'th' ? 'ยืนยัน' : 'Confirm')}
+          {/* SECTION 1: Select User */}
+          <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm text-zinc-400">
+                  person_search
                 </span>
-                {s < 3 && <span className="text-zinc-200 text-lg">›</span>}
-              </div>
-            ))}
-          </div>
-
-          {/* STEP 1: Select user */}
-          {step === 1 && (
-            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-[0_1px_6px_rgba(0,0,0,0.04)] space-y-5">
-              <h3 className="text-sm font-bold text-zinc-800">
-                {lang === 'th' ? 'เลือกผู้ใช้ที่จะเคลม Token ให้' : 'Select the user to claim tokens for'}
+                {t('selectRecipient')}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {members.map(m => (
+              {selectedUser && (
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    check_circle
+                  </span>
+                  {selectedUser.name}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {members.map((m) => {
+                const isSelected = selectedUserId === m.id;
+                return (
                   <button
                     key={m.id}
                     onClick={() => setSelectedUserId(m.id)}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer text-left ${
-                      selectedUserId === m.id
-                        ? 'border-zinc-900 bg-zinc-50'
-                        : 'border-zinc-100 bg-white hover:border-zinc-300'
+                    className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-500/5 shadow-sm'
+                        : 'border-zinc-100 bg-white hover:border-zinc-200'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {m.avatarUrl
-                        ? <img src={m.avatarUrl} alt={m.name} className="w-full h-full object-cover" />
-                        : <span className="text-zinc-600 font-bold text-base">{m.name?.[0]}</span>
-                      }
+                    <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-zinc-200/60">
+                      {m.avatarUrl ? (
+                        <img
+                          src={m.avatarUrl}
+                          alt={m.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-zinc-600 font-bold text-sm">
+                          {m.name?.[0]}
+                        </span>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-zinc-900 truncate">{m.name}</p>
-                      <p className="text-[10px] text-zinc-400 truncate">{m.title || m.role}</p>
-                      <p className="text-[10px] text-blue-600 font-bold mt-0.5">{m.tokensBalance ?? 0} tokens</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-zinc-900 truncate">
+                        {m.name}
+                      </p>
+                      <p className="text-[10px] text-amber-600 font-bold mt-0.5">
+                        {m.tokensBalance ?? 0} Tokens
+                      </p>
                     </div>
-                    {selectedUserId === m.id && (
-                      <span className="material-symbols-outlined text-zinc-900 text-lg ml-auto">check_circle</span>
-                    )}
                   </button>
-                ))}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 2: Work Days List with Filter Bar */}
+          <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] space-y-6">
+            {/* Filter Controls Bar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Month Filter */}
+                <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200/80 px-3 py-1.5 rounded-xl">
+                  <span className="material-symbols-outlined text-sm text-zinc-400">
+                    calendar_month
+                  </span>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-zinc-800 outline-none cursor-pointer pr-1"
+                  >
+                    <option value="ALL">{t('allMonths')}</option>
+                    {monthOptions.map((ym) => (
+                      <option key={ym} value={ym}>
+                        {formatMonthLabel(ym, lang)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Day Type Filter Pills */}
+                <div className="flex items-center bg-zinc-100 p-1 rounded-xl gap-1">
+                  <button
+                    onClick={() => setSelectedType('ALL')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      selectedType === 'ALL'
+                        ? 'bg-white text-zinc-900 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-900'
+                    }`}
+                  >
+                    {t('allTypes')}
+                  </button>
+                  <button
+                    onClick={() => setSelectedType('HOLIDAY')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      selectedType === 'HOLIDAY'
+                        ? 'bg-white text-amber-700 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-900'
+                    }`}
+                  >
+                    {t('holidaysOnly')}
+                  </button>
+                  <button
+                    onClick={() => setSelectedType('WEEKEND')}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      selectedType === 'WEEKEND'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-900'
+                    }`}
+                  >
+                    {t('weekendsOnly')}
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-end pt-2">
+
+              {/* Quick Select Actions */}
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setStep(2)}
-                  disabled={!selectedUserId}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
+                  onClick={selectAllVisible}
+                  className="px-3.5 py-1.5 bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
-                  {lang === 'th' ? 'ถัดไป' : 'Next'}
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  <span className="material-symbols-outlined text-sm">
+                    select_all
+                  </span>
+                  {t('selectAllVisible')} ({filteredEntries.length})
                 </button>
+                {checkedDates.size > 0 && (
+                  <button
+                    onClick={clearSelection}
+                    className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    {t('clearSelection')}
+                  </button>
+                )}
               </div>
             </div>
-          )}
 
-          {/* STEP 2: Select days */}
-          {step === 2 && (
-            <div className="bg-white border border-zinc-100 rounded-3xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-              {/* Toolbar */}
-              <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <p className="text-sm font-bold text-zinc-800">
-                    {lang === 'th' ? `รายการวันทำงาน (${RAW_ENTRIES.length} วัน)` : `Work days (${RAW_ENTRIES.length} entries)`}
-                  </p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {lang === 'th' ? `เลือกแล้ว ${checkedDates.size} วัน` : `${checkedDates.size} selected`}
+            {/* List of Work Day Cards */}
+            <div className="space-y-3">
+              {filteredEntries.length === 0 ? (
+                <div className="py-12 text-center text-zinc-400">
+                  <span className="material-symbols-outlined text-4xl mb-2 text-zinc-300">
+                    find_in_page
+                  </span>
+                  <p className="text-xs font-semibold">
+                    {lang === 'th'
+                      ? 'ไม่พบรายการวันทำงานที่ตรงกับเงื่อนไข'
+                      : 'No work entries match your filters'}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => toggleAll(true)}
-                    className="px-3 py-1.5 text-xs font-bold border border-zinc-200 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer outline-none"
-                  >
-                    {lang === 'th' ? 'เลือกทั้งหมด' : 'Select All'}
-                  </button>
-                  <button
-                    onClick={() => toggleAll(false)}
-                    className="px-3 py-1.5 text-xs font-bold border border-zinc-200 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer outline-none"
-                  >
-                    {lang === 'th' ? 'ยกเลิกทั้งหมด' : 'Deselect All'}
-                  </button>
-                </div>
-              </div>
+              ) : (
+                filteredEntries.map((entry) => {
+                  const isChecked = checkedDates.has(entry.date);
+                  const isExpanded = expandedDates.has(entry.date);
+                  const isHol = entry.is_public_holiday;
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-zinc-50 border-b border-zinc-100">
-                      <th className="px-4 py-3 text-left font-bold text-zinc-500 w-10"></th>
-                      <th className="px-4 py-3 text-left font-bold text-zinc-500">{lang === 'th' ? 'วันที่' : 'Date'}</th>
-                      <th className="px-4 py-3 text-left font-bold text-zinc-500">{lang === 'th' ? 'ประเภท' : 'Type'}</th>
-                      <th className="px-4 py-3 text-left font-bold text-zinc-500">{lang === 'th' ? 'โปรเจกต์' : 'Project'}</th>
-                      <th className="px-4 py-3 text-left font-bold text-zinc-500">{lang === 'th' ? 'งานที่ทำ' : 'Summary'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {RAW_ENTRIES.map((entry) => {
-                      const checked = checkedDates.has(entry.date);
-                      const isHol = entry.is_public_holiday;
-                      return (
-                        <tr
-                          key={entry.date}
-                          onClick={() => toggleDate(entry.date)}
-                          className={`border-b border-zinc-50 transition-all cursor-pointer ${checked ? 'bg-zinc-900/[0.02]' : 'hover:bg-zinc-50'}`}
-                        >
-                          <td className="px-4 py-3">
-                            <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all ${
-                              checked ? 'bg-zinc-900 border-zinc-900' : 'border-zinc-300'
-                            }`}>
-                              {checked && <span className="material-symbols-outlined text-white" style={{ fontSize: 12 }}>check</span>}
+                  return (
+                    <div
+                      key={entry.date}
+                      onClick={() => toggleDate(entry.date)}
+                      className={`border rounded-2xl p-4 transition-all cursor-pointer ${
+                        isChecked
+                          ? 'border-amber-500 bg-amber-500/[0.02] shadow-xs'
+                          : 'border-zinc-200/80 bg-white hover:border-zinc-300 hover:bg-zinc-50/50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {/* Checkbox */}
+                          <div
+                            className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                              isChecked
+                                ? 'bg-amber-500 border-amber-500 text-white'
+                                : 'border-zinc-300 bg-white'
+                            }`}
+                          >
+                            {isChecked && (
+                              <span className="material-symbols-outlined text-sm font-bold">
+                                check
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Date and Details */}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-bold text-zinc-900">
+                                {formatDate(entry.date, lang)}
+                              </span>
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  isHol
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                }`}
+                              >
+                                {isHol
+                                  ? `🎌 ${entry.holiday_name || (lang === 'th' ? 'วันหยุดราชการ' : 'Public Holiday')}`
+                                  : (lang === 'th' ? '📅 วันหยุดสุดสัปดาห์' : '📅 Weekend')}
+                              </span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-bold text-zinc-800">{formatDate(entry.date, lang)}</p>
-                            <p className="text-zinc-400 text-[10px]">{entry.day_of_week}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              isHol ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-blue-50 text-blue-700 border border-blue-100'
-                            }`}>
-                              {isHol
-                                ? (lang === 'th' ? '🎌 วันหยุดราชการ' : '🎌 Public Holiday')
-                                : (lang === 'th' ? '📅 วันหยุดสุดสัปดาห์' : '📅 Weekend')}
-                            </span>
-                            {isHol && <p className="text-[10px] text-zinc-400 mt-0.5 truncate max-w-[120px]">{entry.holiday_name}</p>}
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-zinc-600 truncate max-w-[150px]" title={entry.projects.join(', ')}>{entry.projects.join(', ')}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-zinc-500 truncate max-w-[220px]" title={entry.summary}>{entry.summary}</p>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
 
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-zinc-100 flex justify-between items-center">
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex items-center gap-2 px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-600 transition-colors cursor-pointer outline-none"
-                >
-                  <span className="material-symbols-outlined text-sm">arrow_back</span>
-                  {lang === 'th' ? 'ย้อนกลับ' : 'Back'}
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  disabled={checkedDates.size === 0}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
-                >
-                  {lang === 'th' ? `ถัดไป (${checkedDates.size} วัน)` : `Next (${checkedDates.size} days)`}
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </div>
+                            {/* Project Pills */}
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              {entry.projects.map((proj) => (
+                                <span
+                                  key={proj}
+                                  className="px-2 py-0.5 bg-zinc-100 text-zinc-600 border border-zinc-200/60 rounded-md text-[10px] font-bold"
+                                >
+                                  {proj}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Toggle */}
+                        <button
+                          onClick={(e) => toggleExpand(entry.date, e)}
+                          className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer"
+                        >
+                          <span>
+                            {isExpanded ? t('hideWorkDetails') : t('showWorkDetails')}
+                          </span>
+                          <span className="material-symbols-outlined text-sm">
+                            {isExpanded ? 'expand_less' : 'expand_more'}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Collapsible Details Content */}
+                      {isExpanded && (
+                        <div
+                          className="mt-3 pt-3 border-t border-zinc-100 text-xs text-zinc-600 bg-zinc-50/80 p-3 rounded-xl animate-fade-in"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="font-semibold text-zinc-500 text-[10px] uppercase tracking-wider mb-1">
+                            {lang === 'th' ? 'รายละเอียดงาน (Git Log):' : 'Task Summary:'}
+                          </p>
+                          <p className="text-zinc-700 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+                            {entry.summary}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
-          )}
-
-          {/* STEP 3: Confirm */}
-          {step === 3 && (
-            <div className="bg-white border border-zinc-100 rounded-3xl p-8 shadow-[0_1px_6px_rgba(0,0,0,0.04)] space-y-6">
-              <div className="text-center space-y-3">
-                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto">
-                  <span className="material-symbols-outlined text-white text-3xl">token</span>
-                </div>
-                <h3 className="text-xl font-bold text-zinc-900">
-                  {lang === 'th' ? 'ยืนยันการเคลม Token' : 'Confirm Token Claim'}
-                </h3>
-              </div>
-
-              {/* Summary card */}
-              <div className="bg-zinc-50 rounded-2xl p-5 space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-zinc-500 font-medium">{lang === 'th' ? 'ผู้รับ Token' : 'Recipient'}</span>
-                  <span className="font-bold text-zinc-900">{selectedUser?.name ?? selectedUserId}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-zinc-500 font-medium">{lang === 'th' ? 'จำนวนวัน' : 'Days'}</span>
-                  <span className="font-bold text-zinc-900">{entriesToClaim.length} {lang === 'th' ? 'วัน' : 'day(s)'}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-zinc-500 font-medium">{lang === 'th' ? 'Token ที่จะได้รับ' : 'Tokens to earn'}</span>
-                  <span className="font-bold text-green-600 text-lg">+{entriesToClaim.length}.0</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-zinc-500 font-medium">{lang === 'th' ? 'ยอดใหม่ (คาดการณ์)' : 'Est. new balance'}</span>
-                  <span className="font-bold text-zinc-900">{((selectedUser as any)?.tokensBalance ?? 0) + entriesToClaim.length}.0</span>
-                </div>
-              </div>
-
-              {/* Date preview */}
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-zinc-500">{lang === 'th' ? 'วันที่จะเคลม:' : 'Days to claim:'}</p>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
-                  {entriesToClaim.map(e => (
-                    <span key={e.date} className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
-                      e.is_public_holiday ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
-                    }`}>
-                      {formatDate(e.date, lang)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-2">
-                <button
-                  onClick={() => setStep(2)}
-                  className="flex items-center gap-2 px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-600 transition-colors cursor-pointer outline-none"
-                >
-                  <span className="material-symbols-outlined text-sm">arrow_back</span>
-                  {lang === 'th' ? 'ย้อนกลับ' : 'Back'}
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={claiming}
-                  className="flex items-center gap-2 px-8 py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all cursor-pointer border-none outline-none shadow-lg"
-                >
-                  {claiming
-                    ? <span className="material-symbols-outlined text-base animate-spin">sync</span>
-                    : <span className="material-symbols-outlined text-base">token</span>
-                  }
-                  {claiming
-                    ? (lang === 'th' ? 'กำลังเคลม...' : 'Claiming...')
-                    : (lang === 'th' ? `ยืนยันเคลม ${entriesToClaim.length} Token` : `Confirm Claim ${entriesToClaim.length} Tokens`)}
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </main>
+
+      {/* STICKY BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white/95 backdrop-blur-md border-t border-zinc-200/80 p-4 px-6 z-40 shadow-[0_-4px_25px_rgba(0,0,0,0.05)]">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+          {/* Selected Info Summary */}
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 font-bold flex-shrink-0">
+              <span className="material-symbols-outlined text-xl">token</span>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400 font-medium">
+                  {lang === 'th' ? 'ผู้รับ Token:' : 'Recipient:'}
+                </span>
+                <span className="text-xs font-bold text-zinc-900">
+                  {selectedUser ? selectedUser.name : (lang === 'th' ? 'ยังไม่ได้เลือกผู้ใช้' : 'No user selected')}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className="text-sm font-extrabold text-amber-600">
+                  +{entriesToClaim.length}.0 Tokens ({entriesToClaim.length} {lang === 'th' ? 'วัน' : 'days'})
+                </span>
+                {selectedUser && (
+                  <span className="text-xs text-zinc-500 font-semibold border-l border-zinc-200 pl-3">
+                    {t('estNewBalance')}:{' '}
+                    <span className="font-bold text-zinc-900">
+                      {((selectedUser as any)?.tokensBalance ?? 0) + entriesToClaim.length}.0
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Confirm Action Button */}
+          <button
+            onClick={handleConfirm}
+            disabled={!selectedUserId || entriesToClaim.length === 0 || claiming}
+            className="px-8 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-sm rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-none outline-none"
+          >
+            {claiming ? (
+              <>
+                <span className="material-symbols-outlined text-lg animate-spin">
+                  progress_activity
+                </span>
+                <span>{t('claiming')}</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-lg font-bold">
+                  bolt
+                </span>
+                <span>
+                  {t('confirmBulkClaim').replace('{count}', entriesToClaim.length.toString())}
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
