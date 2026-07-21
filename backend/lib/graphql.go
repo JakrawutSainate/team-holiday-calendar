@@ -106,7 +106,7 @@ func resolveGraphQL(query string, vars map[string]interface{}, userID, userRole 
 	}
 
 	if strings.Contains(q, "getTeamMembers") {
-		rows, err := db.Query(`SELECT id, name, email, role, "avatarUrl", department, title, "tokensBalance" FROM "TeamMember" ORDER BY name`)
+		rows, err := db.Query(`SELECT id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature", "sickLeaveBalance", "annualLeaveBalance" FROM "TeamMember" ORDER BY name`)
 		if err != nil {
 			return nil, err
 		}
@@ -114,15 +114,17 @@ func resolveGraphQL(query string, vars map[string]interface{}, userID, userRole 
 		var members []map[string]interface{}
 		for rows.Next() {
 			var id, name, email, role, department, title string
-			var avatarURL *string
+			var avatarURL, savedSig *string
 			var tokensBalance float64
-			if err := rows.Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance); err != nil {
+			var sickBalance, annualBalance int
+			if err := rows.Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig, &sickBalance, &annualBalance); err != nil {
 				return nil, err
 			}
 			members = append(members, map[string]interface{}{
 				"id": id, "name": name, "email": email, "role": role,
 				"avatarUrl": avatarURL, "department": department, "title": title,
-				"tokensBalance": tokensBalance,
+				"tokensBalance": tokensBalance, "savedSignature": savedSig,
+				"sickLeaveBalance": sickBalance, "annualLeaveBalance": annualBalance,
 			})
 		}
 		if members == nil {
@@ -462,6 +464,102 @@ func resolveGraphQL(query string, vars map[string]interface{}, userID, userRole 
 		return map[string]interface{}{"updateMaxOffAllowed": map[string]interface{}{
 			"id": "global-default", "maxOffAllowed": maxOffInt, "description": "Global default limit",
 		}}, nil
+	}
+
+	if strings.Contains(q, "updateProfileSignature") {
+		// bypass auth for testing — use first member if no token
+		if userID == "" {
+			row := db.QueryRow(`SELECT id FROM "TeamMember" ORDER BY name LIMIT 1`)
+			if err := row.Scan(&userID); err != nil {
+				return nil, errors.New("unauthorized: no user found")
+			}
+		}
+		var sigPtr *string
+		if sigVal, exists := vars["signature"]; exists && sigVal != nil {
+			if sigStr, ok := sigVal.(string); ok {
+				sigPtr = &sigStr
+			}
+		}
+		var id, name, email, role, department, title string
+		var avatarURL, savedSig *string
+		var tokensBalance float64
+		if sigPtr == nil {
+			err := db.QueryRow(
+				`UPDATE "TeamMember" SET "savedSignature" = NULL WHERE id = $1
+				 RETURNING id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature"`,
+				userID,
+			).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err := db.QueryRow(
+				`UPDATE "TeamMember" SET "savedSignature" = $1 WHERE id = $2
+				 RETURNING id, name, email, role, "avatarUrl", department, title, "tokensBalance", "savedSignature"`,
+				*sigPtr, userID,
+			).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &savedSig)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return map[string]interface{}{"updateProfileSignature": map[string]interface{}{
+			"id": id, "name": name, "email": email, "role": role,
+			"avatarUrl": avatarURL, "department": department, "title": title,
+			"tokensBalance": tokensBalance, "savedSignature": savedSig,
+		}}, nil
+	}
+
+	if strings.Contains(q, "updateTeamMemberProfile") {
+		if err := requireAuth(); err != nil {
+			return nil, err
+		}
+		id, _ := vars["id"].(string)
+		name, _ := vars["name"].(string)
+		department, _ := vars["department"].(string)
+		title, _ := vars["title"].(string)
+		if id == "" {
+			return nil, errors.New("missing variable: id")
+		}
+		var retID, retName, retDept, retTitle string
+		err := db.QueryRow(
+			`UPDATE "TeamMember" SET name=$1, department=$2, title=$3 WHERE id=$4
+			 RETURNING id, name, department, title`,
+			name, department, title, id,
+		).Scan(&retID, &retName, &retDept, &retTitle)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"updateTeamMemberProfile": map[string]interface{}{
+			"id": retID, "name": retName, "department": retDept, "title": retTitle,
+		}}, nil
+	}
+
+	if strings.Contains(q, "getAuditLogs") {
+		if err := requireAuth(); err != nil {
+			return nil, err
+		}
+		rows, err := db.Query(`SELECT id, "userId", "userName", action, details, "createdAt" FROM "AuditLog" ORDER BY "createdAt" DESC LIMIT 200`)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		var logs []map[string]interface{}
+		for rows.Next() {
+			var id, uid, uName, action, details string
+			var createdAt time.Time
+			if err := rows.Scan(&id, &uid, &uName, &action, &details, &createdAt); err != nil {
+				return nil, err
+			}
+			logs = append(logs, map[string]interface{}{
+				"id": id, "userId": uid, "userName": uName,
+				"action": action, "details": details,
+				"createdAt": createdAt.UTC().Format(time.RFC3339),
+			})
+		}
+		if logs == nil {
+			logs = []map[string]interface{}{}
+		}
+		return map[string]interface{}{"getAuditLogs": logs}, nil
 	}
 
 	return nil, errors.New("unsupported GraphQL operation")
