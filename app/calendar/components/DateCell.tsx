@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
@@ -10,12 +11,14 @@ interface DateCellProps {
   isMuted: boolean;
   dateString: string;
   events: CalendarEvent[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   leaveDocuments: any[];
   capacity: CapacitySetting;
   onClick?: () => void;
 }
 
 export default function DateCell({ day, isMuted, dateString, events, leaveDocuments, capacity, onClick }: DateCellProps) {
+  const router = useRouter();
   const { language, t } = useTranslation();
   const { user } = useAuth();
   const [earnRate] = useState(() => {
@@ -183,15 +186,20 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
           return (
             <div
               key={e.id}
-              className={`relative group/leave px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 shadow-sm border cursor-help ${
+              onClick={(evt) => {
+                evt.stopPropagation();
+                router.push(`/calendar/leave-request?date=${dateString}`);
+              }}
+              className={`relative group/leave px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 shadow-xs border cursor-pointer hover:scale-105 active:scale-95 transition-all ${
                 theme === 'amber'
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 animate-fade-in'
-                  : 'bg-green-50 text-green-800 border-green-200 animate-fade-in'
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 animate-fade-in'
+                  : 'bg-green-50 hover:bg-green-100 text-green-800 border-green-200 animate-fade-in'
               }`}
+              title={language === 'th' ? 'กดเพื่อยื่นใบลา/ดูรายละเอียดวันลานี้' : 'Click to request/view leave for this date'}
             >
               {e.userName.split(' ')[0]}{' '}
-              <span className="opacity-70 text-[10px]">
-                {isOff ? 'OFF' : '+1 🚗'}
+              <span className="opacity-75 text-[10px] font-semibold">
+                {isOff ? (language === 'th' ? 'ลาหยุด' : 'OFF') : '+1 🚗'}
               </span>
 
               {/* Leave Document Tooltip/Popover */}

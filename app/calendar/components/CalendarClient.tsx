@@ -114,25 +114,6 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         );
       }
     } else {
-      const leaveEvent = controller
-        .getEvents()
-        .find((e) => e.date === dateString && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
-        
-      if (leaveEvent) {
-        setViewingLeaveEvent(leaveEvent);
-        return;
-      }
-
-      const tokensNeeded = 1;
-      if (controller.getTokens() < tokensNeeded) {
-        toast.error(
-          language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
-          { description: language === 'th'
-              ? `ต้องการ ${tokensNeeded} โทเค็น แต่มีเพียง ${controller.getTokens()} โทเค็น`
-              : `You need ${tokensNeeded} tokens but only have ${controller.getTokens()}.` }
-        );
-        return;
-      }
       router.push(`/calendar/leave-request?date=${dateString}`);
     }
   };
