@@ -42,18 +42,36 @@ export class BalanceController {
       }
 
       // Map real TokenTransaction records to the display Transaction type
-      this.transactions = txns.map((t: TokenTransaction): Transaction => ({
-        date: new Date(t.createdAt).toLocaleDateString('en-US', {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-        }),
-        type: t.type as 'EARN' | 'SPEND',
-        description: t.description,
-        status: 'Approved',
-        amount: t.type === 'EARN' ? `+${t.amount}` : `-${t.amount}`,
-        relatedDate: t.relatedDate ?? undefined,
-      }));
+      this.transactions = txns.map((t: TokenTransaction): Transaction => {
+        let displayDate = '';
+        if (t.relatedDate) {
+          try {
+            const d = new Date(t.relatedDate + 'T00:00:00');
+            displayDate = d.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+              year: 'numeric',
+            });
+          } catch {
+            displayDate = t.relatedDate;
+          }
+        } else {
+          displayDate = new Date(t.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+          });
+        }
+
+        return {
+          date: displayDate,
+          type: t.type as 'EARN' | 'SPEND',
+          description: t.description,
+          status: 'Approved',
+          amount: t.type === 'EARN' ? `+${t.amount}` : `-${t.amount}`,
+          relatedDate: t.relatedDate ?? undefined,
+        };
+      });
 
     } catch (e) {
       console.error('Failed to load balance state from database:', e);

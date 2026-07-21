@@ -396,9 +396,12 @@ func (r *MutationResolver) AdminBulkClaimTokens(ctx *ResolverContext, vars map[s
 			return nil, err
 		}
 
-		label := "Weekend Coverage (Bulk)"
-		if status == "HOLIDAY_WORK" {
-			label = "Holiday Coverage (Bulk)"
+		label := details
+		if label == "" {
+			label = "Weekend Coverage"
+			if status == "HOLIDAY_WORK" {
+				label = "Holiday Coverage"
+			}
 		}
 
 		txnID := uuid.New().String()
