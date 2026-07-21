@@ -179,13 +179,12 @@ export default function LeaveRequestClient() {
     reader.readAsDataURL(file);
   };
 
-  // Calculate past leave days based on state (and apply manual overrides if any)
-  const currentYear = new Date(fromDate || new Date()).getFullYear();
-  const calculatedStats = controller.calculatePastLeaveDays(currentYear);
+  // Calculate past leave days based on fiscal year in DB
+  const calculatedStats = controller.calculatePastLeaveDays(fromDate);
 
-  const sickTaken = sickTakenOverride !== null ? sickTakenOverride : calculatedStats.SICK;
-  const personalTaken = personalTakenOverride !== null ? personalTakenOverride : calculatedStats.PERSONAL;
-  const maternityTaken = maternityTakenOverride !== null ? maternityTakenOverride : calculatedStats.MATERNITY;
+  const sickTaken = calculatedStats.SICK;
+  const personalTaken = calculatedStats.PERSONAL;
+  const maternityTaken = calculatedStats.MATERNITY;
 
   const currentSick = leaveType === 'SICK' ? totalDays : 0;
   const currentPersonal = leaveType === 'PERSONAL' ? totalDays : 0;
@@ -513,7 +512,7 @@ export default function LeaveRequestClient() {
                       ตารางสถิติการลาในปีงบประมาณนี้
                     </span>
                     <span className="text-[10px] text-zinc-400 font-semibold lowercase italic">
-                      * สามารถกรอกแก้ไขตัวเลขสถิติลาสะสมได้
+                      * สถิตินับจากประวัติการยื่นลาในปีงบประมาณปัจจุบันแบบอัตโนมัติ
                     </span>
                   </div>
 
@@ -530,31 +529,19 @@ export default function LeaveRequestClient() {
                       <tbody>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">ป่วย / Sick</td>
-                          <td className="border border-zinc-200 px-2 py-1 text-center">
-                            <input type="number" min={0} value={sickTaken}
-                              onChange={(e) => setSickTakenOverride(e.target.value === '' ? 0 : Number(e.target.value))}
-                              className="w-16 text-center border border-zinc-200 rounded py-0.5 bg-zinc-50/50" />
-                          </td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{sickTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentSick}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{sickTotal}</td>
                         </tr>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">กิจส่วนตัว / Personal</td>
-                          <td className="border border-zinc-200 px-2 py-1 text-center">
-                            <input type="number" min={0} value={personalTaken}
-                              onChange={(e) => setPersonalTakenOverride(e.target.value === '' ? 0 : Number(e.target.value))}
-                              className="w-16 text-center border border-zinc-200 rounded py-0.5 bg-zinc-50/50" />
-                          </td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{personalTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentPersonal}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{personalTotal}</td>
                         </tr>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">คลอดบุตร / Maternity</td>
-                          <td className="border border-zinc-200 px-2 py-1 text-center">
-                            <input type="number" min={0} value={maternityTaken}
-                              onChange={(e) => setMaternityTakenOverride(e.target.value === '' ? 0 : Number(e.target.value))}
-                              className="w-16 text-center border border-zinc-200 rounded py-0.5 bg-zinc-50/50" />
-                          </td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{maternityTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentMaternity}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{maternityTotal}</td>
                         </tr>
@@ -744,20 +731,19 @@ export default function LeaveRequestClient() {
                     <div className="flex flex-col items-end pr-8 text-xs space-y-1 mt-4">
                       <div className="flex flex-col items-center space-y-1">
                         <span>ขอแสดงความนับถือ</span>
-                        <div className="h-10 flex items-center justify-center py-1">
-                          {signatureType === 'DRAW' && signatureImage ? (
-                            <img src={signatureImage} alt="Signature" className="max-h-full object-contain" />
-                          ) : (
-                            <span className="font-serif italic border-b border-black px-4 min-h-[18px]">{signatureText || fullName || '....................................'}</span>
-                          )}
+                        <div className="h-12 flex items-center justify-center py-1 min-w-[140px]">
+                          {savedSignature ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain" />
+                          ) : null}
                         </div>
                         <div className="flex items-end gap-1">
                           <span>(ลงชื่อ)</span>
-                          <span className="border-b border-dotted border-black w-[150px] text-center min-h-[16px]">{fullName || '....................................'}</span>
+                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{fullName || user?.name || ''}</span>
                         </div>
                         <div className="flex items-end gap-1">
                           <span>(ตัวบรรจง)</span>
-                          <span className="border-b border-dotted border-black w-[150px] text-center min-h-[16px]">{fullName || '....................................'}</span>
+                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{fullName || user?.name || ''}</span>
                         </div>
                       </div>
                     </div>
