@@ -422,3 +422,30 @@ func (r *MutationResolver) AdminBulkClaimTokens(ctx *ResolverContext, vars map[s
 		"skipped": skipped,
 	}}, nil
 }
+
+// ResetAndSeedTokens clears weekend/holiday events, token transactions, and resets tokensBalance to 0.
+func (r *MutationResolver) ResetAndSeedTokens(ctx *ResolverContext, vars map[string]interface{}) (interface{}, error) {
+	tx, err := r.db.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM "CalendarEvent" WHERE status IN ('WEEKEND_WORK', 'HOLIDAY_WORK')`); err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Exec(`DELETE FROM "TokenTransaction"`); err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = 0.0`); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return true, nil
+}
