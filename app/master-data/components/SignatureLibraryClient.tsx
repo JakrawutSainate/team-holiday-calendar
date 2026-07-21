@@ -34,9 +34,12 @@ export default function SignatureLibraryClient() {
   const currentUserData = controller.getMembers().find((m) => m.id === user?.id) || user;
 
   const [showCanvasModal, setShowCanvasModal] = useState(false);
+  const [sigTab, setSigTab] = useState<'DRAW' | 'TEXT'>('DRAW');
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureImage, setSignatureImage] = useState('');
+  const [signatureText, setSignatureText] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const textCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Setup drawing handlers when canvas modal opens
   useEffect(() => {
@@ -53,6 +56,22 @@ export default function SignatureLibraryClient() {
       }, 100);
     }
   }, [showCanvasModal]);
+
+  // Re-render text preview whenever text changes
+  useEffect(() => {
+    const canvas = textCanvasRef.current;
+    if (!canvas || sigTab !== 'TEXT') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!signatureText.trim()) return;
+    ctx.fillStyle = '#1e3a5f';
+    ctx.font = `52px 'Dancing Script', cursive`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(signatureText.trim(), canvas.width / 2, canvas.height / 2);
+    setSignatureImage(canvas.toDataURL('image/png'));
+  }, [signatureText, sigTab]);
 
   const getCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -105,12 +124,16 @@ export default function SignatureLibraryClient() {
     if (res.success) {
       setShowCanvasModal(false);
       setSignatureImage('');
+      setSignatureText('');
+      setSigTab('DRAW');
       toast.success(language === 'th' ? 'บันทึกลายเซ็นสำเร็จ' : 'Signature saved successfully');
       refreshData();
     } else {
       toast.error(res.error || 'Failed to save signature');
     }
   };
+
+  const openModal = () => { setShowCanvasModal(true); setSigTab('DRAW'); setSignatureImage(''); setSignatureText(''); };
 
   const handleDeleteSignature = async () => {
     if (!confirm(language === 'th' ? 'คุณต้องการลบลายเซ็นนี้ใช่หรือไม่?' : 'Are you sure you want to delete your signature?')) return;
@@ -312,7 +335,7 @@ export default function SignatureLibraryClient() {
                   {currentUserData?.savedSignature && (
                     <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex gap-3 justify-center">
                       <button
-                        onClick={() => setShowCanvasModal(true)}
+                        onClick={openModal}
                         className="flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all border-none outline-none cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-sm">edit</span>
@@ -342,14 +365,17 @@ export default function SignatureLibraryClient() {
         </div>
       </main>
 
-      {/* Signature Canvas Drawing Modal */}
+      {/* Signature Modal — Draw or Type */}
       {showCanvasModal && (
         <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          {/* Load Dancing Script font for text tab */}
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" />
+
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-zinc-100 animate-slide-up">
             {/* Header */}
             <div className="bg-zinc-900 text-white px-6 py-4 flex justify-between items-center">
               <h3 className="text-sm font-bold tracking-wide">
-                {language === 'th' ? 'วาดลายเซ็นของคุณ' : 'Draw Your Signature'}
+                {language === 'th' ? 'ตั้งค่าลายเซ็น' : 'Signature Setup'}
               </h3>
               <button
                 onClick={() => setShowCanvasModal(false)}
@@ -359,59 +385,118 @@ export default function SignatureLibraryClient() {
               </button>
             </div>
 
-            {/* Canvas Body */}
+            {/* Tab Switch */}
+            <div className="flex border-b border-zinc-100">
+              <button
+                onClick={() => { setSigTab('DRAW'); setSignatureImage(''); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold transition-all border-none outline-none cursor-pointer ${
+                  sigTab === 'DRAW'
+                    ? 'text-zinc-900 border-b-2 border-zinc-900 bg-zinc-50'
+                    : 'text-zinc-400 hover:text-zinc-700 bg-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">gesture</span>
+                {language === 'th' ? 'วาดด้วยมือ' : 'Draw'}
+              </button>
+              <button
+                onClick={() => { setSigTab('TEXT'); setSignatureImage(''); setSignatureText(''); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold transition-all border-none outline-none cursor-pointer ${
+                  sigTab === 'TEXT'
+                    ? 'text-zinc-900 border-b-2 border-zinc-900 bg-zinc-50'
+                    : 'text-zinc-400 hover:text-zinc-700 bg-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">title</span>
+                {language === 'th' ? 'พิมพ์ชื่อ' : 'Type Name'}
+              </button>
+            </div>
+
+            {/* Body */}
             <div className="p-6 space-y-4">
-              <p className="text-xs text-zinc-500 font-medium">
-                {language === 'th' 
-                  ? 'กรุณาใช้เมาส์หรือนิ้วมือวาดลายเซ็นลงในกรอบด้านล่างนี้'
-                  : 'Please use your mouse or touch screen to sign inside the box below.'}
-              </p>
-
-              <div className="border border-zinc-200 rounded-2xl bg-zinc-50 overflow-hidden relative h-32 flex items-center justify-center">
-                <canvas
-                  ref={canvasRef}
-                  width={460}
-                  height={120}
-                  className="w-full h-full cursor-crosshair touch-none"
-                  onMouseDown={startDraw}
-                  onMouseMove={doDraw}
-                  onMouseUp={endDraw}
-                  onMouseLeave={endDraw}
-                  onTouchStart={startDraw}
-                  onTouchMove={doDraw}
-                  onTouchEnd={endDraw}
-                />
-              </div>
-
-              <div className="flex justify-between items-center pt-2">
-                <button
-                  onClick={clearDraw}
-                  className="flex items-center gap-1 px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
-                >
-                  <span className="material-symbols-outlined text-sm">mop</span>
-                  {language === 'th' ? 'ล้างกระดาน' : 'Clear Canvas'}
-                </button>
-
-                <div className="flex gap-2">
+              {sigTab === 'DRAW' ? (
+                <>
+                  <p className="text-xs text-zinc-500 font-medium">
+                    {language === 'th'
+                      ? 'ใช้เมาส์หรือนิ้วมือวาดลายเซ็นในกรอบด้านล่าง'
+                      : 'Use mouse or finger to draw your signature below.'}
+                  </p>
+                  <div className="border border-zinc-200 rounded-2xl bg-zinc-50 overflow-hidden relative h-32">
+                    <canvas
+                      ref={canvasRef}
+                      width={460}
+                      height={120}
+                      className="w-full h-full cursor-crosshair touch-none"
+                      onMouseDown={startDraw}
+                      onMouseMove={doDraw}
+                      onMouseUp={endDraw}
+                      onMouseLeave={endDraw}
+                      onTouchStart={startDraw}
+                      onTouchMove={doDraw}
+                      onTouchEnd={endDraw}
+                    />
+                  </div>
                   <button
-                    onClick={() => setShowCanvasModal(false)}
-                    className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
+                    onClick={clearDraw}
+                    className="flex items-center gap-1 px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
                   >
-                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                    <span className="material-symbols-outlined text-sm">mop</span>
+                    {language === 'th' ? 'ล้างกระดาน' : 'Clear'}
                   </button>
-                  <button
-                    onClick={handleSaveSignature}
-                    disabled={!signatureImage || savingSig}
-                    className="flex items-center gap-1.5 px-5 py-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
-                  >
-                    {savingSig ? (
-                      <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-zinc-500 font-medium">
+                    {language === 'th'
+                      ? 'พิมพ์ชื่อของคุณ ระบบจะแปลงเป็นลายเซ็นแบบลายมือให้อัตโนมัติ'
+                      : 'Type your name and the system will render it as a handwritten signature.'}
+                  </p>
+                  <input
+                    type="text"
+                    value={signatureText}
+                    onChange={(e) => setSignatureText(e.target.value)}
+                    placeholder={language === 'th' ? 'กรอกชื่อ - นามสกุล...' : 'Enter your name...'}
+                    className="w-full px-4 py-3 border border-zinc-200 rounded-2xl text-sm outline-none focus:border-zinc-400 transition-colors"
+                    style={{ fontFamily: "'Dancing Script', cursive", fontSize: 20 }}
+                  />
+                  {/* Text signature preview (hidden canvas) */}
+                  <canvas ref={textCanvasRef} width={460} height={120} className="hidden" />
+                  {/* Visual preview */}
+                  <div className="border border-zinc-200 rounded-2xl bg-zinc-50 h-24 flex items-center justify-center overflow-hidden">
+                    {signatureText.trim() ? (
+                      <span
+                        style={{ fontFamily: "'Dancing Script', cursive", fontSize: 44, color: '#1e3a5f', lineHeight: 1 }}
+                      >
+                        {signatureText.trim()}
+                      </span>
                     ) : (
-                      <span className="material-symbols-outlined text-sm">save</span>
+                      <span className="text-xs text-zinc-400 font-medium">
+                        {language === 'th' ? 'ตัวอย่างลายเซ็นจะแสดงที่นี่' : 'Signature preview will appear here'}
+                      </span>
                     )}
-                    {language === 'th' ? 'บันทึกลายเซ็น' : 'Save Signature'}
-                  </button>
-                </div>
+                  </div>
+                </>
+              )}
+
+              {/* Footer buttons */}
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setShowCanvasModal(false)}
+                  className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
+                >
+                  {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                </button>
+                <button
+                  onClick={handleSaveSignature}
+                  disabled={!signatureImage || savingSig}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
+                >
+                  {savingSig ? (
+                    <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">save</span>
+                  )}
+                  {language === 'th' ? 'บันทึกลายเซ็น' : 'Save Signature'}
+                </button>
               </div>
             </div>
           </div>

@@ -225,6 +225,58 @@ export async function resolveGraphQL(
     return { adminAddTokens: targetUser };
   }
 
+  if (q.includes('adminBulkClaimTokens')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') {
+      throw new Error('forbidden: only administrators can bulk-claim tokens');
+    }
+
+    const targetUserId = variables.userId as string;
+    const entries = variables.entries as Array<{ date: string; status: string; details?: string }>;
+
+    if (!targetUserId || !Array.isArray(entries)) throw new Error('missing variables: userId or entries');
+
+    const targetUser = await prisma.teamMember.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) throw new Error('user not found');
+
+    // Load existing work events for duplicate detection
+    const existingEvents = await prisma.calendarEvent.findMany({
+      where: { userId: targetUserId, status: { in: ['WEEKEND_WORK', 'HOLIDAY_WORK'] } },
+      select: { date: true },
+    });
+    const existingDates = new Set(existingEvents.map((e: { date: string }) => e.date));
+
+    let claimed = 0;
+    let skipped = 0;
+
+    for (const entry of entries) {
+      if (!entry.date || !['WEEKEND_WORK', 'HOLIDAY_WORK'].includes(entry.status)) continue;
+      if (existingDates.has(entry.date)) { skipped++; continue; }
+
+      await prisma.calendarEvent.create({
+        data: {
+          userId: targetUserId,
+          userName: targetUser.name,
+          date: entry.date,
+          status: entry.status,
+          details: entry.details || '',
+        },
+      });
+      await prisma.teamMember.update({
+        where: { id: targetUserId },
+        data: { tokensBalance: { increment: 1.0 } },
+      });
+      const label = entry.status === 'HOLIDAY_WORK' ? 'Holiday Coverage (Bulk)' : 'Weekend Coverage (Bulk)';
+      await prisma.tokenTransaction.create({
+        data: { userId: targetUserId, type: 'EARN', amount: 1.0, description: label, relatedDate: entry.date },
+      });
+      existingDates.add(entry.date);
+      claimed++;
+    }
+
+    return { adminBulkClaimTokens: { claimed, skipped } };
+  }
+
   if (q.includes('updateProfileSignature')) {
     const authUser = await requireAuth();
     const signature = variables.signature as string | null;

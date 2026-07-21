@@ -1,0 +1,692 @@
+[
+  {
+    "date": "2025-10-23",
+    "day_of_week": "Thursday",
+    "is_public_holiday": true,
+    "holiday_name": "วันปิยมหาราช (King Chulalongkorn Memorial Day)",
+    "project": "AMC_PC",
+    "tasks": [
+      "edit",
+      "feature addjust AboutUS page"
+    ],
+    "summary": "edit | feature addjust AboutUS page"
+  },
+  {
+    "date": "2025-10-25",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "AMC_PC",
+    "tasks": [
+      "Update ApiRoutes.js (Fix)",
+      "Update ApiRoute.js"
+    ],
+    "summary": "Update ApiRoutes.js (Fix) | Update ApiRoute.js"
+  },
+  {
+    "date": "2025-10-26",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "AMC_PC",
+    "tasks": [
+      "Merge branch 'main' of https://github.com/sodium6/AMC_PC",
+      "Update AboutUs.jsx",
+      "Refactor deploy workflow with improved steps",
+      "edit Main.jsx"
+    ],
+    "summary": "Merge branch 'main' of https://github.com/sodium6/AMC_PC | Update AboutUs.jsx | Refactor deploy workflow with improved steps | edit Main.jsx"
+  },
+  {
+    "date": "2025-11-01",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "AMC_PC",
+    "tasks": [
+      "Update AboutUs.jsx",
+      "Update connector.js"
+    ],
+    "summary": "Update AboutUs.jsx | Update connector.js"
+  },
+  {
+    "date": "2025-12-10",
+    "day_of_week": "Wednesday",
+    "is_public_holiday": true,
+    "holiday_name": "วันรัฐธรรมนูญ (Constitution Day)",
+    "project": "AMC_PC",
+    "tasks": [
+      "feat: introduce Services page with tabbed display for company services, news, press releases, and additional content.",
+      "Update UserLogin.jsx",
+      "edit route",
+      "Merge pull request #5 from sodium6/Merge1.1.1_production",
+      "ีupdate debug",
+      "debug payment"
+    ],
+    "summary": "feat: introduce Services page with tabbed display for company services, news, press releases, and additional content. | Update UserLogin.jsx | edit route | Merge pull request #5 from sodium6/Merge1.1.1_production | ีupdate debug | debug payment"
+  },
+  {
+    "date": "2026-02-14",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Update Requirement file for AI"
+    ],
+    "summary": "Update Requirement file for AI"
+  },
+  {
+    "date": "2026-02-15",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Update Requirement.md",
+      "Add project approval workflow (client & server)"
+    ],
+    "summary": "Update Requirement.md | Add project approval workflow (client & server)"
+  },
+  {
+    "date": "2026-02-21",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Add board approval UI and approval emails"
+    ],
+    "summary": "Add board approval UI and approval emails"
+  },
+  {
+    "date": "2026-02-22",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "fix: nuclear cleanup of ports 4000 and 3000 to resolve persistent binding issues",
+      "fix: forcefully free ports 4000 and 3000 before deployment",
+      "fix: clear existing containers before deployment to avoid port conflicts",
+      "fix: resolve deployment path issue by adding checkout step to deploy job",
+      "fix: resolve all build-blocking typescript and prerender errors",
+      "fix: resolve frontend build error (undefined activeRequest)",
+      "Merge pull request #1 from BEATRIX-COMPANY/Demo_CD/CI",
+      "feat: setup CI/CD pipeline with optimized Dockerfiles and parallel GitHub Actions"
+    ],
+    "summary": "fix: nuclear cleanup of ports 4000 and 3000 to resolve persistent binding issues | fix: forcefully free ports 4000 and 3000 before deployment | fix: clear existing containers before deployment to avoid port conflicts | fix: resolve deployment path issue by adding checkout step to deploy job | fix: resolve all build-blocking typescript and prerender errors | fix: resolve frontend build error (undefined activeRequest) | Merge pull request #1 from BEATRIX-COMPANY/Demo_CD/CI | feat: setup CI/CD pipeline with optimized Dockerfiles and parallel GitHub Actions"
+  },
+  {
+    "date": "2026-02-28",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "feat: Initialize monorepo structure with Turborepo and a new NestJS server workspace."
+    ],
+    "summary": "feat: Initialize monorepo structure with Turborepo and a new NestJS server workspace."
+  },
+  {
+    "date": "2026-03-03",
+    "day_of_week": "Tuesday",
+    "is_public_holiday": true,
+    "holiday_name": "วันมาฆบูชา (Makha Bucha Day)",
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Introduce SSR session BFF and fetchSSR",
+      "Change backend image tag to 'prod'",
+      "Change backend image tag to 'prod' in deploy.yml",
+      "ลบ async",
+      "ลบ console.log",
+      "แก้ไข version libc6",
+      "feat: Implement core AI agent system with defined agent roles, diverse technical skills, and operational workflows.",
+      "แก้ .agent",
+      "แก้ไขไม่ให้ agent ขึ้น",
+      "feat: Add client-side password reset server action and a server-side authentication API test utility.",
+      "feat: Implement a server action for password reset functionality and silence console output in the test API script.",
+      "chore: Introduce DeepSource configuration for static analysis and update production Docker Compose.",
+      "feat: Implement GitHub Actions CI/CD for Docker image build, push, and self-hosted deployment, and update the frontend production port mapping to 3000.",
+      "feat: Add GitHub Actions workflow for CI/CD deployment and define client API endpoints.",
+      "feat: Establish the core application module, integrating NestJS configuration, TypeORM entities, and all feature modules.",
+      "feat: Add GitHub Actions workflow for building, pushing, and deploying Beatrix E-Bidding backend and frontend to Lightsail via Docker Compose.",
+      "feat: Add GitHub Actions workflow for building, pushing, and deploying the application to Lightsail via Docker Compose.",
+      "feat: Add GitHub Actions CI/CD for Dockerized backend and frontend deployment to Lightsail and initialize NestJS core application module.",
+      "feat: Add Dockerfile for the backend server and a GitHub Actions CI/CD pipeline to build, push, and deploy both backend and frontend applications.",
+      "feat: configure NestJS server with CORS, cookie parsing, static assets, and API prefix.",
+      "feat: Set up production deployment via GitHub Actions, including backend application initialization and Docker Compose configuration.",
+      "feat: Add file upload endpoint to backend and establish CI/CD pipeline for production deployment.",
+      "feat: Add GitHub Actions workflow for building, pushing, and deploying the Beatrix E-Bidding application to Lightsail via a self-hosted runner.",
+      "feat: Implement GitHub Actions CI/CD pipeline for automated Docker image build, push, and Lightsail deployment.",
+      "feat: Implement CI/CD pipeline for automated application deployment to Lightsail via GitHub Actions.",
+      "feat: Add GitHub Actions workflow to build and deploy the Beatrix E-Bidding application's backend and frontend to Lightsail.",
+      "refactor: split docker-compose configuration into environment-specific production and UAT files with corresponding environment variables."
+    ],
+    "summary": "Introduce SSR session BFF and fetchSSR | Change backend image tag to 'prod' | Change backend image tag to 'prod' in deploy.yml | ลบ async | ลบ console.log | แก้ไข version libc6 | feat: Implement core AI agent system with defined agent roles, diverse technical skills, and operational workflows. | แก้ .agent | แก้ไขไม่ให้ agent ขึ้น | feat: Add client-side password reset server action and a server-side authentication API test utility. | feat: Implement a server action for password reset functionality and silence console output in the test API script. | chore: Introduce DeepSource configuration for static analysis and update production Docker Compose. | feat: Implement GitHub Actions CI/CD for Docker image build, push, and self-hosted deployment, and update the frontend production port mapping to 3000. | feat: Add GitHub Actions workflow for CI/CD deployment and define client API endpoints. | feat: Establish the core application module, integrating NestJS configuration, TypeORM entities, and all feature modules. | feat: Add GitHub Actions workflow for building, pushing, and deploying Beatrix E-Bidding backend and frontend to Lightsail via Docker Compose. | feat: Add GitHub Actions workflow for building, pushing, and deploying the application to Lightsail via Docker Compose. | feat: Add GitHub Actions CI/CD for Dockerized backend and frontend deployment to Lightsail and initialize NestJS core application module. | feat: Add Dockerfile for the backend server and a GitHub Actions CI/CD pipeline to build, push, and deploy both backend and frontend applications. | feat: configure NestJS server with CORS, cookie parsing, static assets, and API prefix. | feat: Set up production deployment via GitHub Actions, including backend application initialization and Docker Compose configuration. | feat: Add file upload endpoint to backend and establish CI/CD pipeline for production deployment. | feat: Add GitHub Actions workflow for building, pushing, and deploying the Beatrix E-Bidding application to Lightsail via a self-hosted runner. | feat: Implement GitHub Actions CI/CD pipeline for automated Docker image build, push, and Lightsail deployment. | feat: Implement CI/CD pipeline for automated application deployment to Lightsail via GitHub Actions. | feat: Add GitHub Actions workflow to build and deploy the Beatrix E-Bidding application's backend and frontend to Lightsail. | refactor: split docker-compose configuration into environment-specific production and UAT files with corresponding environment variables."
+  },
+  {
+    "date": "2026-03-15",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "AMC_PC",
+    "tasks": [
+      "feat: implement banner controller",
+      "feat: Initialize the Express server with database connection, CORS, static file serving, Swagger documentation, and all primary API routes.",
+      "feat: Add `ApiRoute.js` to centralize API endpoint definitions and configure production host URLs, image URL, and smart connect URL."
+    ],
+    "summary": "feat: implement banner controller | feat: Initialize the Express server with database connection, CORS, static file serving, Swagger documentation, and all primary API routes. | feat: Add `ApiRoute.js` to centralize API endpoint definitions and configure production host URLs, image URL, and smart connect URL."
+  },
+  {
+    "date": "2026-03-21",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update surrogate approve / default template",
+      "update feature reject",
+      "แก้ไขตัวหนังสือ ให้ชัดขึ้น",
+      " log ของอีเว้น  หน้าออกพี่พอตของ อีเว้น",
+      "ปรับแก้ไขหน้าที่บิ๊กทำไปแล้ว ให้ตรงกับที่พี่ต้นต้องการ"
+    ],
+    "summary": "update surrogate approve / default template | update feature reject | แก้ไขตัวหนังสือ ให้ชัดขึ้น |  log ของอีเว้น  หน้าออกพี่พอตของ อีเว้น | ปรับแก้ไขหน้าที่บิ๊กทำไปแล้ว ให้ตรงกับที่พี่ต้นต้องการ"
+  },
+  {
+    "date": "2026-03-22",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Merge pull request #13 from BEATRIX-COMPANY/updata/project-",
+      "แก้ icon",
+      "Merge pull request #12 from BEATRIX-COMPANY/updata/project-",
+      "แก้ ci/cd",
+      "Merge pull request #11 from BEATRIX-COMPANY/updata/project-",
+      "update all feature",
+      "ลบ hardcode",
+      "แก้ไขหน้า ที่ดึงข้อมูลมาแสเงบอกสถานะ ผิด แมพผิด"
+    ],
+    "summary": "Merge pull request #13 from BEATRIX-COMPANY/updata/project- | แก้ icon | Merge pull request #12 from BEATRIX-COMPANY/updata/project- | แก้ ci/cd | Merge pull request #11 from BEATRIX-COMPANY/updata/project- | update all feature | ลบ hardcode | แก้ไขหน้า ที่ดึงข้อมูลมาแสเงบอกสถานะ ผิด แมพผิด"
+  },
+  {
+    "date": "2026-03-28",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Merge branch 'main' into update/feature"
+    ],
+    "summary": "Merge branch 'main' into update/feature"
+  },
+  {
+    "date": "2026-03-29",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "refactor: import named ProjectsClient instead of default",
+      "refactor: use optional chaining to simplify null checks",
+      "refactor: fix syntax error",
+      "refactor: replace useless template literals with string literals",
+      "refactor: use shorthand property syntax for object literals",
+      "Add comments to clarify component exports in EventLayout and ThemeContext for improved maintainability",
+      "Enhance step status handling in EventLayout component and improve icon and label class management. Refactor getStepStatus, getStepIconClass, and getStepLabelClass for better clarity and maintainability.",
+      "Refactor filtering logic in DashboardClient, optimize useEffect hooks in ActivityLogTab, ProjectReportTab, and CompanyUsersTab, and improve code structure in various components. Update clipboard utility for better readability and maintainability. Enhance file upload handling in ApprovalController and UploadContentController. Streamline vendor search functionality in SapVendorService and VendorEventsService. Ensure consistent error handling and improve code clarity across multiple files.",
+      "Refactor default parameter assignments for improved consistency and clarity across multiple components",
+      "Refactor debug logging in authentication and document services for improved clarity and consistency",
+      "Add comments to clarify key usage in static components for improved maintainability",
+      "Refactor StatusBadge component for improved clarity and structure. Move the component definition to the appropriate location and simplify the rendering logic.",
+      "Refactor key assignment in various components for improved uniqueness and clarity. Update keys in lists to use more descriptive identifiers instead of array indices.",
+      "Refactor proxy function for improved clarity and consistency. Replace double negation with Boolean conversion and enhance variable naming for better readability.",
+      "Refactor various components for improved readability and consistency. Update string escaping and remove unnecessary console logs.",
+      "Refactor NodeCard component for improved clarity and consistency. Remove unused borderColor variable and simplify isResult prop usage.",
+      "Refactor OTPForm and ApprovalFlowGraph2 components for improved structure and readability. Remove autoFocus from OTP input and encapsulate NodeCard logic for better maintainability.",
+      "Refactor TrackRequestPage and SubmitResponseClient for improved readability and performance. Update router variable naming and simplify option key assignment in select elements.",
+      "Refactor type definitions in useEventContent and HistoryPage for improved type safety. Update savedTemplates and change handling to use Record<string, unknown> for better clarity and maintainability.",
+      "Refactor ApproverAddModal components for improved structure and readability. Introduce UserAvatar, UserInfo, UserCheckbox, and UserItem components to reduce complexity and enhance maintainability. Update image handling with Next.js Image component for better performance.",
+      "Refactor ApproverAddModal for improved readability and maintainability. Introduce ModalHeader, ModalBody, and ModalFooter components to reduce nesting and complexity. Enhance user selection logic and search functionality with hooks for better performance.",
+      "Refactor API response types to use Record<string, unknown> for improved type safety",
+      "Refactor error message extraction logic in verification process for improved clarity and maintainability. Introduce utility functions for direct and error object message extraction. Optimize verification API request handling by encapsulating logic in a dedicated function.",
+      "Refactor error message extraction functions for clarity and consistency. Introduce a new utility function to handle error object messages and update existing logic to improve maintainability. Adjust form field markup for better readability and consistency in the verify page.",
+      "Refactor login and verification components to improve error handling and session management. Consolidate error message extraction logic and enhance session population with user data. Update form handling for better maintainability and readability.",
+      "Refactor login and verification components to improve code organization and readability. Introduce utility functions for user ID and access token extraction, and enhance error handling in response validation. Update form handling and UI components for better user experience and maintainability.",
+      "Refactor login and verification components to enhance error handling and payload management. Introduce utility functions for building request payloads, validating response content types, and extracting error messages. Improve readability and maintainability by separating concerns in the verification process.",
+      "Refactor login route and verify page components to enhance type safety and consistency. Update payload extraction logic to handle backend response structure and replace `any` types with `Record<string, unknown>`. Change function declaration style for VerifyPage for improved readability.",
+      "Refactor login route and verify page components to use arrow function syntax for consistency. Update payload handling to improve type safety by replacing `any` with `Record<string, unknown>`.",
+      "Refactor type definitions across the application to use Record<string, unknown> instead of any for improved type safety. This includes updates in various components, services, and API calls to ensure consistent type handling and reduce potential runtime errors. Key changes include:",
+      "Refactor hasProperty type guard; remove duplicate definition and update documentation for clarity.",
+      "Refactor buildProjectPayload and utility functions; extract logic for assigning master data and parent project IDs to improve readability and maintainability.",
+      "Add type definitions for CreateProjectForm and common API responses; replace `any` types with proper TypeScript interfaces for improved type safety and maintainability.",
+      "Refactor project filtering logic in ParentProjectDropdown for improved readability; extract toLowerSafe function for safer string handling. Remove unused import in ProjectNameDropdown. Simplify role retrieval logic in user-utils for clarity.",
+      "Refactor CreateProjectForm and related components; extract dropdowns into separate files for improved modularity and readability. Enhance form validation and payload building logic with dedicated helper functions.",
+      "Refactor CreateProjectForm input fields to readOnly; enhance accessibility and prevent unintended modifications.",
+      "Refactor user role management; extract role retrieval logic into dedicated utility functions for improved modularity and maintainability.",
+      "Refactor API response handling in TeamClient and CreateProjectForm; enhance type safety and clarity by specifying response types and improving error handling utilities.",
+      "Refactor project name concatenation in duplicate logic for improved readability.",
+      "Refactor date comparison logic to static method; enhance clarity and ensure consistent usage across the class.",
+      "Refactor numeric and date comparison methods to static; enhance clarity and consistency in type handling.",
+      "Refactor project comparison logic for improved clarity and modularity; extract date, array, and numeric checks into dedicated methods.",
+      "Refactor inviteVendors method to enhance modularity and clarity; extract vendor invitation processing and duplicate handling into dedicated methods.",
+      "Refactor inviteVendors and vendor resolution logic for improved clarity and modularity; streamline invitation checks and separate vendor type handling into dedicated methods.",
+      "Refactor inviteVendors method for improved clarity and modularity; extract vendor resolution and invitation handling logic into separate methods.",
+      "Refactor removeByEventAndVendor method to simplify parameters; remove companyId from method signature and adjust related logic for improved clarity.",
+      "Refactor various components to improve type safety and error handling; replace 'any' types with specific interfaces and enhance error messages for better clarity.",
+      "Refactor parseUserData in useSupplierProfile hook for improved clarity; enhance company name extraction logic.",
+      "Refactor fetchEventDataForSubmit and useSupplierProfile for improved readability and modularity; change function declarations to arrow functions, enhance user data extraction logic, and streamline error handling.",
+      "Refactor event data fetching functions for improved readability and modularity; move fetch logic into fetchEventDataForSubmit and enhance parseUserData in useSupplierProfile hook for better data handling.",
+      "Refactor API utility functions to improve code clarity and maintainability; introduce parseUserData function for better user data handling; streamline fetchSupplierProfileFromAPI and add ESLint comments for unused variables.",
+      "Refactor event data fetching utilities for improved error handling and readability; streamline fetchEventDetails and fetchEventDataForSubmit functions; enhance useSupplierProfile hook with better profile fetching logic.",
+      "Refactor event details and submission pages for improved modularity; implement fetchEventDetails and fetchEventDataForSubmit utilities; create SupplierHeader and HeroBanner components; utilize useSupplierProfile hook for profile management.",
+      "Refactor event details and submission pages for improved readability and modularity; introduce ErrorCard, EventHeader, RejectionStatus, and ActionFooter components; add utility functions for HTML stripping and date formatting.",
+      "Refactor various components and services to improve type safety and clarity; replace 'any' with specific types and enhance data handling across the application",
+      "Refactor VendorEventsService methods to improve consistency in parameter default values; streamline code readability and maintainability",
+      "Refactor various services and DTOs for improved type safety and clarity; enhance error handling and modularity in exception filters and controllers",
+      "Add SecretaryPendingItem interface for enhanced approval data structure; refactor getApprovalHistory method for improved clarity",
+      "Enhance CompaniesService and ApprovalService with improved type safety and modularity; add UpdateQueryOptions interface, refactor repository access methods, and update ApprovalHistoryItem structure for better clarity and maintainability",
+      "Refactor ProjectHeader, BudgetRow, and DateRow components for improved modularity; streamline project data rendering in ApprovalDataTable for better clarity and maintainability",
+      "Refactor PublicApprovalContent for improved structure and readability; add LoadingState, ErrorState, ProjectHeader, ProjectInfoCards, ApprovalDataTable, and ActionButtons components for better modularity and maintainability",
+      "Refactor PublicApprovalContent for improved clarity and maintainability; streamline fetchProjectDetails logic, enhance error handling, and update approvalData mapping for better type safety",
+      "Refactor VendorSetupClient and PublicApprovalContent for improved type safety; replace 'any' with specific types and streamline imports for better clarity and maintainability",
+      "Refactor error handling to use 'unknown' type for caught errors",
+      "Refactor Rule entity for improved type safety; update pausedAt and remainingTimeOnPause properties to allow null values for better clarity in data handling",
+      "Refactor Companies and Approval services for improved type safety; replace 'any' with specific types, enhance clarity in function signatures, and streamline data handling",
+      "Refactor ProjectsService to improve query consistency; replace template literals with single quotes in delete queries and streamline project retrieval logic",
+      "Refactor ProjectsService for improved type safety; update generateProjectCode method to use Repository, enhance type definitions for team member promises, and improve date comparison logic",
+      "Refactor various services and controllers for improved type safety; replace 'any' with specific types and enhance clarity in function signatures and variable declarations",
+      "Refactor surrogate and projects controllers and services for improved type safety; replace 'any' with specific types, and introduce new DTOs for team member management",
+      "Refactor logging entities to improve type safety; replace 'any' with 'unknown' in details and requestBody fields, and add user relation handling in ActivityLogService",
+      "Refactor DTOs and services for improved type safety and clarity; update various functions to use specific types instead of 'any'",
+      "Refactor vendor DTOs and service methods for improved type safety and clarity",
+      "Refactor controllers to use typed request interfaces and add DTOs for improved type safety and clarity",
+      "Refactor error handling in user and vendor retrieval functions for improved clarity and performance",
+      "Add clarification note in documentation for session handling example",
+      "update",
+      "Refactor async functions to remove unnecessary async keywords for improved performance",
+      "Refactor event handlers to use block syntax for improved readability",
+      "Add rel=\"noopener noreferrer\" to external links for security improvements",
+      "Add exclude patterns for secrets analyzer in DeepSource configuration",
+      "Update DeepSource configuration to exclude markdown files and docs from analysis",
+      "Refactor login route to modularize backend call and session initialization",
+      "Add deployment workflow for Beatrix E-Bidding using GitHub Actions",
+      "Update DeepSource configuration and clean up login route logging"
+    ],
+    "summary": "refactor: import named ProjectsClient instead of default | refactor: use optional chaining to simplify null checks | refactor: fix syntax error | refactor: replace useless template literals with string literals | refactor: use shorthand property syntax for object literals | Add comments to clarify component exports in EventLayout and ThemeContext for improved maintainability | Enhance step status handling in EventLayout component and improve icon and label class management. Refactor getStepStatus, getStepIconClass, and getStepLabelClass for better clarity and maintainability. | Refactor filtering logic in DashboardClient, optimize useEffect hooks in ActivityLogTab, ProjectReportTab, and CompanyUsersTab, and improve code structure in various components. Update clipboard utility for better readability and maintainability. Enhance file upload handling in ApprovalController and UploadContentController. Streamline vendor search functionality in SapVendorService and VendorEventsService. Ensure consistent error handling and improve code clarity across multiple files. | Refactor default parameter assignments for improved consistency and clarity across multiple components | Refactor debug logging in authentication and document services for improved clarity and consistency | Add comments to clarify key usage in static components for improved maintainability | Refactor StatusBadge component for improved clarity and structure. Move the component definition to the appropriate location and simplify the rendering logic. | Refactor key assignment in various components for improved uniqueness and clarity. Update keys in lists to use more descriptive identifiers instead of array indices. | Refactor proxy function for improved clarity and consistency. Replace double negation with Boolean conversion and enhance variable naming for better readability. | Refactor various components for improved readability and consistency. Update string escaping and remove unnecessary console logs. | Refactor NodeCard component for improved clarity and consistency. Remove unused borderColor variable and simplify isResult prop usage. | Refactor OTPForm and ApprovalFlowGraph2 components for improved structure and readability. Remove autoFocus from OTP input and encapsulate NodeCard logic for better maintainability. | Refactor TrackRequestPage and SubmitResponseClient for improved readability and performance. Update router variable naming and simplify option key assignment in select elements. | Refactor type definitions in useEventContent and HistoryPage for improved type safety. Update savedTemplates and change handling to use Record<string, unknown> for better clarity and maintainability. | Refactor ApproverAddModal components for improved structure and readability. Introduce UserAvatar, UserInfo, UserCheckbox, and UserItem components to reduce complexity and enhance maintainability. Update image handling with Next.js Image component for better performance. | Refactor ApproverAddModal for improved readability and maintainability. Introduce ModalHeader, ModalBody, and ModalFooter components to reduce nesting and complexity. Enhance user selection logic and search functionality with hooks for better performance. | Refactor API response types to use Record<string, unknown> for improved type safety | Refactor error message extraction logic in verification process for improved clarity and maintainability. Introduce utility functions for direct and error object message extraction. Optimize verification API request handling by encapsulating logic in a dedicated function. | Refactor error message extraction functions for clarity and consistency. Introduce a new utility function to handle error object messages and update existing logic to improve maintainability. Adjust form field markup for better readability and consistency in the verify page. | Refactor login and verification components to improve error handling and session management. Consolidate error message extraction logic and enhance session population with user data. Update form handling for better maintainability and readability. | Refactor login and verification components to improve code organization and readability. Introduce utility functions for user ID and access token extraction, and enhance error handling in response validation. Update form handling and UI components for better user experience and maintainability. | Refactor login and verification components to enhance error handling and payload management. Introduce utility functions for building request payloads, validating response content types, and extracting error messages. Improve readability and maintainability by separating concerns in the verification process. | Refactor login route and verify page components to enhance type safety and consistency. Update payload extraction logic to handle backend response structure and replace `any` types with `Record<string, unknown>`. Change function declaration style for VerifyPage for improved readability. | Refactor login route and verify page components to use arrow function syntax for consistency. Update payload handling to improve type safety by replacing `any` with `Record<string, unknown>`. | Refactor type definitions across the application to use Record<string, unknown> instead of any for improved type safety. This includes updates in various components, services, and API calls to ensure consistent type handling and reduce potential runtime errors. Key changes include: | Refactor hasProperty type guard; remove duplicate definition and update documentation for clarity. | Refactor buildProjectPayload and utility functions; extract logic for assigning master data and parent project IDs to improve readability and maintainability. | Add type definitions for CreateProjectForm and common API responses; replace `any` types with proper TypeScript interfaces for improved type safety and maintainability. | Refactor project filtering logic in ParentProjectDropdown for improved readability; extract toLowerSafe function for safer string handling. Remove unused import in ProjectNameDropdown. Simplify role retrieval logic in user-utils for clarity. | Refactor CreateProjectForm and related components; extract dropdowns into separate files for improved modularity and readability. Enhance form validation and payload building logic with dedicated helper functions. | Refactor CreateProjectForm input fields to readOnly; enhance accessibility and prevent unintended modifications. | Refactor user role management; extract role retrieval logic into dedicated utility functions for improved modularity and maintainability. | Refactor API response handling in TeamClient and CreateProjectForm; enhance type safety and clarity by specifying response types and improving error handling utilities. | Refactor project name concatenation in duplicate logic for improved readability. | Refactor date comparison logic to static method; enhance clarity and ensure consistent usage across the class. | Refactor numeric and date comparison methods to static; enhance clarity and consistency in type handling. | Refactor project comparison logic for improved clarity and modularity; extract date, array, and numeric checks into dedicated methods. | Refactor inviteVendors method to enhance modularity and clarity; extract vendor invitation processing and duplicate handling into dedicated methods. | Refactor inviteVendors and vendor resolution logic for improved clarity and modularity; streamline invitation checks and separate vendor type handling into dedicated methods. | Refactor inviteVendors method for improved clarity and modularity; extract vendor resolution and invitation handling logic into separate methods. | Refactor removeByEventAndVendor method to simplify parameters; remove companyId from method signature and adjust related logic for improved clarity. | Refactor various components to improve type safety and error handling; replace 'any' types with specific interfaces and enhance error messages for better clarity. | Refactor parseUserData in useSupplierProfile hook for improved clarity; enhance company name extraction logic. | Refactor fetchEventDataForSubmit and useSupplierProfile for improved readability and modularity; change function declarations to arrow functions, enhance user data extraction logic, and streamline error handling. | Refactor event data fetching functions for improved readability and modularity; move fetch logic into fetchEventDataForSubmit and enhance parseUserData in useSupplierProfile hook for better data handling. | Refactor API utility functions to improve code clarity and maintainability; introduce parseUserData function for better user data handling; streamline fetchSupplierProfileFromAPI and add ESLint comments for unused variables. | Refactor event data fetching utilities for improved error handling and readability; streamline fetchEventDetails and fetchEventDataForSubmit functions; enhance useSupplierProfile hook with better profile fetching logic. | Refactor event details and submission pages for improved modularity; implement fetchEventDetails and fetchEventDataForSubmit utilities; create SupplierHeader and HeroBanner components; utilize useSupplierProfile hook for profile management. | Refactor event details and submission pages for improved readability and modularity; introduce ErrorCard, EventHeader, RejectionStatus, and ActionFooter components; add utility functions for HTML stripping and date formatting. | Refactor various components and services to improve type safety and clarity; replace 'any' with specific types and enhance data handling across the application | Refactor VendorEventsService methods to improve consistency in parameter default values; streamline code readability and maintainability | Refactor various services and DTOs for improved type safety and clarity; enhance error handling and modularity in exception filters and controllers | Add SecretaryPendingItem interface for enhanced approval data structure; refactor getApprovalHistory method for improved clarity | Enhance CompaniesService and ApprovalService with improved type safety and modularity; add UpdateQueryOptions interface, refactor repository access methods, and update ApprovalHistoryItem structure for better clarity and maintainability | Refactor ProjectHeader, BudgetRow, and DateRow components for improved modularity; streamline project data rendering in ApprovalDataTable for better clarity and maintainability | Refactor PublicApprovalContent for improved structure and readability; add LoadingState, ErrorState, ProjectHeader, ProjectInfoCards, ApprovalDataTable, and ActionButtons components for better modularity and maintainability | Refactor PublicApprovalContent for improved clarity and maintainability; streamline fetchProjectDetails logic, enhance error handling, and update approvalData mapping for better type safety | Refactor VendorSetupClient and PublicApprovalContent for improved type safety; replace 'any' with specific types and streamline imports for better clarity and maintainability | Refactor error handling to use 'unknown' type for caught errors | Refactor Rule entity for improved type safety; update pausedAt and remainingTimeOnPause properties to allow null values for better clarity in data handling | Refactor Companies and Approval services for improved type safety; replace 'any' with specific types, enhance clarity in function signatures, and streamline data handling | Refactor ProjectsService to improve query consistency; replace template literals with single quotes in delete queries and streamline project retrieval logic | Refactor ProjectsService for improved type safety; update generateProjectCode method to use Repository, enhance type definitions for team member promises, and improve date comparison logic | Refactor various services and controllers for improved type safety; replace 'any' with specific types and enhance clarity in function signatures and variable declarations | Refactor surrogate and projects controllers and services for improved type safety; replace 'any' with specific types, and introduce new DTOs for team member management | Refactor logging entities to improve type safety; replace 'any' with 'unknown' in details and requestBody fields, and add user relation handling in ActivityLogService | Refactor DTOs and services for improved type safety and clarity; update various functions to use specific types instead of 'any' | Refactor vendor DTOs and service methods for improved type safety and clarity | Refactor controllers to use typed request interfaces and add DTOs for improved type safety and clarity | Refactor error handling in user and vendor retrieval functions for improved clarity and performance | Add clarification note in documentation for session handling example | update | Refactor async functions to remove unnecessary async keywords for improved performance | Refactor event handlers to use block syntax for improved readability | Add rel=\"noopener noreferrer\" to external links for security improvements | Add exclude patterns for secrets analyzer in DeepSource configuration | Update DeepSource configuration to exclude markdown files and docs from analysis | Refactor login route to modularize backend call and session initialization | Add deployment workflow for Beatrix E-Bidding using GitHub Actions | Update DeepSource configuration and clean up login route logging"
+  },
+  {
+    "date": "2026-04-04",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update",
+      "update Reports and  other",
+      "Update InviteSupplier.tsx",
+      "ีupdate vendor list"
+    ],
+    "summary": "update | update Reports and  other | Update InviteSupplier.tsx | ีupdate vendor list"
+  },
+  {
+    "date": "2026-04-05",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update invite vendor"
+    ],
+    "summary": "update invite vendor"
+  },
+  {
+    "date": "2026-04-18",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "refactor(projects): update routing paths and labels for clarity in project overview and history",
+      "feat(projects): add project year filtering functionality with multi-select dropdown",
+      "fix(AuthLogoPanel): update label for internal system to 'E-Bidding System'",
+      "ปรับแก้หน้า แดชบอด แก้ ฟิวเตอร์ กับ ปี  แลัเพิ่ม รหัส โครงการ"
+    ],
+    "summary": "refactor(projects): update routing paths and labels for clarity in project overview and history | feat(projects): add project year filtering functionality with multi-select dropdown | fix(AuthLogoPanel): update label for internal system to 'E-Bidding System' | ปรับแก้หน้า แดชบอด แก้ ฟิวเตอร์ กับ ปี  แลัเพิ่ม รหัส โครงการ"
+  },
+  {
+    "date": "2026-04-19",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update",
+      "Merge remote-tracking branch 'origin/Edit_role_by_role'",
+      "refactor(tasks): update page header to reflect event proposal context"
+    ],
+    "summary": "update | Merge remote-tracking branch 'origin/Edit_role_by_role' | refactor(tasks): update page header to reflect event proposal context"
+  },
+  {
+    "date": "2026-05-04",
+    "day_of_week": "Monday",
+    "is_public_holiday": true,
+    "holiday_name": "วันฉัตรมงคล (Coronation Day)",
+    "project": "amctrainingcenter",
+    "tasks": [
+      "feat: implement frontend pages, components, and server controller for AMC Training Center application initialization",
+      "feat: refactor API routing to use dynamic host configuration and endpoint helper function",
+      "feat: initialize Express server with middleware, CORS configuration, Swagger documentation, and route handlers",
+      "Merge branch 'main' of https://github.com/BEATRIX-COMPANY/amctrainingcenter",
+      "feat: initialize Express server with middleware, CORS configuration, and modular route definitions",
+      "Revise SECURITY.md for supported versions and reporting",
+      "feat: implement automated CI/CD pipeline and database connector module",
+      "Add GitHub Actions workflow for auto deployment",
+      "first commit"
+    ],
+    "summary": "feat: implement frontend pages, components, and server controller for AMC Training Center application initialization | feat: refactor API routing to use dynamic host configuration and endpoint helper function | feat: initialize Express server with middleware, CORS configuration, Swagger documentation, and route handlers | Merge branch 'main' of https://github.com/BEATRIX-COMPANY/amctrainingcenter | feat: initialize Express server with middleware, CORS configuration, and modular route definitions | Revise SECURITY.md for supported versions and reporting | feat: implement automated CI/CD pipeline and database connector module | Add GitHub Actions workflow for auto deployment | first commit"
+  },
+  {
+    "date": "2026-05-23",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "update"
+    ],
+    "summary": "update"
+  },
+  {
+    "date": "2026-05-30",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "feat: add price intelligence dashboard page",
+      "feat: create price intelligence dashboard page",
+      "feat: implement price intelligence dashboard page",
+      "feat: initialize API service layer with procurement, demand, and market intelligence interfaces",
+      "Merge branch 'feat/Stratifies'",
+      "update",
+      "feat: add GitHub Actions workflow for automated EC2 deployment via PM2",
+      "feat: initialize SQLAlchemy database schema with core procurement and market models",
+      "feat: add GitHub Actions workflow for automated AWS EC2 deployment via PM2",
+      "chore: update FastAPI startup command to execute via python module in ecosystem config",
+      "chore: set exec_mode to fork for backend processes in ecosystem config",
+      "chore: disable TLS certificate validation in production environment configuration",
+      "chore: remove hardcoded DATABASE_URL from ecosystem configuration files",
+      "feat: add GitHub Actions workflow for automated EC2 deployment using PM2",
+      "fix: update path to frontend server script in ecosystem configuration",
+      "chore: update production port mappings, include python path, and adjust frontend startup script in ecosystem config",
+      "fix: update path to main.js in ecosystem configuration",
+      "feat: add GitHub Actions CI/CD workflow and update PM2 ecosystem configuration for local environment deployment",
+      "feat: add GitHub Actions workflow and PM2 configuration for automated EC2 deployment",
+      "feat: add GitHub Actions workflow for AWS ECR CI/CD pipeline",
+      "feat: add AWS ECR CI/CD GitHub Actions workflow",
+      "feat: add Dockerfile and GitHub Actions workflow for AWS ECR CI/CD with updated docker-compose configuration"
+    ],
+    "summary": "feat: add price intelligence dashboard page | feat: create price intelligence dashboard page | feat: implement price intelligence dashboard page | feat: initialize API service layer with procurement, demand, and market intelligence interfaces | Merge branch 'feat/Stratifies' | update | feat: add GitHub Actions workflow for automated EC2 deployment via PM2 | feat: initialize SQLAlchemy database schema with core procurement and market models | feat: add GitHub Actions workflow for automated AWS EC2 deployment via PM2 | chore: update FastAPI startup command to execute via python module in ecosystem config | chore: set exec_mode to fork for backend processes in ecosystem config | chore: disable TLS certificate validation in production environment configuration | chore: remove hardcoded DATABASE_URL from ecosystem configuration files | feat: add GitHub Actions workflow for automated EC2 deployment using PM2 | fix: update path to frontend server script in ecosystem configuration | chore: update production port mappings, include python path, and adjust frontend startup script in ecosystem config | fix: update path to main.js in ecosystem configuration | feat: add GitHub Actions CI/CD workflow and update PM2 ecosystem configuration for local environment deployment | feat: add GitHub Actions workflow and PM2 configuration for automated EC2 deployment | feat: add GitHub Actions workflow for AWS ECR CI/CD pipeline | feat: add AWS ECR CI/CD GitHub Actions workflow | feat: add Dockerfile and GitHub Actions workflow for AWS ECR CI/CD with updated docker-compose configuration"
+  },
+  {
+    "date": "2026-06-01",
+    "day_of_week": "Monday",
+    "is_public_holiday": true,
+    "holiday_name": "วันหยุดชดเชยวันวิสาขบูชา (Substitution for Visakha Bucha Day)",
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "feat: add user and company profile management page with edit capabilities",
+      "feat: create surrogate submission page with server-side data fetching for events and vendor responses",
+      "feat: enhance SupplierProfile and SupplierDashboardClient to utilize company phone number and improve state management",
+      "feat: implement draft saving functionality in SummaryClient component",
+      "fix: update project query to use correct column names for consistency",
+      "feat: enhance SidebarSourcing to conditionally render menu items based on user role",
+      "feat: enhance role handling in DashboardClient and ProjectsService for improved access control",
+      "fix: update project title references to projectName in DashboardClient component",
+      "feat: enhance project query to filter by user ID and simplify role checks",
+      "feat: update environment configuration and enhance role handling in user management"
+    ],
+    "summary": "feat: add user and company profile management page with edit capabilities | feat: create surrogate submission page with server-side data fetching for events and vendor responses | feat: enhance SupplierProfile and SupplierDashboardClient to utilize company phone number and improve state management | feat: implement draft saving functionality in SummaryClient component | fix: update project query to use correct column names for consistency | feat: enhance SidebarSourcing to conditionally render menu items based on user role | feat: enhance role handling in DashboardClient and ProjectsService for improved access control | fix: update project title references to projectName in DashboardClient component | feat: enhance project query to filter by user ID and simplify role checks | feat: update environment configuration and enhance role handling in user management"
+  },
+  {
+    "date": "2026-06-01",
+    "day_of_week": "Monday",
+    "is_public_holiday": true,
+    "holiday_name": "วันหยุดชดเชยวันวิสาขบูชา (Substitution for Visakha Bucha Day)",
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "ci: force clean build by removing .next directory to purge stale page cache",
+      "Merge branch 'main' of https://github.com/BEATRIX-COMPANY/PEA-Hackathon",
+      "ci: use pm2 restart instead of reload to fully clear in-memory caches",
+      "ci: automate database schema sync and seeding in deploy job",
+      "feat: implement audit trail logging UI and backend procurement services",
+      "ci: replace hardcoded build URLs with dynamic repository variables",
+      "ci: implement 2-stage verification and deployment pipeline",
+      "update"
+    ],
+    "summary": "ci: force clean build by removing .next directory to purge stale page cache | Merge branch 'main' of https://github.com/BEATRIX-COMPANY/PEA-Hackathon | ci: use pm2 restart instead of reload to fully clear in-memory caches | ci: automate database schema sync and seeding in deploy job | feat: implement audit trail logging UI and backend procurement services | ci: replace hardcoded build URLs with dynamic repository variables | ci: implement 2-stage verification and deployment pipeline | update"
+  },
+  {
+    "date": "2026-06-07",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "fix: update approval status handling to use 'CANCELLED' instead of 'REJECTED' for specific cases",
+      "Refactor code structure for improved readability and maintainability",
+      "feat: add ApprovalComments component and integrate it into ConstructionTaskDetailsPage",
+      "fix: handle token extraction for OTP verification and reset password flow",
+      "feat: implement password reset flow with OTP verification and email notifications",
+      "feat: enforce user limit of 30 per company and update UI to reflect remaining slots",
+      "feat: update user status handling and improve SSO login rejection message",
+      "feat: add email notification for new employee addition and enforce company email domain validation",
+      "feat: remove password field from employee form and adjust submission logic for SSO",
+      "feat: add timestamps for user login and activation status in user entity and service",
+      "feat: conditionally render 'Add New Item' button based on active tab",
+      "feat: simplify home page by removing unused components and adjusting SSO logic",
+      "feat: implement session management checks in login flow and add session-check API endpoint",
+      "feat: enhance active session management by revoking inactive sessions and adding inactivity cutoff"
+    ],
+    "summary": "fix: update approval status handling to use 'CANCELLED' instead of 'REJECTED' for specific cases | Refactor code structure for improved readability and maintainability | feat: add ApprovalComments component and integrate it into ConstructionTaskDetailsPage | fix: handle token extraction for OTP verification and reset password flow | feat: implement password reset flow with OTP verification and email notifications | feat: enforce user limit of 30 per company and update UI to reflect remaining slots | feat: update user status handling and improve SSO login rejection message | feat: add email notification for new employee addition and enforce company email domain validation | feat: remove password field from employee form and adjust submission logic for SSO | feat: add timestamps for user login and activation status in user entity and service | feat: conditionally render 'Add New Item' button based on active tab | feat: simplify home page by removing unused components and adjusting SSO logic | feat: implement session management checks in login flow and add session-check API endpoint | feat: enhance active session management by revoking inactive sessions and adding inactivity cutoff"
+  },
+  {
+    "date": "2026-06-07",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "Update คำ",
+      "Update Excel",
+      "update bug",
+      "Debug",
+      "fix: update production URLs to HTTPS in ecosystem config",
+      "Merge pull request #11 from BEATRIX-COMPANY/dev_big",
+      "feat: implement procurement service logic for managing resource requests",
+      "Merge pull request #10 from BEATRIX-COMPANY/dev_big",
+      "Merge pull request #9 from BEATRIX-COMPANY/dev_big",
+      "feat: implement procurement service logic and initialize FastAPI main entry point",
+      "feat: add supplier capacity page and necessary data validation files",
+      "feat: implement demand summary upload and anomaly detection dashboard with Z-score filtering",
+      "Merge branch 'feat/Stratifies'",
+      "update",
+      "update annual plan"
+    ],
+    "summary": "Update คำ | Update Excel | update bug | Debug | fix: update production URLs to HTTPS in ecosystem config | Merge pull request #11 from BEATRIX-COMPANY/dev_big | feat: implement procurement service logic for managing resource requests | Merge pull request #10 from BEATRIX-COMPANY/dev_big | Merge pull request #9 from BEATRIX-COMPANY/dev_big | feat: implement procurement service logic and initialize FastAPI main entry point | feat: add supplier capacity page and necessary data validation files | feat: implement demand summary upload and anomaly detection dashboard with Z-score filtering | Merge branch 'feat/Stratifies' | update | update annual plan"
+  },
+  {
+    "date": "2026-06-13",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "Merge pull request #31 from BEATRIX-COMPANY/UAT_final",
+      "feat: add additional vendor fields (typeOfBusiness, city, postalCode) and update import logic for enhanced vendor data handling",
+      "feat: update Docker image tags to version 0.1.2-f for backend and frontend",
+      "feat: update role access logic to allow approvers access to project details",
+      "feat: enhance vendor detail and setup client UI with improved styling and read-only fields",
+      "feat: add supplier data status check in authentication flow to prevent login for unapproved accounts",
+      "feat: add rfpNumber field to various services and templates for enhanced project tracking"
+    ],
+    "summary": "Merge pull request #31 from BEATRIX-COMPANY/UAT_final | feat: add additional vendor fields (typeOfBusiness, city, postalCode) and update import logic for enhanced vendor data handling | feat: update Docker image tags to version 0.1.2-f for backend and frontend | feat: update role access logic to allow approvers access to project details | feat: enhance vendor detail and setup client UI with improved styling and read-only fields | feat: add supplier data status check in authentication flow to prevent login for unapproved accounts | feat: add rfpNumber field to various services and templates for enhanced project tracking"
+  },
+  {
+    "date": "2026-06-13",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "update excel format",
+      "Update page.tsx",
+      "update",
+      "debug cost saving",
+      "update lazy forecast"
+    ],
+    "summary": "update excel format | Update page.tsx | update | debug cost saving | update lazy forecast"
+  },
+  {
+    "date": "2026-06-14",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "chore: update Docker image tags to version 0.1.3 in README",
+      "feat: add RFP number handling to email templates and approval service",
+      "fix: forward authorization header in BFF uploads proxy route",
+      "fix: store prerequisites attachmentUrl with relative proxy path for secure streaming",
+      "refactor: upload prerequisites to Azure Blob using original AzureBlobService without persisting locally",
+      "fix: delete temp prerequisites upload files from localhost after azure upload",
+      "feat: add Excel export functionality and enhance vendor data handling in CompanyUsersTab and SurrogatePage",
+      "fix: dynamically merge buyer uploads into event details for suppliers to prevent missing file data",
+      "feat: implement API proxy route handler and add supplier event prerequisites form component",
+      "fix: sanitize quotes from mail configs",
+      "fix: preview and download file content with azure blob fallback and fix upload state crash",
+      "feat: enhance UI styling and improve conditional rendering in SubItemModals, UploadDocumentModal, MonitorPage, and SurrogateSubmitForm",
+      "feat: implement pagination in VendorListClient and enhance vendor import feedback in VendorImportModal",
+      "feat: implement drag-and-drop file upload functionality and enhance UI feedback in VendorImportModal",
+      "Merge pull request #32 from BEATRIX-COMPANY/UAT_final",
+      "feat: update Docker image tags to version 0.1.2 and enhance contract admin notification logic in project updates"
+    ],
+    "summary": "chore: update Docker image tags to version 0.1.3 in README | feat: add RFP number handling to email templates and approval service | fix: forward authorization header in BFF uploads proxy route | fix: store prerequisites attachmentUrl with relative proxy path for secure streaming | refactor: upload prerequisites to Azure Blob using original AzureBlobService without persisting locally | fix: delete temp prerequisites upload files from localhost after azure upload | feat: add Excel export functionality and enhance vendor data handling in CompanyUsersTab and SurrogatePage | fix: dynamically merge buyer uploads into event details for suppliers to prevent missing file data | feat: implement API proxy route handler and add supplier event prerequisites form component | fix: sanitize quotes from mail configs | fix: preview and download file content with azure blob fallback and fix upload state crash | feat: enhance UI styling and improve conditional rendering in SubItemModals, UploadDocumentModal, MonitorPage, and SurrogateSubmitForm | feat: implement pagination in VendorListClient and enhance vendor import feedback in VendorImportModal | feat: implement drag-and-drop file upload functionality and enhance UI feedback in VendorImportModal | Merge pull request #32 from BEATRIX-COMPANY/UAT_final | feat: update Docker image tags to version 0.1.2 and enhance contract admin notification logic in project updates"
+  },
+  {
+    "date": "2026-06-14",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "PEA-Hackathon",
+    "tasks": [
+      "update wording",
+      "Update main.py",
+      "update",
+      "Update DemandFilterDropdown.tsx",
+      "Redirect home page to /kpi"
+    ],
+    "summary": "update wording | Update main.py | update | Update DemandFilterDropdown.tsx | Redirect home page to /kpi"
+  },
+  {
+    "date": "2026-06-21",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "chore: update Docker image version to 0.1.7 for backend and frontend",
+      "chore: update version info to 0.1.7 in SidebarSourcing component",
+      "Refactor code structure for improved readability and maintainability",
+      "Merge branch 'UAT_final' of https://github.com/BEATRIX-COMPANY/E-Bidding_Beatrix-BootStrape into UAT_final",
+      "feat: remove 'Report' tab from project events page and related components"
+    ],
+    "summary": "chore: update Docker image version to 0.1.7 for backend and frontend | chore: update version info to 0.1.7 in SidebarSourcing component | Refactor code structure for improved readability and maintainability | Merge branch 'UAT_final' of https://github.com/BEATRIX-COMPANY/E-Bidding_Beatrix-BootStrape into UAT_final | feat: remove 'Report' tab from project events page and related components"
+  },
+  {
+    "date": "2026-06-27",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "AMC_PC",
+    "tasks": [
+      "update"
+    ],
+    "summary": "update"
+  },
+  {
+    "date": "2026-06-28",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "feat: update VendorImportModal step count and enhance CompaniesService with logging for vendor duplicate issues"
+    ],
+    "summary": "feat: update VendorImportModal step count and enhance CompaniesService with logging for vendor duplicate issues"
+  },
+  {
+    "date": "2026-07-04",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update clear cache",
+      "update",
+      "fix: improve event and vendor data fetching logic",
+      "Update InviteSupplier.tsx",
+      "update debug"
+    ],
+    "summary": "update clear cache | update | fix: improve event and vendor data fetching logic | Update InviteSupplier.tsx | update debug"
+  },
+  {
+    "date": "2026-07-05",
+    "day_of_week": "Sunday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update",
+      "Update version numbers to 0.2.6 in README.md and SidebarSourcing.tsx",
+      "Update version numbers in README.md and SidebarSourcing.tsx to 0.2.5",
+      "Update SurrogateSubmitForm.tsx",
+      "Update SubmitResponseClient.tsx",
+      "Update api.ts",
+      "Update page.tsx",
+      "debug"
+    ],
+    "summary": "update | Update version numbers to 0.2.6 in README.md and SidebarSourcing.tsx | Update version numbers in README.md and SidebarSourcing.tsx to 0.2.5 | Update SurrogateSubmitForm.tsx | Update SubmitResponseClient.tsx | Update api.ts | Update page.tsx | debug"
+  },
+  {
+    "date": "2026-07-11",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "amctrainingcenter",
+    "tasks": [
+      "feat: implement pulsing GenericSkeleton loader for BuyAndSell, Trivia, and Lecturer pages",
+      "chore: trigger redeploy after smart-connect updates",
+      "fix: make pm2 deploy step robust using delete and start",
+      "chore: trigger redeploy",
+      "chore: send tax_company to Smart Connect on registration",
+      "chore: add fallback for SMART_CONNECT_API_URL to e-card.pimmz.club",
+      "chore: sync smartconnect user profile fields to local user_tbl on login"
+    ],
+    "summary": "feat: implement pulsing GenericSkeleton loader for BuyAndSell, Trivia, and Lecturer pages | chore: trigger redeploy after smart-connect updates | fix: make pm2 deploy step robust using delete and start | chore: trigger redeploy | chore: send tax_company to Smart Connect on registration | chore: add fallback for SMART_CONNECT_API_URL to e-card.pimmz.club | chore: sync smartconnect user profile fields to local user_tbl on login"
+  },
+  {
+    "date": "2026-07-11",
+    "day_of_week": "Saturday",
+    "is_public_holiday": false,
+    "holiday_name": null,
+    "project": "E-Bidding_Beatrix-BootStrape",
+    "tasks": [
+      "update version to 1.0.0 in README and SidebarSourcing component"
+    ],
+    "summary": "update version to 1.0.0 in README and SidebarSourcing component"
+  }
+]

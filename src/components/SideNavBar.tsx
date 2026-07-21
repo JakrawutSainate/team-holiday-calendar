@@ -46,6 +46,7 @@ export default function SideNavBar() {
     { name: language === 'th' ? 'แผนกและตำแหน่ง' : 'Departments & Titles', href: '/master-data/departments', icon: 'schema' },
     { name: language === 'th' ? 'ประเภทการลา' : 'Leave Types', href: '/master-data/leave-types', icon: 'format_list_bulleted' },
     ...(role === 'ADMIN' ? [{ name: language === 'th' ? 'ประวัติระบบ' : 'Audit Logs', href: '/master-data/audit-logs', icon: 'history' }] : []),
+    ...(role === 'ADMIN' ? [{ name: language === 'th' ? 'เคลม Token วันหยุด' : 'Bulk Token Claim', href: '/master-data/bulk-claim', icon: 'token' }] : []),
   ];
 
   // Filter items based on login status and role

@@ -400,6 +400,20 @@ class CalendarDataService {
     await broadcastCalendarUpdate();
     return result;
   }
+
+  public async adminBulkClaimTokens(
+    userId: string,
+    entries: Array<{ date: string; status: string; details?: string }>
+  ): Promise<{ claimed: number; skipped: number } | null> {
+    const result = await fetchGraphQL(`
+      mutation adminBulkClaimTokens($userId: String!, $entries: [BulkClaimEntry!]!) {
+        adminBulkClaimTokens(userId: $userId, entries: $entries) { claimed skipped }
+      }
+    `, { userId, entries });
+    this.invalidateAll();
+    await broadcastCalendarUpdate();
+    return (result as any)?.adminBulkClaimTokens ?? null;
+  }
 }
 
 // ─── SINGLETON EXPORT ─────────────────────────────────────────────────────────
@@ -427,6 +441,8 @@ export const getAllCapacitySettings = (): Promise<CapacitySetting[]> =>
 
 export const getTokenTransactions = (): Promise<TokenTransaction[]> =>
   calendarDataService.getTokenTransactions();
+
+
 
 export const getDayCapacitySetting = async (dateString: string): Promise<CapacitySetting> => {
   const settings = await calendarDataService.getAllCapacitySettings();

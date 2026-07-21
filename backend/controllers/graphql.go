@@ -488,6 +488,108 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return map[string]interface{}{"adminAddTokens": targetUser}, nil
 	}
 
+	if strings.Contains(queryClean, "adminBulkClaimTokens") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		if authUser.Role != "ADMIN" {
+			return nil, errors.New("forbidden: only administrators can bulk-claim tokens")
+		}
+
+		targetUserID, ok := vars["userId"].(string)
+		if !ok || targetUserID == "" {
+			return nil, errors.New("missing variable: userId")
+		}
+
+		// Fetch target user name
+		targetUser, err := g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(targetUserID),
+		).Exec(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("user not found: %w", err)
+		}
+
+		entriesRaw, ok := vars["entries"].([]interface{})
+		if !ok {
+			return nil, errors.New("missing variable: entries")
+		}
+
+		// Fetch existing events for this user to detect duplicates
+		existing, _ := g.dbService.Client.CalendarEvent.FindMany(
+			db.CalendarEvent.UserID.Equals(targetUserID),
+		).Exec(ctx)
+		existingDates := map[string]bool{}
+		for _, ev := range existing {
+			if ev.Status == "WEEKEND_WORK" || ev.Status == "HOLIDAY_WORK" {
+				existingDates[ev.Date] = true
+			}
+		}
+
+		claimed := 0
+		skipped := 0
+		for _, raw := range entriesRaw {
+			entry, ok := raw.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			date, _ := entry["date"].(string)
+			status, _ := entry["status"].(string)
+			details, _ := entry["details"].(string)
+
+			if date == "" || (status != "WEEKEND_WORK" && status != "HOLIDAY_WORK") {
+				continue
+			}
+			// Skip duplicate
+			if existingDates[date] {
+				skipped++
+				continue
+			}
+
+			// Create calendar event
+			_, err := g.dbService.Client.CalendarEvent.CreateOne(
+				db.CalendarEvent.UserID.Set(targetUserID),
+				db.CalendarEvent.UserName.Set(targetUser.Name),
+				db.CalendarEvent.Date.Set(date),
+				db.CalendarEvent.Status.Set(status),
+				db.CalendarEvent.Details.Set(details),
+			).Exec(ctx)
+			if err != nil {
+				continue
+			}
+
+			// Award 1 token
+			_, err = g.dbService.Client.TeamMember.FindUnique(
+				db.TeamMember.ID.Equals(targetUserID),
+			).Update(
+				db.TeamMember.TokensBalance.Increment(1.0),
+			).Exec(ctx)
+			if err != nil {
+				continue
+			}
+
+			label := "Weekend Coverage (Bulk)"
+			if status == "HOLIDAY_WORK" {
+				label = "Holiday Coverage (Bulk)"
+			}
+			_, _ = g.dbService.Client.TokenTransaction.CreateOne(
+				db.TokenTransaction.UserID.Set(targetUserID),
+				db.TokenTransaction.Type.Set("EARN"),
+				db.TokenTransaction.Amount.Set(1.0),
+				db.TokenTransaction.Description.Set(label),
+				db.TokenTransaction.RelatedDate.Set(date),
+			).Exec(ctx)
+
+			existingDates[date] = true
+			claimed++
+		}
+
+		return map[string]interface{}{"adminBulkClaimTokens": map[string]interface{}{
+			"claimed": claimed,
+			"skipped": skipped,
+		}}, nil
+	}
+
 	if strings.Contains(queryClean, "updateMaxOffAllowed") {
 		authUser, err := getAuthUser()
 		if err != nil {
