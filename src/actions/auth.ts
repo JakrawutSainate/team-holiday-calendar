@@ -59,7 +59,7 @@ export async function loginAction(emailInput: string, passwordInput: string) {
     try {
       const loginUrl = `${INTERNAL_API_URL}/api/v1/auth/login`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(loginUrl, {
         method: 'POST',
@@ -160,7 +160,7 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(graphqlUrl, {
         method: 'POST',
