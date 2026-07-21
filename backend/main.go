@@ -63,6 +63,24 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Root Status Route
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		
+		dbStatus := "connected"
+		_, err := dbService.Client.TeamMember.FindMany().Take(1).Exec(context.Background())
+		if err != nil {
+			dbStatus = "disconnected"
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf(`{"service":"team-holiday-calendar-api","status":"ok","db":"%s"}`, dbStatus)))
+	})
+
 	// Register Routes
 	mux.Handle("/api/health", healthCtrl)
 	mux.HandleFunc("/api/v1/auth/login", authCtrl.Login)
