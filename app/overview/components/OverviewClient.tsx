@@ -15,6 +15,7 @@ import OverviewHeader from './OverviewHeader';
 import UpcomingHolidaysCard from './UpcomingHolidaysCard';
 import YourTokenBalanceCard from './YourTokenBalanceCard';
 import RecentActivityCard from './RecentActivityCard';
+import ClaimShiftsModal from '@/src/components/ClaimShiftsModal';
 import dynamic from 'next/dynamic';
 
 const PulseChart = dynamic(() => import('./PulseChart'), { ssr: false });
@@ -35,6 +36,7 @@ export default function OverviewClient({
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const [, setTick] = useState(0);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
 
   const [controller] = useState<OverviewController>(() => new OverviewController(
     initialActivities,
@@ -56,6 +58,8 @@ export default function OverviewClient({
     return <OverviewSkeleton />;
   }
 
+  const unclaimedShifts = controller.getUnclaimedShifts(language);
+
   return (
     <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -73,6 +77,8 @@ export default function OverviewClient({
             {user && (
               <YourTokenBalanceCard
                 tokens={Math.floor(user.tokensBalance)}
+                unclaimedCount={unclaimedShifts.length}
+                onOpenClaimModal={() => setIsClaimModalOpen(true)}
               />
             )}
           </div>
@@ -90,6 +96,16 @@ export default function OverviewClient({
           </div>
         </div>
       </main>
+
+      {/* Claim Shifts Modal */}
+      <ClaimShiftsModal
+        isOpen={isClaimModalOpen}
+        onClose={() => setIsClaimModalOpen(false)}
+        unclaimedShifts={unclaimedShifts}
+        onClaimSuccess={() => {
+          controller.loadState(user?.id || '');
+        }}
+      />
     </div>
     </ErrorBoundary>
   );

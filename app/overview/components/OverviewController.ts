@@ -52,6 +52,53 @@ export class OverviewController {
 
   public isLoading(): boolean { return this.loading; }
 
+  public getUnclaimedShifts(language: 'th' | 'en' = 'th'): { date: string; type: 'WEEKEND_WORK' | 'HOLIDAY_WORK'; title: string; dayName: string }[] {
+    if (!this.userId) return [];
+
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const monthPrefix = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+
+    const unclaimed: { date: string; type: 'WEEKEND_WORK' | 'HOLIDAY_WORK'; title: string; dayName: string }[] = [];
+
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const todayDateNum = now.getDate();
+    const limitDay = Math.min(daysInMonth, todayDateNum);
+
+    for (let day = 1; day <= limitDay; day++) {
+      const dateStr = `${monthPrefix}-${day.toString().padStart(2, '0')}`;
+      if (dateStr > todayStr) break;
+
+      const d = new Date(`${dateStr}T00:00:00`);
+      const dayOfWeek = d.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const holiday = botHolidays2026.find(h => h.date === dateStr);
+
+      if (!isWeekend && !holiday) continue;
+
+      const userEvent = this.events.find(e => e.date === dateStr && e.userId === this.userId);
+      if (userEvent) continue;
+
+      const dayName = d.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { weekday: 'long' });
+      const title = holiday
+        ? (language === 'th' ? holiday.nameTh : holiday.nameEn)
+        : (language === 'th' ? `เวรวัน${dayName}` : `${dayName} Shift`);
+
+      unclaimed.push({
+        date: dateStr,
+        type: holiday ? 'HOLIDAY_WORK' : 'WEEKEND_WORK',
+        title,
+        dayName,
+      });
+    }
+
+    return unclaimed;
+  }
+
   public getUpcomingHolidaysAndShifts(language: 'th' | 'en' = 'en'): { title: string; subtitle?: string; type: string }[] {
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
