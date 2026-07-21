@@ -173,6 +173,20 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		return map[string]interface{}{"getTokenTransactions": txns}, nil
 	}
 
+	if strings.Contains(queryClean, "getAuditLogs") {
+		_, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+		logs, err := g.dbService.Client.AuditLog.FindMany().OrderBy(
+			db.AuditLog.CreatedAt.Order(db.DESC),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"getAuditLogs": logs}, nil
+	}
+
 	// ─── MUTATIONS (Protected) ─────────────────────────────────────────────────
 
 	if strings.Contains(queryClean, "claimShift") {
@@ -507,6 +521,46 @@ func (g *GraphQLController) resolve(ctx context.Context, query string, vars map[
 		}
 
 		return map[string]interface{}{"updateMaxOffAllowed": setting}, nil
+	}
+
+	if strings.Contains(queryClean, "updateTeamMemberProfile") {
+		authUser, err := getAuthUser()
+		if err != nil {
+			return nil, err
+		}
+
+		targetUserID, ok1 := vars["id"].(string)
+		name, ok2 := vars["name"].(string)
+		department, ok3 := vars["department"].(string)
+		title, ok4 := vars["title"].(string)
+
+		if !ok1 || !ok2 || !ok3 || !ok4 {
+			return nil, errors.New("missing variables: id, name, department, or title")
+		}
+
+		if authUser.Role != "ADMIN" && authUser.ID != targetUserID {
+			return nil, errors.New("unauthorized: you can only update your own profile")
+		}
+
+		updatedUser, err := g.dbService.Client.TeamMember.FindUnique(
+			db.TeamMember.ID.Equals(targetUserID),
+		).Update(
+			db.TeamMember.Name.Set(name),
+			db.TeamMember.Department.Set(department),
+			db.TeamMember.Title.Set(title),
+		).Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		_, _ = g.dbService.Client.AuditLog.CreateOne(
+			db.AuditLog.UserID.Set(authUser.ID),
+			db.AuditLog.UserName.Set(authUser.Name),
+			db.AuditLog.Action.Set("UPDATE_PROFILE"),
+			db.AuditLog.Details.Set(fmt.Sprintf("Updated profile info for user ID %s. New details - Name: %s, Dept: %s, Title: %s", targetUserID, name, department, title)),
+		).Exec(ctx)
+
+		return map[string]interface{}{"updateTeamMemberProfile": updatedUser}, nil
 	}
 
 	if strings.Contains(queryClean, "updateProfileSignature") {

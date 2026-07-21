@@ -144,13 +144,7 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
   const queryClean = query.trim();
 
   // 1. Bypass Go backend for new queries not defined in Go
-  const shouldBypassBFF =
-    queryClean.includes('getAuditLogs') ||
-    queryClean.includes('getLeaveDocuments') ||
-    queryClean.includes('approveLeaveDocument') ||
-    queryClean.includes('rejectLeaveDocument') ||
-    queryClean.includes('deleteLeaveDocument') ||
-    queryClean.includes('updateTeamMemberProfile');
+  const shouldBypassBFF = false;
 
   let result: any = null;
 
