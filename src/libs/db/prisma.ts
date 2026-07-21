@@ -3,16 +3,30 @@ import { PrismaClient } from '@prisma/client';
 
 import { Pool } from '@neondatabase/serverless';
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { _prisma: PrismaClient | undefined };
 
 function makePrismaClient() {
-  const neonPool = new Pool({ connectionString: process.env.DATABASE_URL! });
+  const connStr = process.env.DATABASE_URL;
+  if (!connStr) {
+    throw new Error('DATABASE_URL is not set. Cannot connect to database.');
+  }
+  const neonPool = new Pool({ connectionString: connStr });
   const adapter = new PrismaNeon(neonPool as any);
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? makePrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+// Lazy singleton — only created on first access, never at module-load time.
+export function getPrisma(): PrismaClient {
+  if (!globalForPrisma._prisma) {
+    globalForPrisma._prisma = makePrismaClient();
+  }
+  return globalForPrisma._prisma;
 }
+
+// Keep a backward-compatible `prisma` export but make it a Proxy so
+// the actual client is only constructed the first time a property is accessed.
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return (getPrisma() as any)[prop];
+  },
+});
