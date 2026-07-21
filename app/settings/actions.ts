@@ -2,7 +2,7 @@
 
 import { SettingsValidator, ProfileSettingsInput, WorkspaceSettingsInput } from './schema';
 import { sanitize } from '@/src/libs/security';
-import { runGraphQLAction } from '@/src/actions/auth';
+import { runGraphQLAction, getSession } from '@/src/actions/auth';
 
 export async function saveProfileSettings(input: ProfileSettingsInput) {
   const sanitizedInput: ProfileSettingsInput = {
@@ -46,6 +46,13 @@ export async function saveSignatureAction(signature: string | null) {
     if (res?.errors) {
       return { success: false, error: res.errors[0].message };
     }
+
+    const session = await getSession();
+    if (session.user) {
+      session.user.savedSignature = signature;
+      await session.save();
+    }
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to save signature' };

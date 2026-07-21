@@ -135,6 +135,33 @@ export async function logoutAction() {
 export async function getCurrentUserAction() {
   const session = await getSession();
   if (!session.user) return null;
+
+  try {
+    const res = await runGraphQLAction(`
+      query {
+        getTeamMembers {
+          id
+          savedSignature
+          tokensBalance
+          sickLeaveBalance
+          annualLeaveBalance
+        }
+      }
+    `);
+    const members = res?.data?.getTeamMembers || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const current = members.find((m: any) => m.id === session.user?.id);
+    if (current) {
+      session.user.savedSignature = current.savedSignature ?? null;
+      session.user.tokensBalance = current.tokensBalance ?? session.user.tokensBalance;
+      session.user.sickLeaveBalance = current.sickLeaveBalance ?? session.user.sickLeaveBalance;
+      session.user.annualLeaveBalance = current.annualLeaveBalance ?? session.user.annualLeaveBalance;
+      await session.save();
+    }
+  } catch (err) {
+    // Fall back to cached session
+  }
+
   return session.user;
 }
 
