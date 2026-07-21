@@ -96,21 +96,22 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
             padding: 0 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background: #fff !important;
           }
           .print-page {
             width: 210mm !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
+            height: 295mm !important;
+            min-height: 295mm !important;
             margin: 0 !important;
+            padding: 24px !important;
             border: none !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
-            transform: scale(0.94);
-            transform-origin: top center;
+            background: #fff !important;
           }
         }
       </style>
-    </head><body>${el.innerHTML}</body></html>`);
+    </head><body>${el.outerHTML}</body></html>`);
     win.document.close();
     win.focus();
 
