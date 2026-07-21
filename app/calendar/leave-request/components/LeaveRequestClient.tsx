@@ -262,9 +262,29 @@ export default function LeaveRequestClient() {
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
       ${styles}
       <style>
-        body { margin:0; padding:40px; font-family:'Sarabun', 'Noto Sans Thai', sans-serif; background:#fff; color:#000; }
+        body { margin:0; padding:30px; font-family:'Sarabun', 'Noto Sans Thai', sans-serif; background:#fff; color:#000; }
         .page { background:#fff; width:100%; max-width:800px; margin:0 auto; padding:0; box-sizing:border-box; color:#000; }
-        @media print { body{padding:0;} .page{border:none;margin:0;max-width:100%;} }
+        @media print {
+          body { padding: 15px !important; margin: 0 !important; font-size: 11px !important; }
+          .print-page {
+            min-height: 0 !important;
+            height: auto !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            font-size: 11px !important;
+          }
+          .text-xs { font-size: 10px !important; }
+          .leading-loose { line-height: 1.5 !important; }
+          .space-y-4 > * + * { margin-top: 0.5rem !important; }
+          .space-y-6 > * + * { margin-top: 0.75rem !important; }
+          .space-y-2.5 > * + * { margin-top: 0.25rem !important; }
+          .mt-4 { margin-top: 0.4rem !important; }
+          .pt-4 { padding-top: 0.4rem !important; }
+          .py-1.5 { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+          .py-2.5 { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
+          table td, table th { padding: 2px 4px !important; }
+        }
       </style>
     </head><body>${el.innerHTML}</body></html>`);
     win.document.close();
