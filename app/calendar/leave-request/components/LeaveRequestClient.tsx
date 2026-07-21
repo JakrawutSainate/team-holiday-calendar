@@ -277,14 +277,24 @@ export default function LeaveRequestClient() {
           }
           .print-page {
             width: 210mm !important;
-            height: 295mm !important;
-            min-height: 295mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
             margin: 0 !important;
-            padding: 24px !important;
+            padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
             background: #fff !important;
+            display: block !important;
+          }
+          .print-page > .page {
+            height: 100% !important;
+            min-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            box-sizing: border-box !important;
+            padding: 30px 40px !important;
           }
         }
       </style>
