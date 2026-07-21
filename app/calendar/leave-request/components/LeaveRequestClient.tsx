@@ -10,6 +10,7 @@ import { LeaveRequestController } from './LeaveRequestController';
 import { LeaveRequestValidator } from '../schema';
 import { LeaveFormData, LeaveStats } from '@/src/types/leave';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
+import { getUserSavedSignatureAction } from '@/app/settings/actions';
 
 export default function LeaveRequestClient() {
   const { user, loading: authLoading } = useAuth();
@@ -47,6 +48,8 @@ export default function LeaveRequestClient() {
   const [sickTakenOverride, setSickTakenOverride] = useState<number | null>(null);
   const [personalTakenOverride, setPersonalTakenOverride] = useState<number | null>(null);
   const [maternityTakenOverride, setMaternityTakenOverride] = useState<number | null>(null);
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
+  const [loadingSignature, setLoadingSignature] = useState(true);
 
   const [controller] = useState<LeaveRequestController>(
     () => new LeaveRequestController(user?.id || '', () => setTick((tick) => tick + 1))
@@ -61,6 +64,22 @@ export default function LeaveRequestClient() {
       router.push('/calendar?triggerLogin=true');
     }
   }, [user, authLoading, router, language]);
+
+  // Fetch user's saved signature from Master Data on demand
+  useEffect(() => {
+    async function fetchSig() {
+      if (!user) return;
+      try {
+        const sig = await getUserSavedSignatureAction();
+        setSavedSignature(sig);
+      } catch (err) {
+        console.error('Failed to load saved signature:', err);
+      } finally {
+        setLoadingSignature(false);
+      }
+    }
+    fetchSig();
+  }, [user]);
 
   // Load controller state (to get tokens and past leaves)
   useEffect(() => {
@@ -185,7 +204,7 @@ export default function LeaveRequestClient() {
   const handleSubmit = async () => {
     setError('');
 
-    if (!user?.savedSignature) {
+    if (!savedSignature) {
       const msg = language === 'th' ? 'กรุณาตั้งค่าลายเซ็นใน Master Data ก่อนยื่นใบลา' : 'Please configure your signature in Master Data before submitting leave';
       setError(msg);
       toast.error(msg);
@@ -230,8 +249,8 @@ export default function LeaveRequestClient() {
         fromDate,
         JSON.stringify(formData),
         'SAVED',
-        user.name,
-        user.savedSignature,
+        user?.name || '',
+        savedSignature,
         ''
       );
 
@@ -548,11 +567,15 @@ export default function LeaveRequestClient() {
                 <div className="border-t border-zinc-100 pt-5 space-y-4">
                   <label className={labelClass}>ลงชื่อผู้ยื่นใบลา / Signature (Master Data)</label>
                   
-                  {user?.savedSignature ? (
+                  {loadingSignature ? (
+                    <div className="flex items-center justify-center py-6 bg-zinc-50 border border-zinc-200/80 rounded-2xl">
+                      <span className="animate-spin inline-block w-5 h-5 border-2 border-zinc-600 border-t-transparent rounded-full" />
+                    </div>
+                  ) : savedSignature ? (
                     <div className="flex flex-col items-center gap-1.5 py-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl">
                       <div className="relative p-3 max-w-[320px] w-full flex items-center justify-center min-h-[90px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={user.savedSignature} alt="Master Data Signature" className="max-h-[85px] object-contain" />
+                        <img src={savedSignature} alt="Master Data Signature" className="max-h-[85px] object-contain" />
                       </div>
                       <span className="text-[11px] font-medium text-zinc-400">({language === 'th' ? 'ลายเซ็นจาก Master Data' : 'Master Data Signature'})</span>
                     </div>
@@ -598,7 +621,7 @@ export default function LeaveRequestClient() {
                     className="px-5 py-2.5 border border-zinc-200 text-zinc-500 rounded-xl text-xs font-semibold hover:bg-zinc-50 disabled:opacity-50 transition-all cursor-pointer">
                     ยกเลิก / Cancel
                   </button>
-                  <button onClick={handleSubmit} disabled={submitting || !user?.savedSignature}
+                  <button onClick={handleSubmit} disabled={submitting || loadingSignature || !savedSignature}
                     className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer flex items-center gap-1.5">
                     {submitting ? (
                       <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />

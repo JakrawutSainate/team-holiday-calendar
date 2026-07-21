@@ -5,7 +5,7 @@ import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
 import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
-import { saveProfileSettings, saveWorkspaceSettings, saveSignatureAction } from '../actions';
+import { saveProfileSettings, saveWorkspaceSettings, saveSignatureAction, getUserSavedSignatureAction } from '../actions';
 import { SettingsController } from './SettingsController';
 import SettingsSkeleton from '@/src/components/skeletons/SettingsSkeleton';
 import SignatureCanvas from '@/src/components/SignatureCanvas';
@@ -15,13 +15,22 @@ export default function SettingsClient() {
   const { role } = useRole();
   const { user, refreshUser } = useAuth();
   const [newSignature, setNewSignature] = useState<string | null>(null);
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [controller] = useState(() => new SettingsController(() => setTick((tick) => tick + 1)));
 
+  const loadSig = async () => {
+    if (user) {
+      const sig = await getUserSavedSignatureAction();
+      setSavedSignature(sig);
+    }
+  };
+
   useEffect(() => {
     controller.loadState().finally(() => setIsLoading(false));
-  }, [controller]);
+    loadSig();
+  }, [controller, user]);
 
   // Pre-fill profile fields from logged-in user
   useEffect(() => {
@@ -143,9 +152,9 @@ export default function SettingsClient() {
                       ลายเซ็นปัจจุบัน (Current Signature)
                     </label>
                     <div className="h-36 bg-zinc-50 border border-zinc-200/60 rounded-xl flex items-center justify-center overflow-hidden">
-                      {user?.savedSignature ? (
+                      {savedSignature ? (
                         <img
-                          src={user.savedSignature}
+                          src={savedSignature}
                           alt="Saved Signature"
                           className="max-h-full max-w-full object-contain filter invert"
                         />
@@ -153,12 +162,12 @@ export default function SettingsClient() {
                         <span className="text-sm text-zinc-400 font-medium">ยังไม่มีลายเซ็นที่บันทึก (No saved signature)</span>
                       )}
                     </div>
-                    {user?.savedSignature && (
+                    {savedSignature && (
                       <button
                         onClick={async () => {
                           const res = await saveSignatureAction(null);
                           if (res.success) {
-                            await refreshUser();
+                            await loadSig();
                           } else {
                             alert(res.error);
                           }

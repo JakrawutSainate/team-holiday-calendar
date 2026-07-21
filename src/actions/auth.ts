@@ -83,7 +83,6 @@ export async function loginAction(emailInput: string, passwordInput: string) {
           department: data.user.department,
           title: data.user.title,
           tokensBalance: data.user.tokensBalance,
-          savedSignature: data.user.savedSignature ?? null,
           sickLeaveBalance: data.user.sickLeaveBalance ?? 30,
           annualLeaveBalance: data.user.annualLeaveBalance ?? 6,
         };
@@ -113,7 +112,6 @@ export async function loginAction(emailInput: string, passwordInput: string) {
       department: user.department,
       title: user.title,
       tokensBalance: user.tokensBalance,
-      savedSignature: user.savedSignature ?? null,
       sickLeaveBalance: user.sickLeaveBalance ?? 30,
       annualLeaveBalance: user.annualLeaveBalance ?? 6,
     };
@@ -147,7 +145,6 @@ export async function getCurrentUserAction() {
           avatarUrl
           department
           title
-          savedSignature
           tokensBalance
           sickLeaveBalance
           annualLeaveBalance
@@ -164,7 +161,6 @@ export async function getCurrentUserAction() {
       session.user.avatarUrl = current.avatarUrl ?? session.user.avatarUrl;
       session.user.department = current.department ?? session.user.department;
       session.user.title = current.title ?? session.user.title;
-      session.user.savedSignature = current.savedSignature ?? null;
       session.user.tokensBalance = current.tokensBalance ?? session.user.tokensBalance;
       session.user.sickLeaveBalance = current.sickLeaveBalance ?? session.user.sickLeaveBalance;
       session.user.annualLeaveBalance = current.annualLeaveBalance ?? session.user.annualLeaveBalance;

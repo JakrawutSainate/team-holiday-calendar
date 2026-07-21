@@ -31,7 +31,7 @@ export default function SignatureLibraryClient() {
   }, [members, controller]);
 
   const filteredMembers = controller.getFilteredMembers(searchQuery, selectedDept);
-  const currentUserData = controller.getMembers().find((m) => m.id === user?.id) || user;
+  const currentUserMember = controller.getMembers().find((m) => m.id === user?.id);
 
   const [showCanvasModal, setShowCanvasModal] = useState(false);
   const [sigTab, setSigTab] = useState<'DRAW' | 'TEXT'>('DRAW');
@@ -301,19 +301,19 @@ export default function SignatureLibraryClient() {
                     </h3>
                     <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-xl">
                       <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center font-bold text-zinc-800">
-                        {currentUserData?.name?.charAt(0)}
+                        {(currentUserMember?.name || user?.name || '')?.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-zinc-900">{currentUserData?.name}</h4>
-                        <p className="text-[10px] text-zinc-500 font-semibold">{currentUserData?.title} ({currentUserData?.department})</p>
+                        <h4 className="text-sm font-bold text-zinc-900">{currentUserMember?.name || user?.name}</h4>
+                        <p className="text-[10px] text-zinc-500 font-semibold">{currentUserMember?.title || user?.title} ({currentUserMember?.department || user?.department})</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="h-44 bg-zinc-50 flex items-center justify-center overflow-hidden p-6 border-b border-zinc-100">
-                    {currentUserData?.savedSignature ? (
+                    {currentUserMember?.savedSignature ? (
                       <img
-                        src={currentUserData.savedSignature}
+                        src={currentUserMember.savedSignature}
                         alt="Your Saved Signature"
                         className="max-h-full max-w-full object-contain filter invert opacity-95"
                       />
@@ -332,7 +332,7 @@ export default function SignatureLibraryClient() {
                     )}
                   </div>
 
-                  {currentUserData?.savedSignature && (
+                  {currentUserMember?.savedSignature && (
                     <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex gap-3 justify-center">
                       <button
                         onClick={openModal}

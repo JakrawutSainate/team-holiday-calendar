@@ -46,15 +46,31 @@ export async function saveSignatureAction(signature: string | null) {
     if (res?.errors) {
       return { success: false, error: res.errors[0].message };
     }
-
-    const session = await getSession();
-    if (session.user) {
-      session.user.savedSignature = signature;
-      await session.save();
-    }
-
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to save signature' };
+  }
+}
+
+export async function getUserSavedSignatureAction(): Promise<string | null> {
+  try {
+    const session = await getSession();
+    if (!session.user) return null;
+
+    const res = await runGraphQLAction(`
+      query {
+        getTeamMembers {
+          id
+          savedSignature
+        }
+      }
+    `);
+    const members = res?.data?.getTeamMembers || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const current = members.find((m: any) => m.id === session.user?.id);
+    return current?.savedSignature ?? null;
+  } catch (err) {
+    console.error('getUserSavedSignatureAction error:', err);
+    return null;
   }
 }

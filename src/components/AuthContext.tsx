@@ -12,7 +12,6 @@ export interface User {
   department: string;
   title: string;
   tokensBalance: number;
-  savedSignature?: string | null;
   sickLeaveBalance?: number;
   annualLeaveBalance?: number;
 }

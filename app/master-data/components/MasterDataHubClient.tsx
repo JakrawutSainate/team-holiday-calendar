@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useMasterData } from './MasterDataContext';
 import { MasterDataHubController } from './MasterDataHubController';
 import { SkeletonHeader, SkeletonCardGrid } from './Skeleton';
+import { getUserSavedSignatureAction } from '@/app/settings/actions';
 
 export default function MasterDataHubClient() {
   const { user } = useAuth();
@@ -18,6 +19,17 @@ export default function MasterDataHubClient() {
 
   const [, setTick] = useState(0);
   const [controller] = useState(() => new MasterDataHubController(() => setTick(t => t + 1)));
+  const [isUserSignatureSaved, setIsUserSignatureSaved] = useState(false);
+
+  useEffect(() => {
+    async function checkSig() {
+      if (user) {
+        const sig = await getUserSavedSignatureAction();
+        setIsUserSignatureSaved(!!sig);
+      }
+    }
+    checkSig();
+  }, [user]);
 
   // Sync context data to local OOP controller
   useEffect(() => {
@@ -128,8 +140,6 @@ export default function MasterDataHubClient() {
         ]
       : []),
   ];
-
-  const isUserSignatureSaved = user?.savedSignature ? true : false;
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">

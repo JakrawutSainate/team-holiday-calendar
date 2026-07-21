@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import SignatureCanvas from './SignatureCanvas';
+import { getUserSavedSignatureAction } from '@/app/settings/actions';
 
 interface LeaveDocumentFormModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function LeaveDocumentFormModal({
   const [leaveType, setLeaveType] = useState('CASUAL'); // Default to CASUAL
   const [reason, setReason] = useState('');
   const [signature, setSignature] = useState('');
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [useSavedSignature, setUseSavedSignature] = useState(false);
   const [attachment, setAttachment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,11 +35,18 @@ export default function LeaveDocumentFormModal({
 
   // Default to using saved signature if available
   useEffect(() => {
-    if (user?.savedSignature) {
-      setUseSavedSignature(true);
-    } else {
-      setUseSavedSignature(false);
+    async function loadSig() {
+      if (user && isOpen) {
+        const sig = await getUserSavedSignatureAction();
+        setSavedSignature(sig);
+        if (sig) {
+          setUseSavedSignature(true);
+        } else {
+          setUseSavedSignature(false);
+        }
+      }
     }
+    loadSig();
   }, [user, isOpen]);
 
   if (!isOpen) return null;
@@ -55,7 +64,7 @@ export default function LeaveDocumentFormModal({
       return;
     }
 
-    const finalSignature = useSavedSignature && user?.savedSignature ? user.savedSignature : signature;
+    const finalSignature = useSavedSignature && savedSignature ? savedSignature : signature;
     if (!finalSignature) {
       setError('กรุณาลงลายมือชื่อ / Please sign the document');
       return;
@@ -241,7 +250,7 @@ export default function LeaveDocumentFormModal({
               <div>
                 <label className="text-xs font-bold text-zinc-700 mb-1.5 flex justify-between items-center">
                   <span>ลายมือชื่อผู้ขอลา / Applicant Signature <span className="text-red-500">*</span></span>
-                  {user?.savedSignature && (
+                  {savedSignature && (
                     <button
                       type="button"
                       onClick={() => setUseSavedSignature(!useSavedSignature)}
@@ -255,10 +264,10 @@ export default function LeaveDocumentFormModal({
                   )}
                 </label>
 
-                {useSavedSignature && user?.savedSignature ? (
+                {useSavedSignature && savedSignature ? (
                   <div className="h-36 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center overflow-hidden">
                     <img
-                      src={user.savedSignature}
+                      src={savedSignature}
                       alt="Saved Signature"
                       className="max-h-full max-w-full object-contain filter invert"
                     />
