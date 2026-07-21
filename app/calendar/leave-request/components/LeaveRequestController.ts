@@ -1,6 +1,7 @@
 import {
   getTeamMembers,
   getAllRawEvents,
+  getLeaveDocuments,
   requestLeaveMutation,
   TeamMember,
   CalendarEvent
@@ -9,6 +10,8 @@ import {
 export class LeaveRequestController {
   private members: TeamMember[] = [];
   private allEvents: CalendarEvent[] = [];
+
+  private leaveDocuments: any[] = [];
   private tokens: number = 0;
   private loading: boolean = false;
   private userId: string;
@@ -40,6 +43,10 @@ export class LeaveRequestController {
     return this.allEvents;
   }
 
+  public getLeaveDocuments(): any[] {
+    return this.leaveDocuments;
+  }
+
   // Load state from DB
   public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
@@ -47,13 +54,15 @@ export class LeaveRequestController {
     this.updateCallback();
 
     try {
-      const [members, events] = await Promise.all([
+      const [members, events, docs] = await Promise.all([
         getTeamMembers(),
         getAllRawEvents(),
+        getLeaveDocuments(),
       ]);
 
       this.members = members;
       this.allEvents = events;
+      this.leaveDocuments = docs;
 
       const currentUser = members.find(m => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;

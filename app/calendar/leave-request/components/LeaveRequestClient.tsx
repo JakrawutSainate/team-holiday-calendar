@@ -7,6 +7,7 @@ import { useAuth } from '@/src/components/AuthContext';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { LeaveRequestController } from './LeaveRequestController';
+import { cancelLeaveMutation } from '@/src/libs/calendarData';
 import { LeaveRequestValidator } from '../schema';
 import { LeaveFormData, LeaveStats } from '@/src/types/leave';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
@@ -50,6 +51,7 @@ export default function LeaveRequestClient() {
   const [maternityTakenOverride, setMaternityTakenOverride] = useState<number | null>(null);
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [loadingSignature, setLoadingSignature] = useState(true);
+  const [viewOnly, setViewOnly] = useState(false);
 
   const [controller] = useState<LeaveRequestController>(
     () => new LeaveRequestController(user?.id || '', () => setTick((tick) => tick + 1))
@@ -81,13 +83,29 @@ export default function LeaveRequestClient() {
     fetchSig();
   }, [user]);
 
-  // Load controller state (to get tokens and past leaves)
+  // Load controller state (to get tokens and past leaves) and check existing leave
   useEffect(() => {
     if (user?.id) {
       controller.updateParams(user.id);
-      controller.loadState();
+      controller.loadState().then(() => {
+        if (fromDate) {
+          const existingEvent = controller.getAllEvents().find(
+            e => e.userId === user.id && e.date === fromDate && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+          );
+          const existingDoc = controller.getLeaveDocuments().find(
+            d => d.userId === user.id && d.leaveDate === fromDate
+          );
+          if (existingEvent || existingDoc) {
+            setViewOnly(true);
+            if (existingDoc) {
+              setReasonText(existingDoc.reason || '');
+              if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
+            }
+          }
+        }
+      });
     }
-  }, [user?.id, controller]);
+  }, [user?.id, fromDate, controller]);
 
   // Prefill user data on load
   useEffect(() => {
@@ -253,11 +271,13 @@ export default function LeaveRequestClient() {
         ''
       );
 
+      await controller.loadState();
+
       toast.success(
-        language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
-        { description: language === 'th' ? 'หัก 1 โทเค็นและลงทะเบียนวันลาเรียบร้อยแล้ว' : 'Deducted 1 token and registered leave!' }
+        language === 'th' ? 'ยื่นใบลาสำเร็จและบันทึกเอกสารแล้ว' : 'Leave Requested & Document Saved',
+        { description: language === 'th' ? 'หัก 1 โทเค็นและลงทะเบียนแบบใบลาเรียบร้อยแล้ว' : 'Deducted 1 token and saved official leave document!' }
       );
-      router.push('/calendar');
+      setViewOnly(true);
     } catch (err: any) {
       console.error(err);
       const errMsg = err.message || (language === 'th' ? 'เกิดข้อผิดพลาดในการยื่นใบลา' : 'Failed to request leave');
@@ -371,26 +391,87 @@ export default function LeaveRequestClient() {
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Page Header */}
-            <div className="flex justify-between items-center border-b border-zinc-200 pb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-200 pb-4 gap-4">
               <div>
-                <h2 className="text-3xl font-extrabold text-zinc-900 tracking-tight">
-                  {language === 'th' ? 'ยื่นแบบใบลาพักผ่อน' : 'New Leave Request'}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-3xl font-extrabold text-zinc-900 tracking-tight">
+                    {viewOnly
+                      ? (language === 'th' ? 'แบบใบลาพักผ่อน (ฉบับสมบูรณ์)' : 'Official Leave Document')
+                      : (language === 'th' ? 'ยื่นแบบใบลาพักผ่อน' : 'New Leave Request')}
+                  </h2>
+                  {viewOnly && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                      <span className="material-symbols-outlined text-xs">check_circle</span>
+                      {language === 'th' ? 'ยื่นสำเร็จแล้ว' : 'Submitted'}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-zinc-500 mt-1">
-                  {language === 'th' ? 'กรอกรายละเอียดและตรวจสอบความถูกต้องของลายเซ็นตามจริงด้านล่าง' : 'Fill in the form on the left and preview the official document on the right.'}
+                  {viewOnly
+                    ? (language === 'th' ? 'เอกสารยื่นลาฉบับสมบูรณ์สำหรับตรวจสอบและพิมพ์ลงกระดาษ' : 'Official leave document for review and printing.')
+                    : (language === 'th' ? 'กรอกรายละเอียดและตรวจสอบความถูกต้องของลายเซ็นตามจริงด้านล่าง' : 'Fill in the form on the left and preview the official document on the right.')}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-[#fcf4e0] text-[#8b6914] px-4 py-2 rounded-xl border border-[#ebd8ad]">
-                  <span className="material-symbols-outlined text-sm">toll</span>
-                  {language === 'th' ? `โทเค็นคงเหลือ: ${controller.getTokens()}` : `Balance: ${controller.getTokens()} tokens`}
-                </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {viewOnly ? (
+                  <>
+                    <button
+                      onClick={() => window.print()}
+                      className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-0"
+                    >
+                      <span className="material-symbols-outlined text-sm">print</span>
+                      <span>{language === 'th' ? 'พิมพ์ใบลา' : 'Print'}</span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        const existingEvent = controller.getAllEvents().find(
+                          e => e.userId === user?.id && e.date === fromDate && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+                        );
+                        if (!existingEvent) {
+                          toast.error(language === 'th' ? 'ไม่พบรายการวันลา' : 'Leave event not found');
+                          return;
+                        }
+                        if (confirm(language === 'th' ? 'คุณต้องการยกเลิกการลานี้ และรับคืน 1 โทเค็นหรือไม่?' : 'Are you sure you want to cancel this leave and regain 1 token?')) {
+                          try {
+                            await cancelLeaveMutation(existingEvent.id);
+                            toast.success(language === 'th' ? 'ยกเลิกวันลาสำเร็จ' : 'Leave Cancelled', {
+                              description: language === 'th' ? 'คืน +1 โทเค็นเข้าสู่บัญชีของคุณแล้ว' : 'Refunded +1 token to your account!'
+                            });
+                            setViewOnly(false);
+                            router.push('/calendar');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Failed to cancel leave');
+                          }
+                        }
+                      }}
+                      className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                      <span>{language === 'th' ? 'ยกเลิกวันลา (คืน 1 โทเค็น)' : 'Cancel Leave (+1 Token)'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setViewOnly(false)}
+                      className="px-3.5 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">add</span>
+                      <span>{language === 'th' ? 'ยื่นแบบใหม่' : 'Create New'}</span>
+                    </button>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-[#fcf4e0] text-[#8b6914] px-4 py-2 rounded-xl border border-[#ebd8ad]">
+                    <span className="material-symbols-outlined text-sm">toll</span>
+                    {language === 'th' ? `โทเค็นคงเหลือ: ${controller.getTokens()}` : `Balance: ${controller.getTokens()} tokens`}
+                  </span>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className={viewOnly ? "flex justify-center" : "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"}>
               
-              {/* ════ LEFT COLUMN: INPUT FORM ════ */}
+              {/* ════ LEFT COLUMN: INPUT FORM (Hidden in viewOnly mode) ════ */}
+              {!viewOnly && (
               <div className="bg-white border border-zinc-100 shadow-xs rounded-2xl p-6 space-y-6">
                 
                 <h3 className="text-lg font-bold text-zinc-900 pb-2 border-b border-zinc-100 flex items-center gap-2">
@@ -622,20 +703,23 @@ export default function LeaveRequestClient() {
                 </div>
 
               </div>
+              )}
 
-              {/* ════ RIGHT COLUMN: LIVE PREVIEW ════ */}
-              <div className="sticky top-6 space-y-4">
-                <div className="flex justify-between items-center bg-white border border-zinc-100 rounded-2xl px-5 py-3 shadow-xs">
-                  <span className="text-xs font-bold text-zinc-500 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[#8b6914] text-sm">visibility</span>
-                    เอกสารใบลาจำลอง (Live Document Preview)
-                  </span>
-                  <button onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#d4a843] hover:bg-[#c49835] text-[#1e3a5f] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs">
-                    <span className="material-symbols-outlined text-sm">print</span>
-                    พิมพ์ / PDF (Print)
-                  </button>
-                </div>
+              {/* ════ RIGHT COLUMN / FULL DOCUMENT PREVIEW ════ */}
+              <div className={viewOnly ? "w-full max-w-3xl space-y-4" : "sticky top-6 space-y-4"}>
+                {!viewOnly && (
+                  <div className="flex justify-between items-center bg-white border border-zinc-100 rounded-2xl px-5 py-3 shadow-xs">
+                    <span className="text-xs font-bold text-zinc-500 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[#8b6914] text-sm">visibility</span>
+                      เอกสารใบลาจำลอง (Live Document Preview)
+                    </span>
+                    <button onClick={handlePrint}
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-[#d4a843] hover:bg-[#c49835] text-[#1e3a5f] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs border-0">
+                      <span className="material-symbols-outlined text-sm">print</span>
+                      พิมพ์ / PDF (Print)
+                    </button>
+                  </div>
+                )}
 
                 {/* ═══ Document Frame ═══ */}
                 <div ref={printRef} className="print-page overflow-hidden border border-zinc-300 shadow-[0_4px_20px_rgba(0,0,0,0.05)] bg-white text-black leading-relaxed" style={{ fontSize: 13, color: '#000' }}>

@@ -112,8 +112,41 @@ export async function resolveGraphQL(
       throw new Error('insufficient tokens: you need at least 1.0 tokens to request leave on this day');
     }
 
+    let parsedLeaveType = 'COMPENSATORY';
+    let parsedReason = (variables.reason as string) || '';
+    let parsedSignature = (variables.signatureImage as string) || freshUser.savedSignature || '';
+    const attachmentImage = (variables.attachmentImage as string) || null;
+
+    try {
+      if (variables.reason) {
+        const data = JSON.parse(variables.reason as string);
+        if (data && typeof data === 'object') {
+          if (data.leaveType) parsedLeaveType = data.leaveType;
+          if (data.reasonText) parsedReason = data.reasonText;
+        }
+      }
+    } catch (e) {
+      // not JSON
+    }
+
     const event = await prisma.calendarEvent.create({
       data: { userId: authUser.id, userName: authUser.name, date, status: 'COMPENSATORY_OFF' },
+    });
+
+    // Create LeaveDocument record in DB
+    await prisma.leaveDocument.create({
+      data: {
+        userId: authUser.id,
+        userName: authUser.name,
+        department: authUser.department || '',
+        title: authUser.title || '',
+        leaveDate: date,
+        leaveType: parsedLeaveType,
+        reason: parsedReason,
+        signature: parsedSignature,
+        status: 'APPROVED',
+        attachment: attachmentImage,
+      },
     });
 
     await prisma.teamMember.update({
@@ -141,6 +174,9 @@ export async function resolveGraphQL(
     }
 
     await prisma.calendarEvent.delete({ where: { id } });
+    await prisma.leaveDocument.deleteMany({
+      where: { userId: event.userId, leaveDate: event.date }
+    });
 
     const isLeave = event.status === 'COMPENSATORY_OFF' || event.status === 'NORMAL';
     if (isLeave) {
