@@ -274,7 +274,7 @@ export default function MasterDataHubClient() {
                     </div>
                     {!isUserSignatureSaved && (
                       <Link
-                        href="/settings"
+                        href="/master-data/signatures"
                         className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                       >
                         {language === 'th' ? 'ไปตั้งค่าลายเซ็น' : 'Draw Signature'}

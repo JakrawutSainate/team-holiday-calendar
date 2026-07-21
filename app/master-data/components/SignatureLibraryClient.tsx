@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
 import { useRole } from '@/src/components/RoleContext';
@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { useMasterData } from './MasterDataContext';
 import { SignatureLibraryController } from './SignatureLibraryController';
 import { SkeletonHeader, SkeletonCardGrid } from './Skeleton';
+import { toast } from 'sonner';
+import { saveSignatureAction } from '@/app/settings/actions';
 
 export default function SignatureLibraryClient() {
   const { user } = useAuth();
@@ -30,6 +32,96 @@ export default function SignatureLibraryClient() {
 
   const filteredMembers = controller.getFilteredMembers(searchQuery, selectedDept);
   const currentUserData = controller.getMembers().find((m) => m.id === user?.id) || user;
+
+  const [showCanvasModal, setShowCanvasModal] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureImage, setSignatureImage] = useState('');
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Setup drawing handlers when canvas modal opens
+  useEffect(() => {
+    if (showCanvasModal) {
+      setTimeout(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#1e3a5f';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+      }, 100);
+    }
+  }, [showCanvasModal]);
+
+  const getCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) {
+      if (e.touches.length === 0) return { x: 0, y: 0 };
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const c = getCoords(e);
+    ctx.beginPath(); ctx.moveTo(c.x, c.y);
+    setIsDrawing(true);
+  };
+
+  const doDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const c = getCoords(e);
+    ctx.lineTo(c.x, c.y); ctx.stroke();
+  };
+
+  const endDraw = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      if (canvasRef.current) setSignatureImage(canvasRef.current.toDataURL('image/png'));
+    }
+  };
+
+  const clearDraw = () => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx && canvasRef.current) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    setSignatureImage('');
+  };
+
+  const [savingSig, setSavingSig] = useState(false);
+  const handleSaveSignature = async () => {
+    if (!signatureImage) return;
+    setSavingSig(true);
+    const res = await saveSignatureAction(signatureImage);
+    setSavingSig(false);
+    if (res.success) {
+      setShowCanvasModal(false);
+      setSignatureImage('');
+      toast.success(language === 'th' ? 'บันทึกลายเซ็นสำเร็จ' : 'Signature saved successfully');
+      refreshData();
+    } else {
+      toast.error(res.error || 'Failed to save signature');
+    }
+  };
+
+  const handleDeleteSignature = async () => {
+    if (!confirm(language === 'th' ? 'คุณต้องการลบลายเซ็นนี้ใช่หรือไม่?' : 'Are you sure you want to delete your signature?')) return;
+    const res = await saveSignatureAction(null);
+    if (res.success) {
+      toast.success(language === 'th' ? 'ลบลายเซ็นสำเร็จ' : 'Signature deleted successfully');
+      refreshData();
+    } else {
+      toast.error(res.error || 'Failed to delete signature');
+    }
+  };
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -138,6 +230,27 @@ export default function SignatureLibraryClient() {
                           )}
                         </div>
 
+                        {m.id === user?.id && (
+                          <div className="p-3 bg-zinc-50/50 border-b border-zinc-100 flex gap-2 justify-center">
+                            <button
+                              onClick={() => setShowCanvasModal(true)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[11px] font-bold transition-all border-none outline-none cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-xs">edit</span>
+                              {language === 'th' ? 'วาด/แก้ไข' : 'Draw/Edit'}
+                            </button>
+                            {m.savedSignature && (
+                              <button
+                                onClick={handleDeleteSignature}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-xl text-[11px] font-bold transition-all border border-red-200/50 outline-none cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-xs">delete</span>
+                                {language === 'th' ? 'ลบ' : 'Delete'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+
                         <div className="p-4 bg-zinc-50/20 text-center">
                           <span className="text-[10px] text-zinc-400 font-semibold truncate block">
                             ID: {m.id}
@@ -186,15 +299,34 @@ export default function SignatureLibraryClient() {
                         <p className="text-xs text-zinc-400 font-semibold">
                           {language === 'th' ? 'คุณยังไม่ได้บันทึกลายเซ็นไว้ในระบบ' : 'You have not saved a signature yet.'}
                         </p>
-                        <Link
-                          href="/settings"
-                          className="inline-block px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all"
+                        <button
+                          onClick={() => setShowCanvasModal(true)}
+                          className="inline-block px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all border-none outline-none cursor-pointer"
                         >
-                          {language === 'th' ? 'ไปวาดลายเซ็นที่หน้าตั้งค่า' : 'Draw signature in Settings'}
-                        </Link>
+                          {language === 'th' ? 'วาดลายเซ็นใหม่' : 'Draw Signature'}
+                        </button>
                       </div>
                     )}
                   </div>
+
+                  {currentUserData?.savedSignature && (
+                    <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex gap-3 justify-center">
+                      <button
+                        onClick={() => setShowCanvasModal(true)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all border-none outline-none cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                        {language === 'th' ? 'แก้ไขลายเซ็น' : 'Edit Signature'}
+                      </button>
+                      <button
+                        onClick={handleDeleteSignature}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-650 rounded-xl text-xs font-bold transition-all border border-red-200/50 outline-none cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                        {language === 'th' ? 'ลบลายเซ็น' : 'Delete Signature'}
+                      </button>
+                    </div>
+                  )}
 
                   <div className="p-4 text-center bg-zinc-50/20">
                     <p className="text-[10px] text-zinc-400 font-medium">
@@ -209,6 +341,82 @@ export default function SignatureLibraryClient() {
           )}
         </div>
       </main>
+
+      {/* Signature Canvas Drawing Modal */}
+      {showCanvasModal && (
+        <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-zinc-100 animate-slide-up">
+            {/* Header */}
+            <div className="bg-zinc-900 text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="text-sm font-bold tracking-wide">
+                {language === 'th' ? 'วาดลายเซ็นของคุณ' : 'Draw Your Signature'}
+              </h3>
+              <button
+                onClick={() => setShowCanvasModal(false)}
+                className="text-zinc-400 hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Canvas Body */}
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-zinc-500 font-medium">
+                {language === 'th' 
+                  ? 'กรุณาใช้เมาส์หรือนิ้วมือวาดลายเซ็นลงในกรอบด้านล่างนี้'
+                  : 'Please use your mouse or touch screen to sign inside the box below.'}
+              </p>
+
+              <div className="border border-zinc-200 rounded-2xl bg-zinc-50 overflow-hidden relative h-32 flex items-center justify-center">
+                <canvas
+                  ref={canvasRef}
+                  width={460}
+                  height={120}
+                  className="w-full h-full cursor-crosshair touch-none"
+                  onMouseDown={startDraw}
+                  onMouseMove={doDraw}
+                  onMouseUp={endDraw}
+                  onMouseLeave={endDraw}
+                  onTouchStart={startDraw}
+                  onTouchMove={doDraw}
+                  onTouchEnd={endDraw}
+                />
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <button
+                  onClick={clearDraw}
+                  className="flex items-center gap-1 px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
+                >
+                  <span className="material-symbols-outlined text-sm">mop</span>
+                  {language === 'th' ? 'ล้างกระดาน' : 'Clear Canvas'}
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCanvasModal(false)}
+                    className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold text-zinc-650 transition-colors cursor-pointer outline-none"
+                  >
+                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                  </button>
+                  <button
+                    onClick={handleSaveSignature}
+                    disabled={!signatureImage || savingSig}
+                    className="flex items-center gap-1.5 px-5 py-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none outline-none"
+                  >
+                    {savingSig ? (
+                      <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                    ) : (
+                      <span className="material-symbols-outlined text-sm">save</span>
+                    )}
+                    {language === 'th' ? 'บันทึกลายเซ็น' : 'Save Signature'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
