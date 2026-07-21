@@ -329,3 +329,96 @@ func (r *MutationResolver) UpdateTeamMemberProfile(ctx *ResolverContext, vars ma
 		"id": retID, "name": retName, "department": retDept, "title": retTitle,
 	}}, nil
 }
+
+// AdminBulkClaimTokens allows an admin to claim tokens for a user for multiple dates at once.
+func (r *MutationResolver) AdminBulkClaimTokens(ctx *ResolverContext, vars map[string]interface{}) (interface{}, error) {
+	targetUserID, _ := vars["userId"].(string)
+	entriesRaw, ok := vars["entries"].([]interface{})
+	if !ok || targetUserID == "" || len(entriesRaw) == 0 {
+		return nil, errors.New("missing variables: userId or entries")
+	}
+
+	var targetUserName string
+	if err := r.db.DB.QueryRow(`SELECT name FROM "TeamMember" WHERE id = $1`, targetUserID).Scan(&targetUserName); err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	rows, err := r.db.DB.Query(`SELECT date FROM "CalendarEvent" WHERE "userId" = $1 AND status IN ('WEEKEND_WORK', 'HOLIDAY_WORK')`, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	existingDates := make(map[string]bool)
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err == nil {
+			existingDates[d] = true
+		}
+	}
+
+	claimed := 0
+	skipped := 0
+
+	tx, err := r.db.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	for _, entryRaw := range entriesRaw {
+		entryMap, ok := entryRaw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		date, _ := entryMap["date"].(string)
+		status, _ := entryMap["status"].(string)
+		details, _ := entryMap["details"].(string)
+
+		if date == "" || (status != "WEEKEND_WORK" && status != "HOLIDAY_WORK") {
+			continue
+		}
+
+		if existingDates[date] {
+			skipped++
+			continue
+		}
+
+		eventID := uuid.New().String()
+		if _, err := tx.Exec(
+			`INSERT INTO "CalendarEvent" (id, "userId", "userName", date, status, details) VALUES ($1,$2,$3,$4,$5,$6)`,
+			eventID, targetUserID, targetUserName, date, status, details,
+		); err != nil {
+			return nil, err
+		}
+
+		if _, err := tx.Exec(`UPDATE "TeamMember" SET "tokensBalance" = "tokensBalance" + 1.0 WHERE id = $1`, targetUserID); err != nil {
+			return nil, err
+		}
+
+		label := "Weekend Coverage (Bulk)"
+		if status == "HOLIDAY_WORK" {
+			label = "Holiday Coverage (Bulk)"
+		}
+
+		txnID := uuid.New().String()
+		if _, err := tx.Exec(
+			`INSERT INTO "TokenTransaction" (id, "userId", type, amount, description, "relatedDate") VALUES ($1,$2,'EARN',1.0,$3,$4)`,
+			txnID, targetUserID, label, date,
+		); err != nil {
+			return nil, err
+		}
+
+		existingDates[date] = true
+		claimed++
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{"adminBulkClaimTokens": map[string]interface{}{
+		"claimed": claimed,
+		"skipped": skipped,
+	}}, nil
+}

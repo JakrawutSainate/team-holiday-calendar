@@ -115,6 +115,8 @@ func (h *GraphQLHandler) resolve(
 		return h.mutations.UpdateProfileSignature(ctx, vars)
 	case strings.Contains(q, "updateTeamMemberProfile"):
 		return h.mutations.UpdateTeamMemberProfile(ctx, vars)
+	case strings.Contains(q, "adminBulkClaimTokens"):
+		return h.mutations.AdminBulkClaimTokens(ctx, vars)
 
 	default:
 		return nil, errors.New("unsupported GraphQL operation")
