@@ -184,17 +184,18 @@ export default function LeaveRequestClient() {
 
   const handleSubmit = async () => {
     setError('');
-    const validationError = LeaveRequestValidator.validate({
-      fromDate,
-      fullName,
-      signatureType,
-      signatureText,
-      signatureImage
-    }, language);
 
-    if (validationError) {
-      setError(validationError);
-      toast.error(validationError);
+    if (!user?.savedSignature) {
+      const msg = language === 'th' ? 'กรุณาตั้งค่าลายเซ็นใน Master Data ก่อนยื่นใบลา' : 'Please configure your signature in Master Data before submitting leave';
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!fromDate) {
+      const msg = language === 'th' ? 'กรุณาระบุวันที่เริ่มลา' : 'Please specify start date';
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -228,10 +229,10 @@ export default function LeaveRequestClient() {
       await controller.submitLeave(
         fromDate,
         JSON.stringify(formData),
-        signatureType,
-        signatureText,
-        signatureImage,
-        attachmentImage
+        'SAVED',
+        user.name,
+        user.savedSignature,
+        ''
       );
 
       toast.success(
@@ -543,81 +544,43 @@ export default function LeaveRequestClient() {
                   </div>
                 </div>
 
-                {/* เอกสารแนบ */}
-                <div>
-                  <label className={labelClass}>เอกสารแนบ (ทางเลือก) / Attachment</label>
-                  <div className="flex gap-4 items-center mt-1">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} id="leave-img-up-request" className="hidden" />
-                    <label htmlFor="leave-img-up-request"
-                      className="flex items-center gap-2 px-4 py-2 border border-dashed border-zinc-300 text-zinc-700 rounded-xl text-xs font-semibold cursor-pointer hover:bg-zinc-50 transition-all">
-                      <span className="material-symbols-outlined text-sm">cloud_upload</span>
-                      เลือกรูปภาพ / Choose Image
-                    </label>
-                    {attachmentImage && (
-                      <div className="relative w-12 h-12 rounded-xl border border-zinc-200 overflow-hidden bg-white shadow-xs">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={attachmentImage} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => setAttachmentImage('')}
-                          className="absolute inset-0 bg-red-600/80 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity text-white cursor-pointer">
-                          <span className="material-symbols-outlined text-sm">close</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ลงลายเซ็น */}
+                {/* ลงลายเซ็น (Master Data) */}
                 <div className="border-t border-zinc-100 pt-5 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <label className={labelClass}>ลงชื่อผู้ยื่นใบลา / Signature</label>
-                    <div className="flex border border-zinc-200 rounded-lg p-0.5 text-[10px] bg-zinc-50">
-                      {user?.savedSignature && (
-                        <button type="button" onClick={() => { setSignatureType('SAVED'); setSignatureImage(user.savedSignature || ''); setError(''); }}
-                          className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                            signatureType === 'SAVED' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'
-                          }`}>ใช้ลายเซ็นที่บันทึกไว้ / Saved</button>
-                      )}
-                      <button type="button" onClick={() => { setSignatureType('TEXT'); setError(''); }}
-                        className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                          signatureType === 'TEXT' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'
-                        }`}>พิมพ์ชื่อ / Type Name</button>
-                      <button type="button" onClick={() => { setSignatureType('DRAW'); setError(''); }}
-                        className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                          signatureType === 'DRAW' ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-900'
-                        }`}>วาดลายเซ็น / Draw</button>
-                    </div>
-                  </div>
-
-                  {signatureType === 'SAVED' ? (
-                    <div className="flex flex-col items-center gap-1 py-2">
-                      <div className="relative border border-zinc-200 rounded-xl p-3 bg-zinc-50 max-w-[320px] w-full flex items-center justify-center min-h-[100px]">
+                  <label className={labelClass}>ลงชื่อผู้ยื่นใบลา / Signature (Master Data)</label>
+                  
+                  {user?.savedSignature ? (
+                    <div className="flex flex-col items-center gap-1.5 py-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl">
+                      <div className="relative p-3 max-w-[320px] w-full flex items-center justify-center min-h-[90px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={user?.savedSignature || ''} alt="Saved Signature" className="max-h-[80px] object-contain" />
+                        <img src={user.savedSignature} alt="Master Data Signature" className="max-h-[85px] object-contain" />
                       </div>
-                      <span className="text-[10px] text-zinc-400 mt-1">(ลายเซ็นที่บันทึกไว้ในระบบ)</span>
-                    </div>
-                  ) : signatureType === 'TEXT' ? (
-                    <div className="flex flex-col items-center gap-1 py-2">
-                      <input type="text" value={signatureText}
-                        onChange={(e) => { setSignatureText(e.target.value); setError(''); }}
-                        placeholder="พิมพ์ชื่อ-นามสกุล..."
-                        className="w-full max-w-[320px] text-center px-4 py-2 border-b-2 border-zinc-800 bg-transparent text-xl font-serif italic outline-none text-[#1e3a5f] placeholder:text-zinc-300" />
-                      <span className="text-[10px] text-zinc-400 mt-1">(ลงชื่อ)</span>
+                      <span className="text-[11px] font-medium text-zinc-400">({language === 'th' ? 'ลายเซ็นจาก Master Data' : 'Master Data Signature'})</span>
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <div className="relative border border-dashed border-zinc-300 rounded-xl bg-zinc-50 overflow-hidden">
-                        <canvas ref={canvasRef} width={520} height={100}
-                          onMouseDown={startDraw} onMouseMove={doDraw}
-                          onMouseUp={endDraw} onMouseLeave={endDraw}
-                          onTouchStart={startDraw} onTouchMove={doDraw} onTouchEnd={endDraw}
-                          className="w-full cursor-crosshair h-[100px]" />
-                        <button type="button" onClick={clearDraw}
-                          className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-lg border border-zinc-200 text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer">
-                          <span className="material-symbols-outlined text-sm">refresh</span>
-                        </button>
+                    <div className="p-5 bg-amber-50/80 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center flex-shrink-0 font-bold">
+                          <span className="material-symbols-outlined text-xl">draw</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-amber-900">
+                            {language === 'th' ? 'ยังไม่ได้ตั้งค่าลายเซ็นในระบบ' : 'No signature configured'}
+                          </p>
+                          <p className="text-[11px] text-amber-700 font-medium mt-0.5">
+                            {language === 'th'
+                              ? 'กรุณาเพิ่มลายเซ็นใน Master Data ก่อนยื่นใบลา'
+                              : 'Please add your signature in Master Data settings before submitting leave.'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[9px] text-zinc-400 text-center">เขียนลายเซ็นด้วยเมาส์หรือนิ้วสัมผัส</p>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/master-data/signatures')}
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      >
+                        <span>{language === 'th' ? 'ไปตั้งค่าลายเซ็น (Master Data)' : 'Go to Signature Settings'}</span>
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -635,7 +598,7 @@ export default function LeaveRequestClient() {
                     className="px-5 py-2.5 border border-zinc-200 text-zinc-500 rounded-xl text-xs font-semibold hover:bg-zinc-50 disabled:opacity-50 transition-all cursor-pointer">
                     ยกเลิก / Cancel
                   </button>
-                  <button onClick={handleSubmit} disabled={submitting}
+                  <button onClick={handleSubmit} disabled={submitting || !user?.savedSignature}
                     className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer flex items-center gap-1.5">
                     {submitting ? (
                       <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
