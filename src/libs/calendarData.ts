@@ -228,6 +228,10 @@ class CalendarDataService {
     return this.allEventsFlight;
   }
 
+  public async getAllRawEvents(): Promise<CalendarEvent[]> {
+    return this.fetchAllRawEvents();
+  }
+
   // ─── Queries ──────────────────────────────────────────────────────────────
 
   public async getTeamMembers(): Promise<TeamMember[]> {
@@ -411,6 +415,9 @@ export const getTeamMembers = (): Promise<TeamMember[]> =>
 
 export const getCalendarEvents = (year: number, month: number): Promise<CalendarEvent[]> =>
   calendarDataService.getCalendarEvents(year, month);
+
+export const getAllRawEvents = (): Promise<CalendarEvent[]> =>
+  calendarDataService.getAllRawEvents();
 
 export const getLeaveDocuments = (): Promise<any[]> =>
   calendarDataService.getLeaveDocuments();

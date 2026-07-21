@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
@@ -16,7 +17,6 @@ import { useConfirm } from '@/src/components/ConfirmDialog';
 import dynamic from 'next/dynamic';
 import { ExcelExporter, PdfExporter } from '../utils/CalendarExporter';
 
-const LeaveFormDialog = dynamic(() => import('@/src/components/LeaveFormDialog').then((mod) => mod.LeaveFormDialog), { ssr: false });
 const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
 const ExportDialog = dynamic(() => import('@/src/components/ExportDialog').then((mod) => mod.ExportDialog), { ssr: false });
 
@@ -30,10 +30,8 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
   const { role } = useRole();
   const { user, openLogin } = useAuth();
   const confirm = useConfirm();
+  const router = useRouter();
   const [, setTick] = useState(0);
-  const [showLeaveForm, setShowLeaveForm] = useState(false);
-  const [selectedLeaveDate, setSelectedLeaveDate] = useState('');
-  const [leaveFormPrefillDate, setLeaveFormPrefillDate] = useState('');
   const [viewingLeaveEvent, setViewingLeaveEvent] = useState<any>(null);
   
   const [showExportModal, setShowExportModal] = useState(false);
@@ -56,6 +54,17 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
     controller.updateParams(year, month, user?.id ?? '', user?.name ?? '');
     controller.loadState();
   }, [year, month, user?.id, controller]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('triggerLogin') === 'true') {
+        openLogin();
+        const newUrl = window.location.pathname + window.location.search.replace(/[?&]triggerLogin=true/, '');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [openLogin]);
 
   useRealtimeSync(() => controller.loadState());
 
@@ -124,37 +133,11 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         );
         return;
       }
-      setLeaveFormPrefillDate(dateString);
-      setShowLeaveForm(true);
+      router.push(`/calendar/leave-request?date=${dateString}`);
     }
   };
 
-  const handleLeaveFormSubmit = (
-    selectedDate: string,
-    reason: string,
-    signatureType: 'DRAW' | 'TEXT',
-    signatureText: string,
-    signatureImage: string,
-    attachmentImage: string
-  ) => {
-    const tokensNeeded = 1;
-    if (controller.getTokens() < tokensNeeded) {
-      toast.error(
-        language === 'th' ? 'โทเค็นไม่เพียงพอ' : 'Insufficient Tokens',
-        { description: language === 'th'
-            ? `ต้องการ ${tokensNeeded} โทเค็น แต่มีเพียง ${controller.getTokens()} โทเค็น`
-            : `You need ${tokensNeeded} tokens but only have ${controller.getTokens()}.` }
-      );
-      return;
-    }
-    controller.requestLeave(selectedDate, reason, signatureType, signatureText, signatureImage, attachmentImage);
-    toast.success(
-      language === 'th' ? 'ยื่นใบลาสำเร็จ' : 'Leave Requested',
-      { description: language === 'th'
-          ? `หัก ${tokensNeeded} โทเค็นและลงทะเบียนวันลาเรียบร้อยแล้ว`
-          : `Deducted ${tokensNeeded} token and registered your leave!` }
-    );
-  };
+  // Leave request is now handled on the dedicated page /calendar/leave-request
 
   const handleMaxOffChange = (newVal: number) => {
     controller.updateMaxOff(newVal);
@@ -183,8 +166,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
               role={role}
               tokens={controller.getTokens()}
               onRequestLeave={() => {
-                setLeaveFormPrefillDate('');
-                setShowLeaveForm(true);
+                router.push('/calendar/leave-request');
               }}
               onOpenExport={() => setShowExportModal(true)}
             />
@@ -256,14 +238,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
         </main>
       </div>
 
-      <LeaveFormDialog
-        open={showLeaveForm}
-        onClose={() => setShowLeaveForm(false)}
-        onSubmit={handleLeaveFormSubmit}
-        tokens={controller.getTokens()}
-        language={language}
-        prefillDate={leaveFormPrefillDate}
-      />
+      {/* Leave form modal has been replaced by the dedicated page /calendar/leave-request */}
 
       <LeaveDetailsDialog
         open={!!viewingLeaveEvent}

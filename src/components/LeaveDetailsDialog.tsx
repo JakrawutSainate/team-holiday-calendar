@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
-import type { LeaveFormData } from './LeaveFormDialog';
+import type { LeaveFormData } from '@/src/types/leave';
 
 interface LeaveRequestData {
   reason?: string;
@@ -65,6 +65,8 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
   const phone = fd?.contactPhone || '';
   const loc = fd?.writtenAt || '';
   const recipient = fd?.recipientTitle || '';
+  const level = fd?.level || '';
+  const stats = fd?.stats || null;
 
   const DotVal = ({ val, w = 120 }: { val: string; w?: number }) => (
     val
@@ -187,8 +189,9 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
                   <span><span className="label font-semibold text-[#1e3a5f]">ข้าพเจ้า</span> <DotVal val={name} w={180} /></span>
                   <span><span className="label font-semibold text-[#1e3a5f]">ตำแหน่ง</span> <DotVal val={pos} w={140} /></span>
                 </div>
-                <div className="text-[13px] text-[#3d4f5f]">
-                  <span className="label font-semibold text-[#1e3a5f]">สังกัด</span> <DotVal val={dept} w={320} />
+                <div className="flex flex-wrap items-end gap-x-4 gap-y-1 text-[13px] text-[#3d4f5f]">
+                  <span><span className="label font-semibold text-[#1e3a5f]">ระดับ</span> <DotVal val={level} w={100} /></span>
+                  <span><span className="label font-semibold text-[#1e3a5f]">สังกัด</span> <DotVal val={dept} w={280} /></span>
                 </div>
               </div>
 
@@ -239,6 +242,44 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
               <div className="flex flex-wrap items-end gap-x-4 gap-y-1 text-[13px] text-[#3d4f5f]">
                 <span><span className="label font-semibold text-[#1e3a5f]">ติดต่อได้ที่</span> <DotVal val={contact} w={200} /></span>
                 <span><span className="label font-semibold text-[#1e3a5f]">โทร</span> <DotVal val={phone} w={140} /></span>
+              </div>
+
+              {/* สถิติการลา */}
+              <div className="space-y-1 text-[13px]">
+                <div className="section-title text-[9px] font-bold uppercase tracking-[2px] text-[#8b6914] flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">table_chart</span>
+                  สถิติการลาในปีงบประมาณนี้
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10, fontFamily: 'Sarabun, sans-serif', fontSize: 12, border: '1px solid #c5b99b' }}>
+                  <thead>
+                    <tr style={{ background: '#f8f6f0' }}>
+                      <th style={{ border: '1px solid #c5b99b', padding: '4px 8px', textAlign: 'left', color: '#1e3a5f' }}>ประเภทลา</th>
+                      <th style={{ border: '1px solid #c5b99b', padding: '4px 8px', width: 100, color: '#1e3a5f' }}>ลามาแล้ว (วัน)</th>
+                      <th style={{ border: '1px solid #c5b99b', padding: '4px 8px', width: 80, color: '#1e3a5f' }}>ลาครั้งนี้</th>
+                      <th style={{ border: '1px solid #c5b99b', padding: '4px 8px', width: 80, color: '#1e3a5f' }}>รวมเป็น</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1e3a5f' }}>ป่วย / Sick</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.sick?.taken ?? '-'}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.sick?.current ?? (lt === 'SICK' ? days : 0)}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', fontWeight: 'bold' }}>{stats?.sick?.total ?? (stats?.sick?.taken !== undefined ? stats.sick.taken + (lt === 'SICK' ? days : 0) : '-')}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1e3a5f' }}>กิจส่วนตัว / Personal</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.personal?.taken ?? '-'}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.personal?.current ?? (lt === 'PERSONAL' ? days : 0)}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', fontWeight: 'bold' }}>{stats?.personal?.total ?? (stats?.personal?.taken !== undefined ? stats.personal.taken + (lt === 'PERSONAL' ? days : 0) : '-')}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1e3a5f' }}>ลาคลอด / Maternity</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.maternity?.taken ?? '-'}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px' }}>{stats?.maternity?.current ?? (lt === 'MATERNITY' ? days : 0)}</td>
+                      <td style={{ border: '1px solid #c5b99b', padding: '4px 8px', fontWeight: 'bold' }}>{stats?.maternity?.total ?? (stats?.maternity?.taken !== undefined ? stats.maternity.taken + (lt === 'MATERNITY' ? days : 0) : '-')}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               {/* เอกสารแนบ */}
