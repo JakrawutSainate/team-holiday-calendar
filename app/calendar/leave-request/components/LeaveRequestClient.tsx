@@ -259,31 +259,8 @@ export default function LeaveRequestClient() {
     win.document.write(`<html><head><title>แบบใบลา - ${fullName}</title>
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
       <style>
-        body { margin:0; padding:20px; font-family:'Sarabun', 'Noto Sans Thai', sans-serif; background:#fff; }
-        .page { background:#fff; width:100%; max-width:800px; margin:0 auto; padding:0; box-sizing:border-box; color:#3d4f5f; }
-        .gold-bar { display:none; }
-        .header { text-align:center; border-bottom:2px double #c5b99b; padding-bottom:12px; margin-bottom:20px; }
-        .header h2 { font-size:18px; font-weight:bold; color:#1e3a5f; margin:0; tracking:0.1em; }
-        .header p { font-size:9px; color:#8b9cb5; margin:4px 0 0 0; text-transform:uppercase; font-weight:bold; }
-        .row { display:flex; flex-wrap:wrap; align-items:end; margin-bottom:10px; font-size:13px; }
-        .label { font-weight:600; color:#1e3a5f; margin-right:6px; }
-        .dot-val { border-bottom:1px dotted #8b9cb5; padding:0 8px; font-weight:500; color:#1e3a5f; display:inline-block; }
-        .section { background:#f8f6f0; border:1px solid #e8e2d0; border-radius:8px; padding:16px; margin:16px 0; }
-        .section-title { font-size:10px; font-weight:bold; text-transform:uppercase; color:#8b6914; display:flex; align-items:center; gap:6px; margin-bottom:8px; }
-        .leave-badges { display:flex; gap:8px; margin-top:8px; }
-        .badge { border:1px solid #d4c9a8; border-radius:4px; padding:4px 10px; font-size:11px; font-weight:600; color:#8b9cb5; display:inline-flex; align-items:center; gap:4px; background:#fff; }
-        .badge.active { background:#1e3a5f; color:#fff; border-color:#1e3a5f; }
-        .date-section { background:#f0f4f8; border:1px solid #d0dbe6; border-radius:6px; padding:12px 16px; margin:12px 0; }
-        .sig-area { text-align:right; padding-right:40px; margin-top:24px; display:flex; flex-direction:column; align-items:end; }
-        .sig-block { display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
-        .sig-name { font-size:18px; font-family:serif; font-style:italic; border-bottom:1.5px solid #1e3a5f; padding:2px 20px; color:#1e3a5f; }
-        .sig-img { max-height:50px; }
-        .sig-label { font-size:10px; color:#8b9cb5; }
-        .attachment-img { max-width:280px; max-height:180px; border:1px solid #e8e2d0; border-radius:6px; margin:8px 0; }
-        table.stats-table { width:100%; border-collapse:collapse; margin-top:15px; font-size:12px; }
-        table.stats-table th, table.stats-table td { border:1px solid #c5b99b; padding:6px 10px; text-align:center; }
-        table.stats-table th { background:#f8f6f0; color:#1e3a5f; font-weight:bold; }
-        table.stats-table td.type-col { text-align:left; font-weight:bold; color:#1e3a5f; }
+        body { margin:0; padding:40px; font-family:'Sarabun', 'Noto Sans Thai', sans-serif; background:#fff; color:#000; }
+        .page { background:#fff; width:100%; max-width:800px; margin:0 auto; padding:0; box-sizing:border-box; color:#000; }
         @media print { body{padding:0;} .page{border:none;margin:0;max-width:100%;} }
       </style>
     </head><body>${el.innerHTML}</body></html>`);
@@ -633,200 +610,248 @@ export default function LeaveRequestClient() {
                 </div>
 
                 {/* ═══ Document Frame ═══ */}
-                <div ref={printRef} className="overflow-hidden rounded-2xl border border-[#c5b99b] shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-[#fffef8]">
-                  <div className="page p-8 md:p-10 space-y-5" style={{ fontFamily: "'Sarabun', 'Noto Sans Thai', sans-serif" }}>
-                    
-                    {/* Gold header bar */}
-                    <div className="gold-bar h-1.5 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914] -mx-10 -mt-10 mb-6" />
+                <div ref={printRef} className="overflow-hidden border border-zinc-300 shadow-[0_4px_20px_rgba(0,0,0,0.05)] bg-white text-black leading-relaxed" style={{ fontSize: 13, color: '#000' }}>
+                  <div className="page p-8 md:p-10 space-y-6" style={{ fontFamily: "'Sarabun', 'Noto Sans Thai', sans-serif" }}>
 
                     {/* Header title */}
-                    <div className="header text-center pb-3 border-b-2 border-double border-[#c5b99b] mb-4">
-                      <h2 className="text-base font-bold text-[#1e3a5f] tracking-widest">
-                        แบบใบลาป่วย ลาคลอดบุตร ลากิจส่วนตัว
+                    <div className="text-center pb-2 border-b border-black mb-4">
+                      <h2 className="text-base font-bold text-black tracking-wide" style={{ fontSize: 16 }}>
+                        แบบใบลาป่วย ลากิจส่วนตัว ลาคลอดบุตร
                       </h2>
-                      <p className="text-[9px] text-[#8b9cb5] tracking-wider uppercase font-semibold">
-                        Sick Leave / Maternity Leave / Personal Leave Request Form
-                      </p>
                     </div>
 
                     {/* เขียนที่ + วันที่ */}
-                    <div className="row flex justify-between items-end text-xs text-[#3d4f5f]">
-                      <div className="flex items-end gap-1">
-                        <span className="font-semibold text-[#1e3a5f]">เขียนที่</span>
-                        <span className="dot-val min-w-[120px]">{writtenAt || '...............'}</span>
+                    <div className="flex flex-col items-end space-y-1.5 text-xs">
+                      <div className="flex items-end gap-1 w-full max-w-[280px]">
+                        <span className="whitespace-nowrap">(เขียนที่)</span>
+                        <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px]">{writtenAt || '..................................'}</span>
                       </div>
-                      <div className="text-right text-[11px] text-[#6b7c8d]">
-                        {todayLabel}
+                      <div className="flex items-end gap-1 w-full max-w-[280px]">
+                        <span>วันที่</span>
+                        <span className="border-b border-dotted border-black w-10 text-center font-bold min-h-[18px]">{today.getDate()}</span>
+                        <span>เดือน</span>
+                        <span className="border-b border-dotted border-black w-24 text-center font-bold min-h-[18px]">{thaiMonths[today.getMonth()]}</span>
+                        <span>พ.ศ.</span>
+                        <span className="border-b border-dotted border-black w-14 text-center font-bold min-h-[18px]">{today.getFullYear() + 543}</span>
                       </div>
                     </div>
 
                     {/* เรื่อง / เรียน */}
-                    <div className="space-y-2 text-xs text-[#3d4f5f]">
+                    <div className="space-y-1.5 text-xs">
                       <div>
-                        <span className="font-semibold text-[#1e3a5f]">เรื่อง</span>
-                        <span className="ml-2 text-zinc-700">ขออนุญาตลา</span>
+                        <span className="font-bold">เรื่อง</span> ขออนุญาตลา
                       </div>
                       <div className="flex items-end gap-1">
-                        <span className="font-semibold text-[#1e3a5f]">เรียน</span>
-                        <span className="dot-val min-w-[200px]">{recipientTitle || '...............'}</span>
+                        <span className="font-bold">เรียน</span>
+                        <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px]">{recipientTitle || '......................................................................'}</span>
                       </div>
                     </div>
 
                     {/* ข้อมูลผู้ลา */}
-                    <div className="section bg-[#f8f6f0] border border-[#e8e2d0] rounded-lg p-4 space-y-2.5 text-xs">
-                      <div className="section-title text-[9px] font-bold uppercase tracking-widest text-[#8b6914] flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[10px]">person</span>
-                        ข้อมูลผู้ยื่นใบลา
-                      </div>
-                      <div className="flex flex-wrap items-end gap-x-4 gap-y-1 text-[#3d4f5f]">
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">ข้าพเจ้า</span>
-                          <span className="dot-val min-w-[150px]">{fullName || '...............'}</span>
+                    <div className="text-xs space-y-2.5 leading-loose">
+                      <div className="flex flex-wrap items-end gap-y-1.5">
+                        <span className="inline-flex items-end w-full md:w-auto flex-1 gap-1">
+                          <span>ข้าพเจ้า</span>
+                          <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px] px-2">{fullName || '......................................................................'}</span>
                         </span>
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">ตำแหน่ง</span>
-                          <span className="dot-val min-w-[120px]">{position || '...............'}</span>
+                        <span className="inline-flex items-end w-full md:w-auto gap-1">
+                          <span className="pl-0 md:pl-2">ตำแหน่ง</span>
+                          <span className="border-b border-dotted border-black w-full md:w-[150px] text-center font-bold min-h-[18px] px-2">{position || '....................................'}</span>
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-end gap-x-4 gap-y-1 text-[#3d4f5f]">
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">ระดับ</span>
-                          <span className="dot-val min-w-[80px]">{level || '...............'}</span>
+                      <div className="flex flex-wrap items-end gap-y-1.5">
+                        <span className="inline-flex items-end w-full md:w-auto gap-1">
+                          <span>ระดับ</span>
+                          <span className="border-b border-dotted border-black w-full md:w-[100px] text-center font-bold min-h-[18px] px-2">{level || '....................'}</span>
                         </span>
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">สังกัด</span>
-                          <span className="dot-val min-w-[200px]">{department || '...............'}</span>
+                        <span className="inline-flex items-end w-full md:w-auto flex-1 gap-1">
+                          <span className="pl-0 md:pl-2">สังกัด</span>
+                          <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px] px-2">{department || '......................................................................'}</span>
                         </span>
                       </div>
                     </div>
 
-                    {/* ประเภทการลา */}
-                    <div className="space-y-2 text-xs">
-                      <div className="font-semibold text-[#1e3a5f] uppercase tracking-widest text-[9px] text-[#8b6914] flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[10px]">event_busy</span>
-                        ประเภทการลา
-                      </div>
-                      <div className="leave-badges flex gap-2">
-                        {(['SICK', 'PERSONAL', 'MATERNITY'] as const).map((type) => {
-                          const labels = { SICK: 'ป่วย', PERSONAL: 'กิจส่วนตัว', MATERNITY: 'คลอดบุตร' };
-                          const icons = { SICK: 'medical_services', PERSONAL: 'work_off', MATERNITY: 'child_care' };
-                          const active = leaveType === type;
-                          return (
-                            <span key={type}
-                              className={`badge inline-flex items-center gap-1 px-3 py-1 rounded border text-[11px] font-semibold ${
-                                active
-                                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
-                                  : 'bg-white text-[#8b9cb5] border-[#d4c9a8]'
-                              }`}
-                              style={active ? { backgroundColor: '#1e3a5f', color: 'white' } : {}}>
-                              <span className="material-symbols-outlined text-xs">{icons[type]}</span>
-                              {labels[type]}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* เนื่องจาก (เหตุผล) */}
-                    <div className="text-xs text-[#3d4f5f] flex items-start gap-1">
-                      <span className="font-semibold text-[#1e3a5f] whitespace-nowrap">เนื่องจาก</span>
-                      <span className="dot-val flex-1 min-h-[22px]">{reasonText || '................................................................................................'}</span>
-                    </div>
-
-                    {/* กำหนดวันลา */}
-                    <div className="date-section bg-[#f0f4f8] border border-[#d0dbe6] rounded-lg p-3 text-xs">
-                      <div className="font-semibold text-[#1e3a5f] uppercase tracking-widest text-[9px] flex items-center gap-1 mb-2">
-                        <span className="material-symbols-outlined text-[10px]">date_range</span>
-                        กำหนดวันลา
-                      </div>
-                      <div className="flex flex-wrap items-end gap-x-3 gap-y-1 text-[#3d4f5f]">
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">ตั้งแต่</span>
-                          <span className="dot-val min-w-[120px]">{formatDateLabel(fromDate)}</span>
+                    {/* ขอลา... เนื่องจาก... */}
+                    <div className="text-xs leading-loose space-y-2">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                        <span>ขอลา</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <input type="checkbox" checked={leaveType === 'SICK'} readOnly className="accent-black" />
+                          <span>ป่วย</span>
                         </span>
-                        <span className="text-[#8b9cb5]">→</span>
-                        <span>
-                          <span className="font-semibold text-[#1e3a5f]">ถึง</span>
-                          <span className="dot-val min-w-[120px]">{formatDateLabel(toDate)}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <input type="checkbox" checked={leaveType === 'PERSONAL'} readOnly className="accent-black" />
+                          <span>กิจส่วนตัว</span>
                         </span>
-                        <span className="text-[#8b9cb5]">=</span>
-                        <span className="font-bold text-[#1e3a5f]">{totalDays} วัน / Days</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <input type="checkbox" checked={leaveType === 'MATERNITY'} readOnly className="accent-black" />
+                          <span>คลอดบุตร</span>
+                        </span>
+                        <span className="inline-flex items-end flex-1 gap-1 min-w-[200px]">
+                          <span>เนื่องจาก</span>
+                          <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px] px-2">{reasonText || '......................................................................'}</span>
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-end gap-y-1.5 gap-x-2">
+                        <span>ตั้งแต่วันที่</span>
+                        <span className="border-b border-dotted border-black min-w-[130px] text-center font-bold min-h-[18px] px-1">{formatDateLabel(fromDate)}</span>
+                        <span>ถึงวันที่</span>
+                        <span className="border-b border-dotted border-black min-w-[130px] text-center font-bold min-h-[18px] px-1">{formatDateLabel(toDate)}</span>
+                        <span>มีกำหนด</span>
+                        <span className="border-b border-dotted border-black w-12 text-center font-bold min-h-[18px] px-1">{totalDays}</span>
+                        <span>วัน</span>
+                      </div>
+
+                      <div className="flex items-end gap-1 w-full">
+                        <span>ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่</span>
+                        <span className="border-b border-dotted border-black flex-1 font-bold min-h-[18px] px-2">{contactAddress || '................................................................................................................'}</span>
+                      </div>
+
+                      <div className="flex items-end gap-1 w-full">
+                        <span>หมายเลขโทรศัพท์</span>
+                        <span className="border-b border-dotted border-black w-[200px] font-bold min-h-[18px] px-2">{contactPhone || '....................................'}</span>
                       </div>
                     </div>
 
-                    {/* ติดต่อ */}
-                    <div className="flex flex-wrap items-end gap-x-4 gap-y-1 text-xs text-[#3d4f5f]">
-                      <span>
-                        <span className="font-semibold text-[#1e3a5f]">ติดต่อได้ที่</span>
-                        <span className="dot-val min-w-[200px]">{contactAddress || '.............................................'}</span>
-                      </span>
-                      <span>
-                        <span className="font-semibold text-[#1e3a5f]">โทร</span>
-                        <span className="dot-val min-w-[100px]">{contactPhone || '.....................'}</span>
-                      </span>
-                    </div>
-
-                    {/* สถิติการลาในปีงบประมาณนี้ */}
-                    <div className="space-y-1 text-xs">
-                      <div className="font-semibold text-[#1e3a5f] uppercase tracking-widest text-[9px] text-[#8b6914] flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[10px]">table_chart</span>
-                        สถิติการลาในปีงบประมาณนี้
-                      </div>
-                      <table className="stats-table w-full border border-[#c5b99b] text-center border-collapse">
-                        <thead>
-                          <tr className="bg-[#f8f6f0]">
-                            <th className="border border-[#c5b99b] p-1 font-semibold text-[#1e3a5f]">ประเภทลา</th>
-                            <th className="border border-[#c5b99b] p-1 font-semibold text-[#1e3a5f] w-24">ลามาแล้ว (วัน)</th>
-                            <th className="border border-[#c5b99b] p-1 font-semibold text-[#1e3a5f] w-20">ลาครั้งนี้</th>
-                            <th className="border border-[#c5b99b] p-1 font-semibold text-[#1e3a5f] w-20">รวมเป็น</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-[#c5b99b] p-1 text-left font-bold text-[#1e3a5f]">ป่วย / Sick</td>
-                            <td className="border border-[#c5b99b] p-1">{sickTaken}</td>
-                            <td className="border border-[#c5b99b] p-1">{currentSick}</td>
-                            <td className="border border-[#c5b99b] p-1 font-semibold">{sickTotal}</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-[#c5b99b] p-1 text-left font-bold text-[#1e3a5f]">กิจส่วนตัว / Personal</td>
-                            <td className="border border-[#c5b99b] p-1">{personalTaken}</td>
-                            <td className="border border-[#c5b99b] p-1">{currentPersonal}</td>
-                            <td className="border border-[#c5b99b] p-1 font-semibold">{personalTotal}</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-[#c5b99b] p-1 text-left font-bold text-[#1e3a5f]">ลาคลอด / Maternity</td>
-                            <td className="border border-[#c5b99b] p-1">{maternityTaken}</td>
-                            <td className="border border-[#c5b99b] p-1">{currentMaternity}</td>
-                            <td className="border border-[#c5b99b] p-1 font-semibold">{maternityTotal}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* ลายเซ็นแนบ */}
-                    <div className="border-t border-dashed border-[#c5b99b] pt-4">
-                      <div className="sig-area flex flex-col items-end pr-8 gap-1">
-                        <span className="text-[11px] text-[#6b7c8d]">ขอแสดงความนับถือ</span>
-                        <div className="sig-block flex flex-col items-center gap-0.5 mt-1">
+                    {/* ขอแสดงความนับถือ */}
+                    <div className="flex flex-col items-end pr-8 text-xs space-y-1 mt-4">
+                      <div className="flex flex-col items-center space-y-1">
+                        <span>ขอแสดงความนับถือ</span>
+                        <div className="h-10 flex items-center justify-center py-1">
                           {signatureType === 'DRAW' && signatureImage ? (
-                            <div className="h-10 flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={signatureImage} alt="Signature" className="sig-img max-h-full object-contain" />
-                            </div>
+                            <img src={signatureImage} alt="Signature" className="max-h-full object-contain" />
                           ) : (
-                            <span className="sig-name text-base font-serif italic border-b border-[#1e3a5f] px-4 py-0.5 text-[#1e3a5f]">
-                              {signatureText || fullName || '.........................'}
-                            </span>
+                            <span className="font-serif italic border-b border-black px-4 min-h-[18px]">{signatureText || fullName || '....................................'}</span>
                           )}
-                          <span className="sig-label text-[9px] text-[#8b9cb5]">(ลงชื่อ) {fullName || '.........................'}</span>
-                          {position && <span className="sig-label text-[9px] text-[#8b9cb5]">ตำแหน่ง {position}</span>}
+                        </div>
+                        <div className="flex items-end gap-1">
+                          <span>(ลงชื่อ)</span>
+                          <span className="border-b border-dotted border-black w-[150px] text-center min-h-[16px]">{fullName || '....................................'}</span>
+                        </div>
+                        <div className="flex items-end gap-1">
+                          <span>(ตัวบรรจง)</span>
+                          <span className="border-b border-dotted border-black w-[150px] text-center min-h-[16px]">{fullName || '....................................'}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Gold footer bar */}
-                    <div className="gold-bar h-1 bg-linear-to-r from-[#8b6914] via-[#d4a843] to-[#8b6914] -mx-10 -mb-10 mt-6" />
+                    {/* Bottom layout split: stats (left) and supervisor/order (right) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-black pt-4 text-xs">
+                      
+                      {/* Left: Stats table and inspector sign */}
+                      <div className="space-y-4 pr-0 md:pr-4 border-r-0 md:border-r border-zinc-200">
+                        <div className="font-bold text-black text-[10px] tracking-wide uppercase">
+                          สถิติการลาในปีงบประมาณนี้
+                        </div>
+                        <table className="w-full text-center border-collapse text-[11px] border border-black" style={{ borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr className="bg-zinc-50 font-bold">
+                              <th className="border border-black p-1 text-left">ประเภทลา</th>
+                              <th className="border border-black p-1 w-20">ลามาแล้ว</th>
+                              <th className="border border-black p-1 w-16">ลาครั้งนี้</th>
+                              <th className="border border-black p-1 w-16">รวมเป็น</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border border-black p-1 text-left font-bold">ป่วย</td>
+                              <td className="border border-black p-1">{sickTaken}</td>
+                              <td className="border border-black p-1">{currentSick}</td>
+                              <td className="border border-black p-1 font-bold">{sickTotal}</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-black p-1 text-left font-bold">กิจส่วนตัว</td>
+                              <td className="border border-black p-1">{personalTaken}</td>
+                              <td className="border border-black p-1">{currentPersonal}</td>
+                              <td className="border border-black p-1 font-bold">{personalTotal}</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-black p-1 text-left font-bold">คลอดบุตร</td>
+                              <td className="border border-black p-1">{maternityTaken}</td>
+                              <td className="border border-black p-1">{currentMaternity}</td>
+                              <td className="border border-black p-1 font-bold">{maternityTotal}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                        <div className="space-y-1.5 pt-2">
+                          <div className="flex items-end gap-1">
+                            <span>(ลงชื่อ)</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                            <span>ผู้ตรวจสอบ</span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>ตำแหน่ง</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>วันที่</span>
+                            <span className="border-b border-dotted border-black w-8 min-h-[16px]"></span>
+                            <span>เดือน</span>
+                            <span className="border-b border-dotted border-black w-20 min-h-[16px]"></span>
+                            <span>พ.ศ.</span>
+                            <span className="border-b border-dotted border-black w-10 min-h-[16px]"></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Supervisor comment and Order */}
+                      <div className="space-y-4 pl-0 md:pl-2">
+                        {/* Supervisor Comment */}
+                        <div className="space-y-2">
+                          <div className="font-bold text-black text-[10px] tracking-wide uppercase">
+                            ความเห็นของผู้บังคับบัญชา
+                          </div>
+                          <div className="border-b border-dotted border-black w-full min-h-[16px]"></div>
+                          <div className="border-b border-dotted border-black w-full min-h-[16px]"></div>
+                          <div className="flex items-end gap-1 pt-1.5">
+                            <span>(ลงชื่อ)</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>ตำแหน่ง</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>วันที่</span>
+                            <span className="border-b border-dotted border-black w-8 min-h-[16px]"></span>
+                            <span>เดือน</span>
+                            <span className="border-b border-dotted border-black w-20 min-h-[16px]"></span>
+                            <span>พ.ศ.</span>
+                            <span className="border-b border-dotted border-black w-10 min-h-[16px]"></span>
+                          </div>
+                        </div>
+
+                        {/* Order */}
+                        <div className="space-y-2 border-t border-dotted border-zinc-300 pt-3">
+                          <div className="font-bold text-black text-[10px] tracking-wide uppercase">
+                            คำสั่ง
+                          </div>
+                          <div className="flex gap-4">
+                            <span>[ ] อนุญาต</span>
+                            <span>[ ] ไม่อนุญาต</span>
+                          </div>
+                          <div className="flex items-end gap-1 pt-1.5">
+                            <span>(ลงชื่อ)</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>ตำแหน่ง</span>
+                            <span className="border-b border-dotted border-black flex-1 min-h-[16px]"></span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span>วันที่</span>
+                            <span className="border-b border-dotted border-black w-8 min-h-[16px]"></span>
+                            <span>เดือน</span>
+                            <span className="border-b border-dotted border-black w-20 min-h-[16px]"></span>
+                            <span>พ.ศ.</span>
+                            <span className="border-b border-dotted border-black w-10 min-h-[16px]"></span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
 
                   </div>
                 </div>
