@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import MemberCard from './MemberCard';
 import { TeamMember, getTeamMembers } from '@/src/libs/calendarData';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { inviteMemberAction, downloadTeamReportAction } from '../actions';
+import { fetchDepartmentsAction, DepartmentItem } from '@/app/master-data/actions';
 import { TeamController } from './TeamController';
 import TeamSkeleton from '@/src/components/skeletons/TeamSkeleton';
 
@@ -26,7 +27,7 @@ interface TeamClientProps {
 }
 
 export default function TeamClient({ initialMembers, searchTerm }: TeamClientProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -36,6 +37,7 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
   const [isSearching, setIsSearching] = useState(false);
   const hasMounted = useRef(false);
 
+  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
   const [selectedTargetMember, setSelectedTargetMember] = useState<TeamMember | null>(null);
   const [showAddTokenModal, setShowAddTokenModal] = useState(false);
 
@@ -44,6 +46,20 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
     searchTerm,
     () => setTick((tick) => tick + 1)
   ));
+
+  // Fetch departments from Master Data
+  const loadDepartments = useCallback(async () => {
+    try {
+      const depts = await fetchDepartmentsAction();
+      setDepartments(depts);
+    } catch (e) {
+      console.error('Failed to load departments in TeamClient:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDepartments();
+  }, [loadDepartments]);
 
   const handleConfirmAddTokens = async (amount: number, description: string) => {
     if (!selectedTargetMember) return;
@@ -114,9 +130,16 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
   };
 
   const members = controller.getMembers();
-  const engineeringMembers = members.filter((m) => m.department === 'Engineering');
-  const designMembers = members.filter((m) => m.department === 'Design');
-  const managementMembers = members.filter((m) => m.department === 'Management');
+
+  // Create department lookup map for icons/descriptions
+  const deptMap = new Map<string, DepartmentItem>();
+  departments.forEach(d => deptMap.set(d.name, d));
+
+  // Determine all department names (Master Data departments + any department present on members)
+  const allDeptNames = Array.from(new Set([
+    ...departments.map(d => d.name),
+    ...members.map(m => m.department).filter(Boolean)
+  ]));
 
   return (
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
@@ -128,83 +151,82 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
           <TeamHeader onAddMember={handleAddMember} />
 
           <div className="space-y-12">
-            {/* Management Division */}
-            {managementMembers.length > 0 && (
-              <section className="space-y-6">
-                <div className="flex items-center gap-4 border-b border-zinc-100 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-900">{t('management')}</h3>
-                  <span className="h-px flex-1 bg-zinc-100"></span>
-                  <span className="text-sm text-zinc-400 font-medium">
-                    {managementMembers.length.toString().padStart(2, '0')} {t('membersCount')}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {managementMembers.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      showAdminActions={user?.role === 'ADMIN'}
-                      onAddTokens={() => {
-                        setSelectedTargetMember(member);
-                        setShowAddTokenModal(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+            {/* Dynamic Department Divisions */}
+            {allDeptNames.map((deptName) => {
+              const deptMembers = members.filter((m) => m.department === deptName);
+              if (deptMembers.length === 0) return null;
 
-            {/* Engineering Division */}
-            {engineeringMembers.length > 0 && (
-              <section className="space-y-6">
-                <div className="flex items-center gap-4 border-b border-zinc-100 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-900">{t('engineering')}</h3>
-                  <span className="h-px flex-1 bg-zinc-100"></span>
-                  <span className="text-base text-zinc-400 font-medium">
-                    {engineeringMembers.length.toString().padStart(2, '0')} {t('membersCount')}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {engineeringMembers.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      showAdminActions={user?.role === 'ADMIN'}
-                      onAddTokens={() => {
-                        setSelectedTargetMember(member);
-                        setShowAddTokenModal(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+              const deptInfo = deptMap.get(deptName);
+              const icon = deptInfo?.icon || 'groups';
+              const description = deptInfo?.description;
 
-            {/* Design Division */}
-            {designMembers.length > 0 && (
-              <section className="space-y-6">
-                <div className="flex items-center gap-4 border-b border-zinc-100 pb-3">
-                  <h3 className="text-base font-semibold text-zinc-900">{t('design')}</h3>
-                  <span className="h-px flex-1 bg-zinc-100"></span>
-                  <span className="text-base text-zinc-400 font-medium">
-                    {designMembers.length.toString().padStart(2, '0')} {t('membersCount')}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {designMembers.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      showAdminActions={user?.role === 'ADMIN'}
-                      onAddTokens={() => {
-                        setSelectedTargetMember(member);
-                        setShowAddTokenModal(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+              return (
+                <section key={deptName} className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-zinc-100 pb-3">
+                    <span className="material-symbols-outlined text-zinc-400 text-2xl">{icon}</span>
+                    <div>
+                      <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+                        <span>{deptName}</span>
+                      </h3>
+                      {description && (
+                        <p className="text-xs text-zinc-400 font-normal">{description}</p>
+                      )}
+                    </div>
+                    <span className="h-px flex-1 bg-zinc-100"></span>
+                    <span className="text-sm text-zinc-400 font-bold px-2.5 py-1 bg-zinc-50 border border-zinc-200/60 rounded-xl">
+                      {deptMembers.length.toString().padStart(2, '0')} {t('membersCount')}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {deptMembers.map((member) => (
+                      <MemberCard
+                        key={member.id}
+                        member={member}
+                        showAdminActions={user?.role === 'ADMIN'}
+                        onAddTokens={() => {
+                          setSelectedTargetMember(member);
+                          setShowAddTokenModal(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+
+            {/* Unassigned / Other Division */}
+            {(() => {
+              const unassigned = members.filter((m) => !m.department || !allDeptNames.includes(m.department));
+              if (unassigned.length === 0) return null;
+              return (
+                <section className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-zinc-100 pb-3">
+                    <span className="material-symbols-outlined text-zinc-400 text-2xl">help_outline</span>
+                    <h3 className="text-base font-bold text-zinc-900">
+                      {language === 'th' ? 'อื่นๆ / ยังไม่สังกัดแผนก' : 'Other / Unassigned'}
+                    </h3>
+                    <span className="h-px flex-1 bg-zinc-100"></span>
+                    <span className="text-sm text-zinc-400 font-bold px-2.5 py-1 bg-zinc-50 border border-zinc-200/60 rounded-xl">
+                      {unassigned.length.toString().padStart(2, '0')} {t('membersCount')}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {unassigned.map((member) => (
+                      <MemberCard
+                        key={member.id}
+                        member={member}
+                        showAdminActions={user?.role === 'ADMIN'}
+                        onAddTokens={() => {
+                          setSelectedTargetMember(member);
+                          setShowAddTokenModal(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
 
             {members.length === 0 && (
               <div className="py-16 text-center text-zinc-500 bg-white border border-zinc-100 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
