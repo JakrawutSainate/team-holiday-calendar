@@ -1,29 +1,20 @@
-import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
-import { Pool } from '@neondatabase/serverless';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 const globalForPrisma = globalThis as unknown as { _prisma: PrismaClient | undefined };
 
 function makePrismaClient(): PrismaClient {
-  let connStr = process.env.DATABASE_URL ?? '';
-  // Clean surrounding quotes or whitespace if accidentally included
-  connStr = connStr.trim().replace(/^['"]+|['"]+$/g, '');
+  const connStr = (process.env.DATABASE_URL ?? '').trim().replace(/^['"]+|['"]+$/g, '');
 
   if (!connStr) {
     throw new Error(
-      'DATABASE_URL environment variable is not set. ' +
-      'Please configure it in Vercel project settings (Production environment).'
+      'DATABASE_URL is not set. Please configure it in Vercel project settings (Production environment).'
     );
   }
 
-  // Remove channel_binding which can break Neon serverless Pool parsing
-  const sanitizedStr = connStr
-    .replace(/&channel_binding=[^&]*/g, '')
-    .replace(/\?channel_binding=[^&]*&?/g, '?')
-    .replace(/\?$/, '');
-
-  const neonPool = new Pool({ connectionString: sanitizedStr });
-  const adapter = new PrismaNeon(neonPool as any);
+  const pool = new Pool({ connectionString: connStr });
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 
@@ -35,8 +26,7 @@ export function getPrisma(): PrismaClient {
   return globalForPrisma._prisma;
 }
 
-// Keep a backward-compatible `prisma` export but make it a Proxy so
-// the actual client is only constructed the first time a property is accessed.
+// Backward-compatible `prisma` export via Proxy
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     return (getPrisma() as any)[prop];
