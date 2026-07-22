@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useRole } from '@/src/components/RoleContext';
@@ -17,6 +18,7 @@ import dynamic from 'next/dynamic';
 const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
 
 export default function LeavesClient() {
+  const router = useRouter();
   const { t, language } = useTranslation();
   const { role } = useRole();
   const { user } = useAuth();
@@ -196,7 +198,7 @@ export default function LeavesClient() {
                             </td>
                             <td className="p-4 pr-6 text-right flex justify-end gap-2">
                               <button
-                                onClick={() => setViewingLeaveEvent(leave)}
+                                onClick={() => router.push(`/calendar/leave-request?date=${leave.date}`)}
                                 className="px-4 py-2 border border-zinc-200 text-zinc-700 rounded-xl text-sm font-semibold hover:bg-zinc-50 transition-colors cursor-pointer flex items-center gap-1"
                               >
                                 <span className="material-symbols-outlined text-[16px]">visibility</span>
