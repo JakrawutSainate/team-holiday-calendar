@@ -422,6 +422,29 @@ export default function LeaveRequestClient() {
         ''
       );
 
+      // Instantly set docView so the viewOnly mode shows exact submitted data without delay/race
+      setDocView({
+        writtenAt,
+        recipientTitle,
+        fullName,
+        position,
+        department,
+        leaveType,
+        reasonText,
+        fromDate,
+        toDate: toDate || fromDate,
+        totalDays,
+        contactAddress,
+        contactPhone,
+        signature: savedSignature,
+        sickTaken: formSickTaken,
+        personalTaken: formPersonalTaken,
+        maternityTaken: formMatTaken,
+        currentSick,
+        currentPersonal,
+        currentMaternity,
+      });
+
       await controller.loadState();
 
       toast.success(
