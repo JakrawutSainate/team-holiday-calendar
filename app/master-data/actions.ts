@@ -105,3 +105,142 @@ export async function updateTeamMemberProfileAction(
     return { success: false, error: err.message || 'Failed to update profile info' };
   }
 }
+
+export interface DepartmentItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+}
+
+export interface JobTitleItem {
+  id: string;
+  name: string;
+  departmentName: string;
+}
+
+export async function fetchDepartmentsAction(): Promise<DepartmentItem[]> {
+  try {
+    const res = await runGraphQLAction(`
+      query {
+        getDepartments {
+          id
+          name
+          description
+          icon
+        }
+      }
+    `);
+    return res?.data?.getDepartments ?? [];
+  } catch (err) {
+    console.error('fetchDepartmentsAction error:', err);
+    return [];
+  }
+}
+
+export async function createDepartmentAction(name: string, description?: string, icon?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($name: String!, $description: String, $icon: String) {
+        createDepartment(name: $name, description: $description, icon: $icon) {
+          id
+          name
+        }
+      }
+    `, { name, description, icon });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to create department' };
+  }
+}
+
+export async function updateDepartmentAction(id: string, name: string, description?: string, icon?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!, $name: String!, $description: String, $icon: String) {
+        updateDepartment(id: $id, name: $name, description: $description, icon: $icon) {
+          id
+          name
+        }
+      }
+    `, { id, name, description, icon });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to update department' };
+  }
+}
+
+export async function deleteDepartmentAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!) {
+        deleteDepartment(id: $id)
+      }
+    `, { id });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to delete department' };
+  }
+}
+
+export async function fetchJobTitlesAction(): Promise<JobTitleItem[]> {
+  try {
+    const res = await runGraphQLAction(`
+      query {
+        getJobTitles {
+          id
+          name
+          departmentName
+        }
+      }
+    `);
+    return res?.data?.getJobTitles ?? [];
+  } catch (err) {
+    console.error('fetchJobTitlesAction error:', err);
+    return [];
+  }
+}
+
+export async function createJobTitleAction(name: string, departmentName: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($name: String!, $departmentName: String!) {
+        createJobTitle(name: $name, departmentName: $departmentName) {
+          id
+          name
+        }
+      }
+    `, { name, departmentName });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to create job title' };
+  }
+}
+
+export async function deleteJobTitleAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!) {
+        deleteJobTitle(id: $id)
+      }
+    `, { id });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to delete job title' };
+  }
+}

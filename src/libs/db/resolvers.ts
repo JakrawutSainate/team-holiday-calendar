@@ -393,6 +393,104 @@ export async function resolveGraphQL(
     return { updateTeamMemberProfile: updatedUser };
   }
 
+  // ─── DEPARTMENT & JOB TITLE CRUD RESOLVERS ───────────────────────────────────
+
+  if (q.includes('getDepartments')) {
+    let depts = await prisma.department.findMany({ orderBy: { name: 'asc' } });
+    if (depts.length === 0) {
+      const defaultDepts = [
+        { name: 'Engineering', description: 'Software engineering and IT development', icon: 'code' },
+        { name: 'Design', description: 'Product design, UX/UI and media asset creation', icon: 'draw' },
+        { name: 'Management', description: 'Executive leadership and operational strategy', icon: 'corporate_fare' },
+      ];
+      for (const d of defaultDepts) {
+        await prisma.department.upsert({
+          where: { name: d.name },
+          create: d,
+          update: {},
+        });
+      }
+      depts = await prisma.department.findMany({ orderBy: { name: 'asc' } });
+    }
+    return { getDepartments: depts };
+  }
+
+  if (q.includes('createDepartment')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const name = (variables.name as string)?.trim();
+    const description = (variables.description as string)?.trim() || null;
+    const icon = (variables.icon as string)?.trim() || 'groups';
+    if (!name) throw new Error('Department name is required');
+    const dept = await prisma.department.create({
+      data: { name, description, icon },
+    });
+    return { createDepartment: dept };
+  }
+
+  if (q.includes('updateDepartment')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const id = variables.id as string;
+    const name = (variables.name as string)?.trim();
+    const description = (variables.description as string)?.trim() || null;
+    const icon = (variables.icon as string)?.trim() || 'groups';
+    const oldDept = await prisma.department.findUnique({ where: { id } });
+    if (!oldDept) throw new Error('Department not found');
+    const updated = await prisma.department.update({
+      where: { id },
+      data: { name, description, icon },
+    });
+    if (oldDept.name !== name) {
+      await prisma.teamMember.updateMany({
+        where: { department: oldDept.name },
+        data: { department: name },
+      });
+      await prisma.jobTitle.updateMany({
+        where: { departmentName: oldDept.name },
+        data: { departmentName: name },
+      });
+    }
+    return { updateDepartment: updated };
+  }
+
+  if (q.includes('deleteDepartment')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const id = variables.id as string;
+    const dept = await prisma.department.findUnique({ where: { id } });
+    if (dept) {
+      await prisma.jobTitle.deleteMany({ where: { departmentName: dept.name } });
+      await prisma.department.delete({ where: { id } });
+    }
+    return { deleteDepartment: true };
+  }
+
+  if (q.includes('getJobTitles')) {
+    const titles = await prisma.jobTitle.findMany({ orderBy: { name: 'asc' } });
+    return { getJobTitles: titles };
+  }
+
+  if (q.includes('createJobTitle')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const name = (variables.name as string)?.trim();
+    const departmentName = (variables.departmentName as string)?.trim();
+    if (!name || !departmentName) throw new Error('Name and departmentName required');
+    const title = await prisma.jobTitle.create({
+      data: { name, departmentName },
+    });
+    return { createJobTitle: title };
+  }
+
+  if (q.includes('deleteJobTitle')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const id = variables.id as string;
+    await prisma.jobTitle.delete({ where: { id } });
+    return { deleteJobTitle: true };
+  }
+
   // ─── LEAVE DOCUMENT CRUD RESOLVERS ──────────────────────────────────────────
 
   if (q.includes('getLeaveDocuments')) {

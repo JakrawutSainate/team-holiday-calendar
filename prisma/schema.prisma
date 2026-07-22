@@ -108,3 +108,22 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  icon        String?  @default("groups")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobTitle {
+  id             String   @id @default(uuid())
+  name           String
+  departmentName String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([name, departmentName])
+}
+
