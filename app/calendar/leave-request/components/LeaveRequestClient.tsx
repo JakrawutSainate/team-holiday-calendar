@@ -24,7 +24,6 @@ export default function LeaveRequestClient() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const printRef = useRef<HTMLDivElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const restoredFromDB = useRef(false); // Prevents prefill from overriding DB-restored data
 
   // Form states
   const [writtenAt, setWrittenAt] = useState('กรุงเทพมหานคร');
@@ -46,12 +45,31 @@ export default function LeaveRequestClient() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Manual Stats Overrides state
-  const [sickTakenOverride, setSickTakenOverride] = useState<number | null>(null);
-  const [personalTakenOverride, setPersonalTakenOverride] = useState<number | null>(null);
-  const [maternityTakenOverride, setMaternityTakenOverride] = useState<number | null>(null);
+  // Separate state holding the document display values loaded from DB (viewOnly mode)
+  // This is set ONCE when loading and never overridden by form effects
+  const [docView, setDocView] = useState<{
+    writtenAt: string;
+    recipientTitle: string;
+    fullName: string;
+    position: string;
+    department: string;
+    leaveType: 'SICK' | 'PERSONAL' | 'MATERNITY';
+    reasonText: string;
+    fromDate: string;
+    toDate: string;
+    totalDays: number;
+    contactAddress: string;
+    contactPhone: string;
+    signature: string | null;
+    sickTaken: number;
+    personalTaken: number;
+    maternityTaken: number;
+    currentSick: number;
+    currentPersonal: number;
+    currentMaternity: number;
+  } | null>(null);
+
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
-  const [docSignature, setDocSignature] = useState<string | null>(null); // Signature stored in DB at time of submission
   const [loadingSignature, setLoadingSignature] = useState(true);
   const [viewOnly, setViewOnly] = useState(false);
 
@@ -85,73 +103,98 @@ export default function LeaveRequestClient() {
     fetchSig();
   }, [user]);
 
-  // Load controller state (to get tokens and past leaves) and check existing leave
+  // Load controller state and check for existing leave document
   useEffect(() => {
     if (user?.id) {
       controller.updateParams(user.id);
       controller.loadState().then(() => {
-        if (fromDate) {
-          const existingEvent = controller.getAllEvents().find(
-            e => e.userId === user.id && e.date === fromDate && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
-          );
-          const existingDoc = controller.getLeaveDocuments().find(
-            d => d.userId === user.id && d.leaveDate === fromDate
-          );
-            if (existingEvent || existingDoc) {
-            setViewOnly(true);
-            if (existingDoc) {
-              // Restore signature from DB
-              if (existingDoc.signature) setDocSignature(existingDoc.signature);
-              // Try to parse reason as full LeaveFormData JSON
-              try {
-                const parsed = JSON.parse(existingDoc.reason || '');
-                if (parsed && typeof parsed === 'object' && (parsed.writtenAt || parsed.fullName || parsed.leaveType)) {
-                  // Full JSON format — restore all fields
-                  restoredFromDB.current = true;
-                  if (parsed.leaveType) setLeaveType(parsed.leaveType);
-                  if (parsed.reasonText !== undefined) setReasonText(parsed.reasonText);
-                  if (parsed.writtenAt) setWrittenAt(parsed.writtenAt);
-                  if (parsed.recipientTitle) setRecipientTitle(parsed.recipientTitle);
-                  if (parsed.fullName) setFullName(parsed.fullName);
-                  if (parsed.position) setPosition(parsed.position);
-                  if (parsed.department) setDepartment(parsed.department);
-                  if (parsed.fromDate) setFromDate(parsed.fromDate);
-                  if (parsed.toDate) setToDate(parsed.toDate);
-                  if (parsed.totalDays) setTotalDays(Number(parsed.totalDays));
-                  if (parsed.contactAddress !== undefined) setContactAddress(parsed.contactAddress);
-                  if (parsed.contactPhone !== undefined) setContactPhone(parsed.contactPhone);
-                  // Restore stats overrides if present
-                  if (parsed.stats) {
-                    if (parsed.stats.sick?.taken !== undefined) setSickTakenOverride(Number(parsed.stats.sick.taken));
-                    if (parsed.stats.personal?.taken !== undefined) setPersonalTakenOverride(Number(parsed.stats.personal.taken));
-                    if (parsed.stats.maternity?.taken !== undefined) setMaternityTakenOverride(Number(parsed.stats.maternity.taken));
-                  }
-                } else {
-                  // Fallback: plain text reason — restore what we can from existingDoc fields
-                  if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
-                  setReasonText(existingDoc.reason || '');
-                  if (existingDoc.userName) setFullName(existingDoc.userName);
-                  if (existingDoc.department) setDepartment(existingDoc.department);
-                  if (existingDoc.title) setPosition(existingDoc.title);
-                }
-              } catch {
-                // Fallback: plain text reason
-                if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
-                setReasonText(existingDoc.reason || '');
-                if (existingDoc.userName) setFullName(existingDoc.userName);
-                if (existingDoc.department) setDepartment(existingDoc.department);
-                if (existingDoc.title) setPosition(existingDoc.title);
-              }
-            }
+        if (!dateParam) return;
+
+        const existingEvent = controller.getAllEvents().find(
+          e => e.userId === user.id && e.date === dateParam && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+        );
+        const existingDoc = controller.getLeaveDocuments().find(
+          d => d.userId === user.id && d.leaveDate === dateParam
+        );
+
+        if (!existingEvent && !existingDoc) return;
+        setViewOnly(true);
+
+        if (!existingDoc) return;
+
+        // Calculate stats at load time so they reflect DB state
+        const stats = controller.calculatePastLeaveDays(dateParam);
+
+        // Try to parse reason as full LeaveFormData JSON (new format)
+        try {
+          const parsed = JSON.parse(existingDoc.reason || 'null');
+          if (parsed && typeof parsed === 'object' && parsed.leaveType) {
+            // --- Full JSON format (submitted with new code) ---
+            const lt = (parsed.leaveType === 'SICK' || parsed.leaveType === 'PERSONAL' || parsed.leaveType === 'MATERNITY')
+              ? parsed.leaveType as 'SICK' | 'PERSONAL' | 'MATERNITY'
+              : 'SICK';
+            const td = Number(parsed.totalDays) || 1;
+            const savedSick    = parsed.stats?.sick?.taken    !== undefined ? Number(parsed.stats.sick.taken)    : stats.SICK;
+            const savedPersonal= parsed.stats?.personal?.taken !== undefined ? Number(parsed.stats.personal.taken): stats.PERSONAL;
+            const savedMat     = parsed.stats?.maternity?.taken !== undefined ? Number(parsed.stats.maternity.taken): stats.MATERNITY;
+            setDocView({
+              writtenAt:      parsed.writtenAt      || 'กรุงเทพมหานคร',
+              recipientTitle: parsed.recipientTitle || 'หัวหน้างาน',
+              fullName:       parsed.fullName       || existingDoc.userName || user.name || '',
+              position:       parsed.position       || existingDoc.title    || user.title || '',
+              department:     parsed.department     || existingDoc.department || user.department || '',
+              leaveType:      lt,
+              reasonText:     parsed.reasonText     || '',
+              fromDate:       parsed.fromDate       || dateParam,
+              toDate:         parsed.toDate         || dateParam,
+              totalDays:      td,
+              contactAddress: parsed.contactAddress || '',
+              contactPhone:   parsed.contactPhone   || '',
+              signature:      existingDoc.signature || savedSignature,
+              sickTaken:      savedSick,
+              personalTaken:  savedPersonal,
+              maternityTaken: savedMat,
+              currentSick:    lt === 'SICK'     ? td : 0,
+              currentPersonal:lt === 'PERSONAL' ? td : 0,
+              currentMaternity: lt === 'MATERNITY' ? td : 0,
+            });
+          } else {
+            throw new Error('not full JSON');
           }
+        } catch {
+          // --- Fallback: plain text reason (submitted with old code) ---
+          const lt = (existingDoc.leaveType === 'SICK' || existingDoc.leaveType === 'PERSONAL' || existingDoc.leaveType === 'MATERNITY')
+            ? existingDoc.leaveType as 'SICK' | 'PERSONAL' | 'MATERNITY'
+            : 'SICK';
+          setDocView({
+            writtenAt:      'กรุงเทพมหานคร',
+            recipientTitle: 'หัวหน้างาน',
+            fullName:       existingDoc.userName   || user.name       || '',
+            position:       existingDoc.title      || user.title      || '',
+            department:     existingDoc.department || user.department || '',
+            leaveType:      lt,
+            reasonText:     existingDoc.reason || '',
+            fromDate:       dateParam,
+            toDate:         dateParam,
+            totalDays:      1,
+            contactAddress: '',
+            contactPhone:   '',
+            signature:      existingDoc.signature || savedSignature,
+            sickTaken:      stats.SICK,
+            personalTaken:  stats.PERSONAL,
+            maternityTaken: stats.MATERNITY,
+            currentSick:    lt === 'SICK'     ? 1 : 0,
+            currentPersonal:lt === 'PERSONAL' ? 1 : 0,
+            currentMaternity: lt === 'MATERNITY' ? 1 : 0,
+          });
         }
       });
     }
-  }, [user?.id, fromDate, controller]);
+  }, [user?.id, dateParam, controller, savedSignature]);
 
-  // Prefill user data on load — skip if data was already restored from DB
+  // Prefill user data on load (form state, NOT docView)
   useEffect(() => {
-    if (user && !restoredFromDB.current) {
+    if (user) {
       setFullName(user.name || '');
       setPosition(user.title || '');
       setDepartment(user.department || '');
@@ -159,9 +202,8 @@ export default function LeaveRequestClient() {
     }
   }, [user]);
 
-  // Auto-calculate duration days — skip if dates were restored from DB
+  // Auto-calculate duration days (form only)
   useEffect(() => {
-    if (restoredFromDB.current) return; // Don't override DB-restored totalDays
     if (fromDate && toDate) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
@@ -243,22 +285,44 @@ export default function LeaveRequestClient() {
   // Calculate past leave days based on fiscal year in DB
   const calculatedStats = controller.calculatePastLeaveDays(fromDate);
 
-  const sickTaken = sickTakenOverride !== null ? sickTakenOverride : calculatedStats.SICK;
-  const personalTaken = personalTakenOverride !== null ? personalTakenOverride : calculatedStats.PERSONAL;
-  const maternityTaken = maternityTakenOverride !== null ? maternityTakenOverride : calculatedStats.MATERNITY;
-
-  const currentSick = leaveType === 'SICK' ? totalDays : 0;
+  // Form-state stats (used when NOT viewOnly)
+  const formSickTaken     = calculatedStats.SICK;
+  const formPersonalTaken = calculatedStats.PERSONAL;
+  const formMatTaken      = calculatedStats.MATERNITY;
+  const currentSick     = leaveType === 'SICK'     ? totalDays : 0;
   const currentPersonal = leaveType === 'PERSONAL' ? totalDays : 0;
-  const currentMaternity = leaveType === 'MATERNITY' ? totalDays : 0;
+  const currentMaternity= leaveType === 'MATERNITY'? totalDays : 0;
 
-  const sickTotal = sickTaken + currentSick;
-  const personalTotal = personalTaken + currentPersonal;
-  const maternityTotal = maternityTaken + currentMaternity;
+  // Computed display values — uses docView when viewOnly, otherwise live form state
+  const dv = {
+    writtenAt:      viewOnly && docView ? docView.writtenAt      : writtenAt,
+    recipientTitle: viewOnly && docView ? docView.recipientTitle : recipientTitle,
+    fullName:       viewOnly && docView ? docView.fullName       : fullName,
+    position:       viewOnly && docView ? docView.position       : position,
+    department:     viewOnly && docView ? docView.department     : department,
+    leaveType:      viewOnly && docView ? docView.leaveType      : leaveType,
+    reasonText:     viewOnly && docView ? docView.reasonText     : reasonText,
+    fromDate:       viewOnly && docView ? docView.fromDate       : fromDate,
+    toDate:         viewOnly && docView ? docView.toDate         : toDate,
+    totalDays:      viewOnly && docView ? docView.totalDays      : totalDays,
+    contactAddress: viewOnly && docView ? docView.contactAddress : contactAddress,
+    contactPhone:   viewOnly && docView ? docView.contactPhone   : contactPhone,
+    signature:      viewOnly && docView ? docView.signature      : savedSignature,
+    sickTaken:      viewOnly && docView ? docView.sickTaken      : formSickTaken,
+    personalTaken:  viewOnly && docView ? docView.personalTaken  : formPersonalTaken,
+    maternityTaken: viewOnly && docView ? docView.maternityTaken : formMatTaken,
+    currentSick:    viewOnly && docView ? docView.currentSick    : currentSick,
+    currentPersonal:viewOnly && docView ? docView.currentPersonal: currentPersonal,
+    currentMaternity:viewOnly && docView ? docView.currentMaternity: currentMaternity,
+  };
+  const sickTotal     = dv.sickTaken     + dv.currentSick;
+  const personalTotal = dv.personalTaken + dv.currentPersonal;
+  const maternityTotal= dv.maternityTaken+ dv.currentMaternity;
 
   const statsObj = {
-    sick: { taken: sickTaken, current: currentSick, total: sickTotal },
-    personal: { taken: personalTaken, current: currentPersonal, total: personalTotal },
-    maternity: { taken: maternityTaken, current: currentMaternity, total: maternityTotal },
+    sick:     { taken: formSickTaken,     current: currentSick,     total: formSickTaken + currentSick },
+    personal: { taken: formPersonalTaken, current: currentPersonal, total: formPersonalTaken + currentPersonal },
+    maternity:{ taken: formMatTaken,      current: currentMaternity,total: formMatTaken + currentMaternity },
   };
 
   const handleSubmit = async () => {
@@ -615,21 +679,21 @@ export default function LeaveRequestClient() {
                       <tbody>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">ป่วย / Sick</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{sickTaken}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{formSickTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentSick}</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{sickTotal}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{formSickTaken + currentSick}</td>
                         </tr>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">กิจส่วนตัว / Personal</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{personalTaken}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{formPersonalTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentPersonal}</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{personalTotal}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{formPersonalTaken + currentPersonal}</td>
                         </tr>
                         <tr>
                           <td className="border border-zinc-200 px-2 py-1.5 font-bold text-[#1e3a5f]">คลอดบุตร / Maternity</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{maternityTaken}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold text-zinc-700">{formMatTaken}</td>
                           <td className="border border-zinc-200 px-2 py-1.5 text-center font-semibold">{currentMaternity}</td>
-                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{maternityTotal}</td>
+                          <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-zinc-800">{formMatTaken + currentMaternity}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -741,7 +805,7 @@ export default function LeaveRequestClient() {
                     <div className="flex flex-col items-end space-y-1.5 text-xs">
                       <div className="flex items-end gap-1 w-full max-w-[280px]">
                         <span className="whitespace-nowrap">(เขียนที่)</span>
-                        <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px]">{writtenAt || '..................................'}</span>
+                        <span className="border-b border-dotted border-black flex-1 text-center font-bold min-h-[18px]">{dv.writtenAt || '..................................'}</span>
                       </div>
                       <div className="flex items-end gap-1 w-full max-w-[320px] whitespace-nowrap">
                         <span className="whitespace-nowrap">วันที่</span>
@@ -760,59 +824,59 @@ export default function LeaveRequestClient() {
                       </div>
                       <div className="flex flex-wrap items-center gap-1 w-full">
                         <span className="font-bold">เรียน</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[200px]">{recipientTitle || '......................................................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[200px]">{dv.recipientTitle || '......................................................................'}</span>
                       </div>
                     </div>
 
                     {/* ข้อมูลผู้ลา */}
                     <div className="text-xs space-y-4 leading-loose text-justify text-zinc-950">
                       <div className="indent-8">
-                        ข้าพเจ้า <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{fullName || '......................................................................'}</span>
-                        ตำแหน่ง <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[150px] text-center">{position || '....................................'}</span>
+                        ข้าพเจ้า <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{dv.fullName || '......................................................................'}</span>
+                        ตำแหน่ง <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[150px] text-center">{dv.position || '....................................'}</span>
                       </div>
                       <div className="indent-8">
-                        สังกัด <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{department || '......................................................................'}</span>
+                        สังกัด <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full min-w-[200px] text-center">{dv.department || '......................................................................'}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-y-2">
                         <span>ขอลา</span>
                         <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={leaveType === 'SICK'} readOnly className="accent-black" />
+                          <input type="checkbox" checked={dv.leaveType === 'SICK'} readOnly className="accent-black" />
                           <span>ป่วย</span>
                         </span>
                         <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={leaveType === 'PERSONAL'} readOnly className="accent-black" />
+                          <input type="checkbox" checked={dv.leaveType === 'PERSONAL'} readOnly className="accent-black" />
                           <span>กิจส่วนตัว</span>
                         </span>
                         <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={leaveType === 'MATERNITY'} readOnly className="accent-black" />
+                          <input type="checkbox" checked={dv.leaveType === 'MATERNITY'} readOnly className="accent-black" />
                           <span>คลอดบุตร</span>
                         </span>
                       </div>
 
                       <div className="flex items-end w-full gap-2">
                         <span>เนื่องจาก</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[250px]">{reasonText || '................................................................................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[250px]">{dv.reasonText || '................................................................................................'}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                         <span>ตั้งแต่วันที่</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(fromDate)}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(dv.fromDate)}</span>
                         <span>ถึงวันที่</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(toDate)}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[130px]">{formatDateLabel(dv.toDate)}</span>
                         <span>มีกำหนด</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[40px]">{totalDays}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold text-center inline-block min-w-[40px]">{dv.totalDays}</span>
                         <span>วัน</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-y-2 w-full">
                         <span>ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[300px]">{contactAddress || '................................................................................................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold break-words inline-block max-w-full flex-1 min-w-[300px]">{dv.contactAddress || '................................................................................................................'}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-y-2 w-full">
                         <span>หมายเลขโทรศัพท์</span>
-                        <span className="border-b border-dotted border-black px-2 font-bold inline-block min-w-[180px]">{contactPhone || '....................................'}</span>
+                        <span className="border-b border-dotted border-black px-2 font-bold inline-block min-w-[180px]">{dv.contactPhone || '....................................'}</span>
                       </div>
                     </div>
 
@@ -822,7 +886,7 @@ export default function LeaveRequestClient() {
                         <span>ขอแสดงความนับถือ</span>
                         <div className="h-12 flex items-center justify-center py-1 min-w-[140px]">
                           {(() => {
-                            const sigSrc = (viewOnly && docSignature) ? docSignature : savedSignature;
+                            const sigSrc = dv.signature;
                             return sigSrc && sigSrc.startsWith('data:image') ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img src={sigSrc} alt="Signature" className="max-h-full object-contain" />
@@ -831,11 +895,11 @@ export default function LeaveRequestClient() {
                         </div>
                         <div className="flex items-end gap-1">
                           <span>(ลงชื่อ)</span>
-                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{fullName || user?.name || ''}</span>
+                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{dv.fullName || user?.name || ''}</span>
                         </div>
                         <div className="flex items-end gap-1">
                           <span>(ตัวบรรจง)</span>
-                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{fullName || user?.name || ''}</span>
+                          <span className="border-b border-dotted border-black w-[160px] text-center font-bold">{dv.fullName || user?.name || ''}</span>
                         </div>
                       </div>
                     </div>
@@ -860,20 +924,20 @@ export default function LeaveRequestClient() {
                           <tbody>
                             <tr>
                               <td className="border border-black p-1 text-left font-bold">ป่วย</td>
-                              <td className="border border-black p-1">{sickTaken}</td>
-                              <td className="border border-black p-1">{currentSick}</td>
+                              <td className="border border-black p-1">{dv.sickTaken}</td>
+                              <td className="border border-black p-1">{dv.currentSick}</td>
                               <td className="border border-black p-1 font-bold">{sickTotal}</td>
                             </tr>
                             <tr>
                               <td className="border border-black p-1 text-left font-bold">กิจส่วนตัว</td>
-                              <td className="border border-black p-1">{personalTaken}</td>
-                              <td className="border border-black p-1">{currentPersonal}</td>
+                              <td className="border border-black p-1">{dv.personalTaken}</td>
+                              <td className="border border-black p-1">{dv.currentPersonal}</td>
                               <td className="border border-black p-1 font-bold">{personalTotal}</td>
                             </tr>
                             <tr>
                               <td className="border border-black p-1 text-left font-bold">คลอดบุตร</td>
-                              <td className="border border-black p-1">{maternityTaken}</td>
-                              <td className="border border-black p-1">{currentMaternity}</td>
+                              <td className="border border-black p-1">{dv.maternityTaken}</td>
+                              <td className="border border-black p-1">{dv.currentMaternity}</td>
                               <td className="border border-black p-1 font-bold">{maternityTotal}</td>
                             </tr>
                           </tbody>
