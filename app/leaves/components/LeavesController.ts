@@ -1,4 +1,4 @@
-import { CalendarEvent, getCalendarEvents, getTeamMembers, cancelLeaveMutation } from '@/src/libs/calendarData';
+import { CalendarEvent, getCalendarEvents, getAllRawEvents, getTeamMembers, cancelLeaveMutation } from '@/src/libs/calendarData';
 
 export class LeavesController {
   private leaves: CalendarEvent[] = [];
@@ -34,12 +34,11 @@ export class LeavesController {
       const prevMonth = month === 1 ? 12 : month - 1;
       const prevYear = month === 1 ? year - 1 : year;
 
-      // All three fetches in parallel; the two getCalendarEvents calls share
-      // the same in-flight Promise inside CalendarDataService (inflight dedup).
-      const [members, currentEvents, prevEvents] = await Promise.all([
+      const [members, currentEvents, prevEvents, rawEvents] = await Promise.all([
         getTeamMembers(),
         getCalendarEvents(year, month),
         getCalendarEvents(prevYear, prevMonth),
+        getAllRawEvents(),
       ]);
 
       const currentUser = members.find(m => m.id === effectiveUserId);
@@ -47,11 +46,20 @@ export class LeavesController {
         this.tokens = currentUser.tokensBalance;
       }
 
-      const combined = [...currentEvents, ...prevEvents];
+      // Merge month events and raw events, deduplicating by ID
+      const eventMap = new Map<string, CalendarEvent>();
+      for (const e of [...(rawEvents || []), ...(currentEvents || []), ...(prevEvents || [])]) {
+        if (e && e.id) eventMap.set(e.id, e);
+      }
+
+      const combined = Array.from(eventMap.values());
       const userLeaves = combined.filter(
         (e: CalendarEvent) =>
           e.userId === effectiveUserId &&
-          (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
+          (e.status === 'COMPENSATORY_OFF' ||
+           e.status === 'NORMAL' ||
+           e.status === 'WEEKEND_WORK' ||
+           e.status === 'HOLIDAY_WORK')
       );
       userLeaves.sort((a: CalendarEvent, b: CalendarEvent) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()

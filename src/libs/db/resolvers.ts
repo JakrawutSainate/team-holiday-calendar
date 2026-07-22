@@ -336,6 +336,8 @@ export async function resolveGraphQL(
     });
 
     const isLeave = event.status === 'COMPENSATORY_OFF' || event.status === 'NORMAL';
+    const isShiftClaim = event.status === 'WEEKEND_WORK' || event.status === 'HOLIDAY_WORK';
+
     if (isLeave) {
       await prisma.teamMember.update({
         where: { id: event.userId },
@@ -347,6 +349,20 @@ export async function resolveGraphQL(
           type: 'EARN',
           amount: 1.0,
           description: 'Leave Cancellation Refund',
+          relatedDate: event.date,
+        },
+      });
+    } else if (isShiftClaim) {
+      await prisma.teamMember.update({
+        where: { id: event.userId },
+        data: { tokensBalance: { decrement: 1.0 } },
+      });
+      await prisma.tokenTransaction.create({
+        data: {
+          userId: event.userId,
+          type: 'REDEEM',
+          amount: 1.0,
+          description: 'Shift Claim Cancellation',
           relatedDate: event.date,
         },
       });
