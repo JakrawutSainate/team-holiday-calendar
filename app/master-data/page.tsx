@@ -1,7 +1,5 @@
-import MasterDataHubClient from './components/MasterDataHubClient';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default function MasterDataHubPage() {
-  return <MasterDataHubClient />;
+  redirect('/master-data/signatures');
 }

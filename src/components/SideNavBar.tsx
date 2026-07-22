@@ -115,9 +115,15 @@ export default function SideNavBar() {
                   <div className={`flex items-center justify-between rounded-lg transition-colors ${
                     isMasterActive ? 'bg-zinc-50 text-zinc-900 font-semibold' : 'text-zinc-500 hover:bg-zinc-50/50'
                   }`}>
-                    <Link
-                      href={item.href}
-                      className="flex items-center gap-3 px-4 py-2.5 grow text-sm"
+                    <button
+                      onClick={() => {
+                        const nextState = !isMasterDataExpanded;
+                        setIsMasterDataExpanded(nextState);
+                        if (!pathname.startsWith('/master-data')) {
+                          router.push('/master-data/signatures');
+                        }
+                      }}
+                      className="flex items-center gap-3 px-4 py-2.5 grow text-sm text-left cursor-pointer border-0 bg-transparent"
                     >
                       <span
                         className="material-symbols-outlined"
@@ -125,17 +131,8 @@ export default function SideNavBar() {
                       >
                         {item.icon}
                       </span>
-                      {item.name}
-                    </Link>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsMasterDataExpanded(!isMasterDataExpanded);
-                      }}
-                      className="p-2.5 text-zinc-400 hover:text-zinc-950 transition-colors flex items-center justify-center cursor-pointer"
-                    >
-                      <span className={`material-symbols-outlined text-lg transition-transform duration-200 ${isMasterDataExpanded ? 'rotate-180' : ''}`}>
+                      <span className="grow font-semibold">{item.name}</span>
+                      <span className={`material-symbols-outlined text-lg transition-transform duration-200 text-zinc-400 ${isMasterDataExpanded ? 'rotate-180' : ''}`}>
                         keyboard_arrow_down
                       </span>
                     </button>
