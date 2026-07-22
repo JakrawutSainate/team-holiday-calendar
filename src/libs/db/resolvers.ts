@@ -34,6 +34,36 @@ export async function resolveGraphQL(
 
   // ─── PUBLIC QUERIES ────────────────────────────────────────────────────────
 
+  if (q.includes('getInitialAppData')) {
+    const [members, events, capacitySettings, holidays, departments] = await Promise.all([
+      prisma.teamMember.findMany({
+        select: {
+          id: true, name: true, email: true, role: true,
+          avatarUrl: true, department: true, title: true, tokensBalance: true,
+          savedSignature: true, sickLeaveBalance: true, annualLeaveBalance: true,
+        },
+      }),
+      prisma.calendarEvent.findMany({
+        select: { id: true, userId: true, userName: true, date: true, status: true, details: true },
+      }),
+      prisma.capacitySetting.findMany({
+        select: { id: true, date: true, dayOfWeek: true, maxOffAllowed: true, description: true },
+      }),
+      prisma.holiday.findMany({ orderBy: { date: 'asc' } }),
+      prisma.department.findMany({ orderBy: { name: 'asc' } }),
+    ]);
+
+    return {
+      getInitialAppData: {
+        teamMembers: members,
+        events,
+        capacitySettings,
+        holidays,
+        departments,
+      },
+    };
+  }
+
   if (q.includes('getTeamMembers')) {
     const members = await prisma.teamMember.findMany({
       select: {

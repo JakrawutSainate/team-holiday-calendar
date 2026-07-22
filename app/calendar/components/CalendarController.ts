@@ -9,6 +9,8 @@ import {
   claimShiftMutation,
   requestLeaveMutation,
   updateMaxOffAllowedMutation,
+  getInitialAppData,
+  getSWRAppCache,
   TeamMember
 } from '@/src/libs/calendarData';
 import { CalendarGridCell } from '../types';
@@ -58,25 +60,27 @@ export class CalendarController {
     const cells: CalendarGridCell[] = [];
     const firstDayOffset = new Date(this.year, this.month - 1, 1).getDay();
     const prevMonthDays = new Date(this.year, this.month - 1, 0).getDate();
-    const currentMonthDays = new Date(this.year, this.month, 0).getDate();
 
     for (let i = firstDayOffset - 1; i >= 0; i--) {
       const day = prevMonthDays - i;
-      const pm = this.month === 1 ? 12 : this.month - 1;
-      const py = this.month === 1 ? this.year - 1 : this.year;
-      cells.push({ day, isMuted: true, dateString: `${py}-${pm.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
+      const prevM = this.month - 1 === 0 ? 12 : this.month - 1;
+      const prevY = this.month - 1 === 0 ? this.year - 1 : this.year;
+      const dateString = `${prevY}-${String(prevM).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      cells.push({ day, isMuted: true, dateString });
     }
 
+    const currentMonthDays = new Date(this.year, this.month, 0).getDate();
     for (let day = 1; day <= currentMonthDays; day++) {
-      cells.push({ day, isMuted: false, dateString: `${this.year}-${this.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
+      const dateString = `${this.year}-${String(this.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      cells.push({ day, isMuted: false, dateString });
     }
 
-    const totalCells = Math.ceil((currentMonthDays + firstDayOffset) / 7) * 7;
-    const remaining = totalCells - (currentMonthDays + firstDayOffset);
+    const remaining = (7 - (cells.length % 7)) % 7;
     for (let day = 1; day <= remaining; day++) {
-      const nm = this.month === 12 ? 1 : this.month + 1;
-      const ny = this.month === 12 ? this.year + 1 : this.year;
-      cells.push({ day, isMuted: true, dateString: `${ny}-${nm.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` });
+      const nextM = this.month + 1 === 13 ? 1 : this.month + 1;
+      const nextY = this.month + 1 === 13 ? this.year + 1 : this.year;
+      const dateString = `${nextY}-${String(nextM).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      cells.push({ day, isMuted: true, dateString });
     }
 
     return cells;
@@ -85,22 +89,41 @@ export class CalendarController {
   public async loadState(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    this.gridCells = [];
-    this.loading = true;
-    this.updateCallback();
+    // Instant SWR Cache load (0ms)
+    const swr = getSWRAppCache();
+    if (swr && swr.teamMembers && swr.events && swr.capacitySettings) {
+      this.gridCells = this.buildGridCells();
+      this.members = swr.teamMembers;
+      this.events = swr.events;
+      const currentUser = this.members.find((m: TeamMember) => m.id === this.userId);
+      if (currentUser) this.tokens = currentUser.tokensBalance;
+      const resolved: Record<string, CapacitySetting> = {};
+      for (const cell of this.gridCells) {
+        resolved[cell.dateString] = resolveCapacity(cell.dateString, swr.capacitySettings);
+      }
+      this.capacities = resolved;
+      this.loading = false;
+      this.updateCallback();
+    } else {
+      this.gridCells = [];
+      this.loading = true;
+      this.updateCallback();
+    }
 
     try {
-      const [members, events, allSettings, leaveDocs] = await Promise.all([
-        getTeamMembers(),
-        getCalendarEvents(this.year, this.month),
-        getAllCapacitySettings(),
+      const [initData, leaveDocs] = await Promise.all([
+        getInitialAppData(),
         this.userId ? getLeaveDocuments() : Promise.resolve([]),
       ]);
 
-      // Build grid cells after data loads so calendar + events appear together
+      const members: TeamMember[] = initData.teamMembers || [];
+      const events: CalendarEvent[] = initData.events || [];
+      const allSettings: CapacitySetting[] = initData.capacitySettings || [];
+
+      // Re-build grid cells after fresh data fetch
       this.gridCells = this.buildGridCells();
 
-      const currentUser = members.find(m => m.id === this.userId);
+      const currentUser = members.find((m: TeamMember) => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;
       this.events = events;
       this.members = members;

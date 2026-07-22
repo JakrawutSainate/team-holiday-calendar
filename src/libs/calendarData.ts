@@ -188,6 +188,7 @@ class CalendarDataService {
   private capacityFlight: Promise<CapacitySetting[]> | null = null;
   private txnFlight: Promise<TokenTransaction[]> | null = null;
   private allEventsFlight: Promise<CalendarEvent[]> | null = null;
+  private initialFlight: Promise<any> | null = null;
 
   private constructor() {}
 
@@ -210,6 +211,62 @@ class CalendarDataService {
     this.capacityCache = null;
     this.txnCache = null;
     this.allEventsCache = null;
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem('swr_app_data'); } catch {}
+    }
+  }
+
+  public async getInitialAppData() {
+    if (
+      this.isFresh(this.membersCache) &&
+      this.isFresh(this.allEventsCache) &&
+      this.isFresh(this.capacityCache)
+    ) {
+      return {
+        teamMembers: this.membersCache.data,
+        events: this.allEventsCache.data,
+        capacitySettings: this.capacityCache.data,
+      };
+    }
+
+    if (this.initialFlight) return this.initialFlight;
+
+    this.initialFlight = fetchGraphQL(`
+      query {
+        getInitialAppData {
+          teamMembers { id name email role avatarUrl department title tokensBalance }
+          events { id userId userName date status details leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } }
+          capacitySettings { id date dayOfWeek maxOffAllowed description }
+          holidays { id date nameTh nameEn }
+          departments { id name description icon }
+        }
+      }
+    `).then(data => {
+      const init = data?.getInitialAppData ?? {
+        teamMembers: [],
+        events: [],
+        capacitySettings: [],
+        holidays: [],
+        departments: []
+      };
+
+      const now = Date.now();
+      this.membersCache = { data: init.teamMembers, expiresAt: now + this.TTL };
+      this.allEventsCache = { data: init.events, expiresAt: now + this.TTL };
+      this.capacityCache = { data: init.capacitySettings, expiresAt: now + this.TTL };
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('swr_app_data', JSON.stringify(init));
+        } catch {}
+      }
+
+      return init;
+    }).finally(() => {
+      this.initialFlight = null;
+    });
+
+    return this.initialFlight;
   }
 
   public invalidateCapacities(): void {
@@ -467,6 +524,18 @@ export const getTokenTransactions = (): Promise<TokenTransaction[]> =>
 
 export const getUserTokenQueue = (): Promise<UserTokenQueueItem[]> =>
   calendarDataService.getUserTokenQueue();
+
+export const getInitialAppData = () =>
+  calendarDataService.getInitialAppData();
+
+export function getSWRAppCache() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('swr_app_data');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
 
 
 
