@@ -178,43 +178,67 @@ export default function LeaveDocumentDetailModal({
               <p className="text-zinc-400 text-xs">HolidayHQ Leave Request Form</p>
             </div>
 
-            {/* Applicant Details */}
-            <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-zinc-100 pb-4">
-              <div>
-                <span className="block text-zinc-400 font-medium">ชื่อพนักงาน / Name</span>
-                <span className="font-bold text-zinc-800">{document.userName}</span>
-              </div>
-              <div>
-                <span className="block text-zinc-400 font-medium">แผนก / Department</span>
-                <span className="font-bold text-zinc-800">{document.department}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="block text-zinc-400 font-medium">ตำแหน่ง / Title</span>
-                <span className="font-bold text-zinc-800">{document.title}</span>
-              </div>
-            </div>
+            {/* Applicant Details & Leave Details */}
+            {(() => {
+              let docName = document.userName;
+              let docDept = document.department;
+              let docTitle = document.title;
+              let docReason = document.reason || '';
 
-            {/* Leave Details */}
-            <div className="space-y-3.5 border-b border-zinc-100 pb-4">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="block text-zinc-400 font-medium">วันที่ขอลา / Leave Date</span>
-                  <span className="font-bold bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg text-amber-800 w-fit block mt-1">
-                    {new Date(document.leaveDate).toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-zinc-400 font-medium">ประเภทการลา / Leave Type</span>
-                  <span className="font-bold text-zinc-800 mt-1 block">{getLeaveTypeLabel(document.leaveType)}</span>
-                </div>
-              </div>
-              <div className="text-xs">
-                <span className="block text-zinc-400 font-medium">เหตุผลการลา / Reason</span>
-                <p className="font-medium text-zinc-800 mt-1 bg-zinc-50 border border-zinc-100 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed">
-                  {document.reason}
-                </p>
-              </div>
-            </div>
+              if (docReason.trim().startsWith('{')) {
+                try {
+                  const parsed = JSON.parse(docReason);
+                  if (parsed && typeof parsed === 'object') {
+                    if (parsed.fullName) docName = parsed.fullName;
+                    if (parsed.department) docDept = parsed.department;
+                    if (parsed.position) docTitle = parsed.position;
+                    if (parsed.reasonText !== undefined) docReason = parsed.reasonText;
+                    else if (parsed.reason !== undefined && !parsed.reason.trim().startsWith('{')) docReason = parsed.reason;
+                    else docReason = '';
+                  }
+                } catch {}
+              }
+
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-zinc-100 pb-4">
+                    <div>
+                      <span className="block text-zinc-400 font-medium">ชื่อพนักงาน / Name</span>
+                      <span className="font-bold text-zinc-800">{docName}</span>
+                    </div>
+                    <div>
+                      <span className="block text-zinc-400 font-medium">แผนก / Department</span>
+                      <span className="font-bold text-zinc-800">{docDept || '-'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-zinc-400 font-medium">ตำแหน่ง / Title</span>
+                      <span className="font-bold text-zinc-800">{docTitle || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5 border-b border-zinc-100 pb-4">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="block text-zinc-400 font-medium">วันที่ขอลา / Leave Date</span>
+                        <span className="font-bold bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg text-amber-800 w-fit block mt-1">
+                          {new Date(document.leaveDate).toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-zinc-400 font-medium">ประเภทการลา / Leave Type</span>
+                        <span className="font-bold text-zinc-800 mt-1 block">{getLeaveTypeLabel(document.leaveType)}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs">
+                      <span className="block text-zinc-400 font-medium">เหตุผลการลา / Reason</span>
+                      <p className="font-medium text-zinc-800 mt-1 bg-zinc-50 border border-zinc-100 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed">
+                        {docReason || '-'}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Attachment Preview */}
             {document.attachment && (

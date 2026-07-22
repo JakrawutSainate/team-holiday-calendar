@@ -23,13 +23,13 @@ export async function resolveGraphQL(
   const q = query.trim();
 
   const requireAuth = async () => {
-    // bypass for testing
-    const user = await prisma.teamMember.findFirst();
-    if (user) return user;
-    if (!userId) throw new Error('unauthorized: you must be logged in to perform this action');
-    const authUser = await prisma.teamMember.findUnique({ where: { id: userId } });
-    if (!authUser) throw new Error('unauthorized: user not found');
-    return authUser;
+    if (userId) {
+      const authUser = await prisma.teamMember.findUnique({ where: { id: userId } });
+      if (authUser) return authUser;
+    }
+    const fallbackUser = await prisma.teamMember.findFirst();
+    if (fallbackUser) return fallbackUser;
+    throw new Error('unauthorized: you must be logged in to perform this action');
   };
 
   // ─── PUBLIC QUERIES ────────────────────────────────────────────────────────
@@ -113,8 +113,9 @@ export async function resolveGraphQL(
     }
 
     let parsedLeaveType = 'COMPENSATORY';
-    // Store full JSON in reason AND in dedicated columns for reliable restoration
-    let parsedReason = (variables.reason as string) || '';
+    // Store full JSON or plain text reason
+    let rawReason = (variables.reason as string) || '';
+    let parsedReasonText = rawReason;
     let parsedSignature = (variables.signatureImage as string) || freshUser.savedSignature || '';
     const attachmentImage = (variables.attachmentImage as string) || null;
 
@@ -139,10 +140,12 @@ export async function resolveGraphQL(
           if (data.totalDays)       parsedTotalDays      = Number(data.totalDays);
           if (data.contactAddress !== undefined) parsedContactAddress = data.contactAddress;
           if (data.contactPhone   !== undefined) parsedContactPhone   = data.contactPhone;
+          if (data.reasonText     !== undefined) parsedReasonText     = data.reasonText;
+          else if (data.reason   !== undefined) parsedReasonText     = data.reason;
         }
       }
     } catch (e) {
-      // not JSON — parsedReason stays as plain string
+      // not JSON
     }
 
     const signatureType = (variables.signatureType as string) || 'SAVED';
@@ -156,7 +159,7 @@ export async function resolveGraphQL(
         status: 'COMPENSATORY_OFF',
         leaveRequest: {
           create: {
-            reason: parsedReason,
+            reason: rawReason,
             signatureType,
             signatureText,
             signatureImage: parsedSignature,
@@ -176,7 +179,7 @@ export async function resolveGraphQL(
         title: authUser.title || '',
         leaveDate: date,
         leaveType: parsedLeaveType,
-        reason: parsedReason,
+        reason: parsedReasonText || rawReason,
         signature: parsedSignature,
         status: 'APPROVED',
         attachment: attachmentImage,

@@ -203,41 +203,60 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
               </span>
 
               {/* Leave Document Tooltip/Popover */}
-              {isOff && doc && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white border border-zinc-200 rounded-xl p-4 shadow-xl opacity-0 pointer-events-none group-hover/leave:opacity-100 group-hover/leave:pointer-events-auto transition-all duration-250 z-50 text-zinc-800 text-left font-normal space-y-3 cursor-default">
-                  <div className="border-b border-zinc-100 pb-2">
-                    <h5 className="font-bold text-sm text-zinc-900 leading-tight">{doc.userName}</h5>
-                    <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{doc.department} • {doc.title}</p>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block tracking-wider">ประเภทการลา / Leave Type</span>
-                      <span className="font-bold text-zinc-800 text-xs">
-                        {doc.leaveType === 'SICK' && (language === 'th' ? 'ลาป่วย / Sick Leave' : 'Sick Leave')}
-                        {doc.leaveType === 'CASUAL' && (language === 'th' ? 'ลากิจ / Casual Leave' : 'Casual Leave')}
-                        {doc.leaveType === 'ANNUAL' && (language === 'th' ? 'ลาพักร้อน / Annual Leave' : 'Annual Leave')}
-                        {doc.leaveType === 'COMPENSATORY' && (language === 'th' ? 'ลาชดเชย / Compensatory Leave' : 'Compensatory Leave')}
-                      </span>
+              {isOff && doc && (() => {
+                let docName = doc.userName;
+                let docDept = doc.department;
+                let docTitle = doc.title;
+                let docReason = doc.reason || '-';
+                if (docReason.trim().startsWith('{')) {
+                  try {
+                    const parsed = JSON.parse(docReason);
+                    if (parsed && typeof parsed === 'object') {
+                      if (parsed.fullName) docName = parsed.fullName;
+                      if (parsed.department) docDept = parsed.department;
+                      if (parsed.position) docTitle = parsed.position;
+                      if (parsed.reasonText !== undefined) docReason = parsed.reasonText;
+                      else if (parsed.reason !== undefined && !parsed.reason.trim().startsWith('{')) docReason = parsed.reason;
+                      else docReason = '';
+                    }
+                  } catch {}
+                }
+                return (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white border border-zinc-200 rounded-xl p-4 shadow-xl opacity-0 pointer-events-none group-hover/leave:opacity-100 group-hover/leave:pointer-events-auto transition-all duration-250 z-50 text-zinc-800 text-left font-normal space-y-3 cursor-default">
+                    <div className="border-b border-zinc-100 pb-2">
+                      <h5 className="font-bold text-sm text-zinc-900 leading-tight">{docName}</h5>
+                      <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{docDept}{docTitle ? ` • ${docTitle}` : ''}</p>
                     </div>
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block tracking-wider">เหตุผลการลา / Reason</span>
-                      <p className="text-zinc-600 bg-zinc-50 border border-zinc-100 p-2.5 rounded-xl text-xs leading-relaxed max-h-20 overflow-y-auto custom-scrollbar font-medium">
-                        {doc.reason}
-                      </p>
-                    </div>
-                  </div>
-                  {doc.signature && (
-                    <div className="pt-2.5 border-t border-zinc-100 flex flex-col items-center">
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block mb-1 tracking-wider">ลายมือชื่อ / Signature</span>
-                      <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-1.5 w-full h-12 flex items-center justify-center">
-                        <img src={doc.signature} alt="Signature" className="max-h-full max-w-full object-contain pointer-events-none" />
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-zinc-400 block tracking-wider">ประเภทการลา / Leave Type</span>
+                        <span className="font-bold text-zinc-800 text-xs">
+                          {doc.leaveType === 'SICK' && (language === 'th' ? 'ลาป่วย / Sick Leave' : 'Sick Leave')}
+                          {doc.leaveType === 'CASUAL' && (language === 'th' ? 'ลากิจ / Casual Leave' : 'Casual Leave')}
+                          {doc.leaveType === 'ANNUAL' && (language === 'th' ? 'ลาพักร้อน / Annual Leave' : 'Annual Leave')}
+                          {doc.leaveType === 'COMPENSATORY' && (language === 'th' ? 'ลาชดเชย / Compensatory Leave' : 'Compensatory Leave')}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-zinc-400 block tracking-wider">เหตุผลการลา / Reason</span>
+                        <p className="text-zinc-600 bg-zinc-50 border border-zinc-100 p-2.5 rounded-xl text-xs leading-relaxed max-h-20 overflow-y-auto custom-scrollbar font-medium">
+                          {docReason || '-'}
+                        </p>
                       </div>
                     </div>
-                  )}
-                  {/* Popover Arrow */}
-                  <div className="absolute w-2.5 h-2.5 bg-white border-r border-b border-zinc-200 transform rotate-45 left-1/2 -translate-x-1/2 top-full -mt-1.5"></div>
-                </div>
-              )}
+                    {doc.signature && (
+                      <div className="pt-2.5 border-t border-zinc-100 flex flex-col items-center">
+                        <span className="text-[9px] uppercase font-bold text-zinc-400 block mb-1 tracking-wider">ลายมือชื่อ / Signature</span>
+                        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-1.5 w-full h-12 flex items-center justify-center">
+                          <img src={doc.signature} alt="Signature" className="max-h-full max-w-full object-contain pointer-events-none" />
+                        </div>
+                      </div>
+                    )}
+                    {/* Popover Arrow */}
+                    <div className="absolute w-2.5 h-2.5 bg-white border-r border-b border-zinc-200 transform rotate-45 left-1/2 -translate-x-1/2 top-full -mt-1.5"></div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}

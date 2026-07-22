@@ -209,7 +209,8 @@ export default function LeaveRequestClient() {
           const td = existingDoc.totalDays || 1;
           // Try to get stats and reasonText from JSON reason if available
           let savedSick = stats.SICK, savedPersonal = stats.PERSONAL, savedMat = stats.MATERNITY;
-          let jsonFullName = '', jsonPosition = '', jsonDepartment = '', jsonReasonText = existingDoc.reason || '';
+          let jsonFullName = '', jsonPosition = '', jsonDepartment = '';
+          let jsonReasonText = (existingDoc.reason && !existingDoc.reason.trim().startsWith('{')) ? existingDoc.reason : '';
           try {
             const parsed = JSON.parse(existingDoc.reason || 'null');
             if (parsed && typeof parsed === 'object') {
@@ -222,6 +223,7 @@ export default function LeaveRequestClient() {
               if (parsed.position)   jsonPosition   = parsed.position;
               if (parsed.department) jsonDepartment = parsed.department;
               if (parsed.reasonText !== undefined) jsonReasonText = parsed.reasonText;
+              else if (parsed.reason !== undefined && !parsed.reason.trim().startsWith('{')) jsonReasonText = parsed.reason;
             }
           } catch { /* reason is plain text */ }
 
