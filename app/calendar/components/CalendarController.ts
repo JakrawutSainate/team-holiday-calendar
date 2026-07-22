@@ -94,7 +94,22 @@ export class CalendarController {
     if (swr && swr.teamMembers && swr.events && swr.capacitySettings) {
       this.gridCells = this.buildGridCells();
       this.members = swr.teamMembers;
-      this.events = swr.events;
+      
+      const holidayEvents: CalendarEvent[] = (swr.holidays || []).map((h: any, i: number) => ({
+        id: `holiday-${h.date}-${i}`,
+        userId: 'system-holiday',
+        userName: 'Holiday',
+        date: h.date,
+        status: 'PUBLIC_HOLIDAY' as const,
+        details: JSON.stringify({ en: h.nameEn, th: h.nameTh, name: h.nameTh }),
+      }));
+
+      const combinedMap = new Map<string, CalendarEvent>();
+      for (const e of [...swr.events, ...holidayEvents]) {
+        if (e && e.id) combinedMap.set(e.id, e);
+      }
+      this.events = Array.from(combinedMap.values());
+
       const currentUser = this.members.find((m: TeamMember) => m.id === this.userId);
       if (currentUser) this.tokens = currentUser.tokensBalance;
       const resolved: Record<string, CapacitySetting> = {};
@@ -111,21 +126,37 @@ export class CalendarController {
     }
 
     try {
-      const [initData, leaveDocs] = await Promise.all([
+      const [initData, monthEvents, leaveDocs] = await Promise.all([
         getInitialAppData(),
+        getCalendarEvents(this.year, this.month),
         this.userId ? getLeaveDocuments() : Promise.resolve([]),
       ]);
 
       const members: TeamMember[] = initData.teamMembers || [];
       const events: CalendarEvent[] = initData.events || [];
+      const holidays: any[] = initData.holidays || [];
       const allSettings: CapacitySetting[] = initData.capacitySettings || [];
 
       // Re-build grid cells after fresh data fetch
       this.gridCells = this.buildGridCells();
 
+      const holidayEvents: CalendarEvent[] = holidays.map((h: any, i: number) => ({
+        id: `holiday-${h.date}-${i}`,
+        userId: 'system-holiday',
+        userName: 'Holiday',
+        date: h.date,
+        status: 'PUBLIC_HOLIDAY' as const,
+        details: JSON.stringify({ en: h.nameEn, th: h.nameTh, name: h.nameTh }),
+      }));
+
+      const combinedMap = new Map<string, CalendarEvent>();
+      for (const e of [...events, ...monthEvents, ...holidayEvents]) {
+        if (e && e.id) combinedMap.set(e.id, e);
+      }
+
       const currentUser = members.find((m: TeamMember) => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;
-      this.events = events;
+      this.events = Array.from(combinedMap.values());
       this.members = members;
       this.leaveDocuments = leaveDocs;
 
