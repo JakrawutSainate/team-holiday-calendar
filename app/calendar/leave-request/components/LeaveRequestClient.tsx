@@ -120,10 +120,82 @@ export default function LeaveRequestClient() {
         if (!existingEvent && !existingDoc) return;
         setViewOnly(true);
 
-        if (!existingDoc) return;
-
-        // Calculate stats at load time
+        // Calculate stats at load time for all branches
         const stats = controller.calculatePastLeaveDays(dateParam);
+
+        if (!existingDoc) {
+          // If event exists but LeaveDocument is missing, try extracting from event.leaveRequest
+          if (existingEvent?.leaveRequest) {
+            const lr = existingEvent.leaveRequest;
+            let jsonFullName = '', jsonPosition = '', jsonDepartment = '', jsonReasonText = lr.reason || '';
+            let writtenAt = 'กรุงเทพมหานคร', recipientTitle = 'หัวหน้างาน', fromDate = dateParam, toDate = dateParam;
+            let totalDays = 1, contactAddress = '', contactPhone = '';
+            let lt: 'SICK' | 'PERSONAL' | 'MATERNITY' = 'SICK';
+            try {
+              const parsed = JSON.parse(lr.reason || 'null');
+              if (parsed && typeof parsed === 'object') {
+                if (parsed.leaveType) lt = parsed.leaveType;
+                if (parsed.writtenAt) writtenAt = parsed.writtenAt;
+                if (parsed.recipientTitle) recipientTitle = parsed.recipientTitle;
+                if (parsed.fullName) jsonFullName = parsed.fullName;
+                if (parsed.position) jsonPosition = parsed.position;
+                if (parsed.department) jsonDepartment = parsed.department;
+                if (parsed.fromDate) fromDate = parsed.fromDate;
+                if (parsed.toDate) toDate = parsed.toDate;
+                if (parsed.totalDays) totalDays = Number(parsed.totalDays);
+                if (parsed.contactAddress) contactAddress = parsed.contactAddress;
+                if (parsed.contactPhone) contactPhone = parsed.contactPhone;
+                if (parsed.reasonText !== undefined) jsonReasonText = parsed.reasonText;
+              }
+            } catch { /* plain text reason */ }
+
+            setDocView({
+              writtenAt,
+              recipientTitle,
+              fullName: jsonFullName || existingEvent.userName || user.name || '',
+              position: jsonPosition || user.title || '',
+              department: jsonDepartment || user.department || '',
+              leaveType: lt,
+              reasonText: jsonReasonText,
+              fromDate,
+              toDate,
+              totalDays,
+              contactAddress,
+              contactPhone,
+              signature: lr.signatureImage || savedSignature,
+              sickTaken: stats.SICK,
+              personalTaken: stats.PERSONAL,
+              maternityTaken: stats.MATERNITY,
+              currentSick: lt === 'SICK' ? totalDays : 0,
+              currentPersonal: lt === 'PERSONAL' ? totalDays : 0,
+              currentMaternity: lt === 'MATERNITY' ? totalDays : 0,
+            });
+          } else {
+            // Default docView with user info if event has no leaveRequest
+            setDocView({
+              writtenAt: 'กรุงเทพมหานคร',
+              recipientTitle: 'หัวหน้างาน',
+              fullName: existingEvent?.userName || user.name || '',
+              position: user.title || '',
+              department: user.department || '',
+              leaveType: 'SICK',
+              reasonText: '',
+              fromDate: dateParam,
+              toDate: dateParam,
+              totalDays: 1,
+              contactAddress: '',
+              contactPhone: '',
+              signature: savedSignature,
+              sickTaken: stats.SICK,
+              personalTaken: stats.PERSONAL,
+              maternityTaken: stats.MATERNITY,
+              currentSick: 1,
+              currentPersonal: 0,
+              currentMaternity: 0,
+            });
+          }
+          return;
+        }
 
         // --- Determine leave type ---
         const lt = (existingDoc.leaveType === 'SICK' || existingDoc.leaveType === 'PERSONAL' || existingDoc.leaveType === 'MATERNITY')
