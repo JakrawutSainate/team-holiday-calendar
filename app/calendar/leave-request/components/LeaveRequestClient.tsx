@@ -24,6 +24,7 @@ export default function LeaveRequestClient() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const printRef = useRef<HTMLDivElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const restoredFromDB = useRef(false); // Prevents prefill from overriding DB-restored data
 
   // Form states
   const [writtenAt, setWrittenAt] = useState('กรุงเทพมหานคร');
@@ -96,7 +97,7 @@ export default function LeaveRequestClient() {
           const existingDoc = controller.getLeaveDocuments().find(
             d => d.userId === user.id && d.leaveDate === fromDate
           );
-          if (existingEvent || existingDoc) {
+            if (existingEvent || existingDoc) {
             setViewOnly(true);
             if (existingDoc) {
               // Restore signature from DB
@@ -104,7 +105,9 @@ export default function LeaveRequestClient() {
               // Try to parse reason as full LeaveFormData JSON
               try {
                 const parsed = JSON.parse(existingDoc.reason || '');
-                if (parsed && typeof parsed === 'object') {
+                if (parsed && typeof parsed === 'object' && (parsed.writtenAt || parsed.fullName || parsed.leaveType)) {
+                  // Full JSON format — restore all fields
+                  restoredFromDB.current = true;
                   if (parsed.leaveType) setLeaveType(parsed.leaveType);
                   if (parsed.reasonText !== undefined) setReasonText(parsed.reasonText);
                   if (parsed.writtenAt) setWrittenAt(parsed.writtenAt);
@@ -124,14 +127,20 @@ export default function LeaveRequestClient() {
                     if (parsed.stats.maternity?.taken !== undefined) setMaternityTakenOverride(Number(parsed.stats.maternity.taken));
                   }
                 } else {
-                  // Fallback: plain text reason
+                  // Fallback: plain text reason — restore what we can from existingDoc fields
                   if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
                   setReasonText(existingDoc.reason || '');
+                  if (existingDoc.userName) setFullName(existingDoc.userName);
+                  if (existingDoc.department) setDepartment(existingDoc.department);
+                  if (existingDoc.title) setPosition(existingDoc.title);
                 }
               } catch {
                 // Fallback: plain text reason
                 if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
                 setReasonText(existingDoc.reason || '');
+                if (existingDoc.userName) setFullName(existingDoc.userName);
+                if (existingDoc.department) setDepartment(existingDoc.department);
+                if (existingDoc.title) setPosition(existingDoc.title);
               }
             }
           }
@@ -140,9 +149,9 @@ export default function LeaveRequestClient() {
     }
   }, [user?.id, fromDate, controller]);
 
-  // Prefill user data on load
+  // Prefill user data on load — skip if data was already restored from DB
   useEffect(() => {
-    if (user) {
+    if (user && !restoredFromDB.current) {
       setFullName(user.name || '');
       setPosition(user.title || '');
       setDepartment(user.department || '');
@@ -150,8 +159,9 @@ export default function LeaveRequestClient() {
     }
   }, [user]);
 
-  // Auto-calculate duration days
+  // Auto-calculate duration days — skip if dates were restored from DB
   useEffect(() => {
+    if (restoredFromDB.current) return; // Don't override DB-restored totalDays
     if (fromDate && toDate) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
