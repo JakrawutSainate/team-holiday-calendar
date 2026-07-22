@@ -131,32 +131,27 @@ export default function LeaveRequestClient() {
           : 'SICK';
 
         // --- Primary: use explicit DB columns (new format) ---
-        const hasExplicitFields = existingDoc.fromDate || existingDoc.toDate || existingDoc.contactAddress !== undefined;
+        const hasExplicitFields = Boolean(existingDoc.fromDate || existingDoc.toDate || existingDoc.contactAddress || existingDoc.contactPhone || existingDoc.writtenAt || existingDoc.recipientTitle);
 
         if (hasExplicitFields) {
           const td = existingDoc.totalDays || 1;
-          // Try to get stats from JSON reason if available
+          // Try to get stats and reasonText from JSON reason if available
           let savedSick = stats.SICK, savedPersonal = stats.PERSONAL, savedMat = stats.MATERNITY;
-          try {
-            const parsed = JSON.parse(existingDoc.reason || 'null');
-            if (parsed?.stats) {
-              if (parsed.stats.sick?.taken    !== undefined) savedSick     = Number(parsed.stats.sick.taken);
-              if (parsed.stats.personal?.taken !== undefined) savedPersonal = Number(parsed.stats.personal.taken);
-              if (parsed.stats.maternity?.taken !== undefined) savedMat    = Number(parsed.stats.maternity.taken);
-            }
-          } catch { /* no stats in JSON */ }
-
-          // Parse fullName/position/department/reasonText from JSON if available
-          let jsonFullName = '', jsonPosition = '', jsonDepartment = '', jsonReasonText = '';
+          let jsonFullName = '', jsonPosition = '', jsonDepartment = '', jsonReasonText = existingDoc.reason || '';
           try {
             const parsed = JSON.parse(existingDoc.reason || 'null');
             if (parsed && typeof parsed === 'object') {
-              jsonFullName    = parsed.fullName    || '';
-              jsonPosition    = parsed.position    || '';
-              jsonDepartment  = parsed.department  || '';
-              jsonReasonText  = parsed.reasonText  || '';
+              if (parsed.stats) {
+                if (parsed.stats.sick?.taken    !== undefined) savedSick     = Number(parsed.stats.sick.taken);
+                if (parsed.stats.personal?.taken !== undefined) savedPersonal = Number(parsed.stats.personal.taken);
+                if (parsed.stats.maternity?.taken !== undefined) savedMat    = Number(parsed.stats.maternity.taken);
+              }
+              if (parsed.fullName)   jsonFullName   = parsed.fullName;
+              if (parsed.position)   jsonPosition   = parsed.position;
+              if (parsed.department) jsonDepartment = parsed.department;
+              if (parsed.reasonText !== undefined) jsonReasonText = parsed.reasonText;
             }
-          } catch { /* use DB fields instead */ }
+          } catch { /* reason is plain text */ }
 
           setDocView({
             writtenAt:       existingDoc.writtenAt      || 'กรุงเทพมหานคร',
