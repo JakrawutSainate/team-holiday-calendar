@@ -130,11 +130,19 @@ export async function resolveGraphQL(
     const authUser = await requireAuth();
     const earnTxns = await prisma.tokenTransaction.findMany({
       where: { userId: authUser.id, type: 'EARN' },
-      orderBy: { createdAt: 'asc' },
     });
     const spendTxns = await prisma.tokenTransaction.findMany({
-      where: { userId: authUser.id, type: 'SPEND' },
+      where: { userId: authUser.id, type: { in: ['SPEND', 'REDEEM'] } },
     });
+
+    // Sort earnTxns by actual earned work date (relatedDate) ascending
+    earnTxns.sort((a, b) => {
+      const dateA = a.relatedDate || (a.createdAt ? a.createdAt.toISOString().split('T')[0] : '');
+      const dateB = b.relatedDate || (b.createdAt ? b.createdAt.toISOString().split('T')[0] : '');
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
+    });
+
     const totalSpent = spendTxns.reduce((acc, t) => acc + (t.amount || 1.0), 0);
 
     const holidays = await prisma.holiday.findMany();
@@ -158,7 +166,7 @@ export async function resolveGraphQL(
         remainingSpent -= earnAmount;
       } else {
         availableIndex++;
-        const earnedDate = earn.relatedDate || earn.createdAt.toISOString().split('T')[0];
+        const earnedDate = earn.relatedDate || (earn.createdAt ? earn.createdAt.toISOString().split('T')[0] : '');
         const festivalName = holidayMap.get(earnedDate) || earn.description || 'วันทำงานค้ำประกันวันหยุด';
         queue.push({
           id: earn.id,
