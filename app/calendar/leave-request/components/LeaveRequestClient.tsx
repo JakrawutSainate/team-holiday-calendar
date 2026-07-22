@@ -415,7 +415,7 @@ export default function LeaveRequestClient() {
               <div className="flex items-center gap-2 flex-wrap">
                 {viewOnly ? (
                   <button
-                    onClick={() => window.print()}
+                    onClick={handlePrint}
                     className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-0"
                   >
                     <span className="material-symbols-outlined text-sm">print</span>
