@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Claims holds the JWT payload.
@@ -38,11 +40,26 @@ func jwtSecret() []byte {
 	return []byte(s)
 }
 
-// HashPassword returns the SHA-256 hex digest of the password.
+// HashPassword returns the bcrypt hash of the password.
 func HashPassword(password string) string {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		// Fallback if bcrypt fails
+		h := sha256.New()
+		h.Write([]byte(password))
+		return fmt.Sprintf("%x", h.Sum(nil))
+	}
+	return string(bytes)
+}
+
+// VerifyPassword checks bcrypt or legacy SHA-256 password hash.
+func VerifyPassword(password, hash string) bool {
+	if strings.HasPrefix(hash, "$2a$") || strings.HasPrefix(hash, "$2b$") {
+		return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+	}
 	h := sha256.New()
 	h.Write([]byte(password))
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return fmt.Sprintf("%x", h.Sum(nil)) == hash
 }
 
 // CreateToken signs a new JWT for the given user.
@@ -107,9 +124,17 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		body.Email,
 	).Scan(&id, &name, &email, &role, &avatarURL, &department, &title, &tokensBalance, &passwordHash)
 
-	if err != nil || HashPassword(body.Password) != passwordHash {
+	if err != nil || !VerifyPassword(body.Password, passwordHash) {
 		WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
 		return
+	}
+
+	// Auto-migrate legacy SHA-256 hash to bcrypt on successful login
+	if !strings.HasPrefix(passwordHash, "$2a$") && !strings.HasPrefix(passwordHash, "$2b$") {
+		newHash := HashPassword(body.Password)
+		go func() {
+			_, _ = h.db.DB.Exec(`UPDATE "TeamMember" SET "passwordHash" = $1 WHERE id = $2`, newHash, id)
+		}()
 	}
 
 	token, err := CreateToken(id, email, role)

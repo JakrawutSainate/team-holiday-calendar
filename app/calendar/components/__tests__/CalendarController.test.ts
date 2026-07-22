@@ -6,27 +6,28 @@ vi.mock('@/src/actions/events', () => ({ broadcastCalendarUpdate: vi.fn().mockRe
 import { calendarDataService } from '@/src/libs/calendarData';
 import { CalendarController } from '../CalendarController';
 
-// Spy on service methods used by the controller
-const loadStateSpy = vi.spyOn(calendarDataService, 'getTeamMembers').mockResolvedValue([
-  { id: 'u1', name: 'Alice', email: 'a@test.com', role: 'MEMBER', department: 'Engineering', title: 'Dev', tokensBalance: 5 },
-]);
-vi.spyOn(calendarDataService, 'getCalendarEvents').mockResolvedValue([]);
-vi.spyOn(calendarDataService, 'getAllCapacitySettings').mockResolvedValue([]);
-const claimSpy = vi.spyOn(calendarDataService, 'claimShift');
-const leaveSpy = vi.spyOn(calendarDataService, 'requestLeave');
-
+let claimSpy: any;
+let leaveSpy: any;
 let controller: CalendarController;
 let tickCount: number;
 
 beforeEach(() => {
   tickCount = 0;
   controller = new CalendarController(2026, 6, 'u1', () => { tickCount++; }, 'Alice');
-  vi.clearAllMocks();
-  loadStateSpy.mockResolvedValue([
+  vi.restoreAllMocks();
+  vi.spyOn(calendarDataService, 'getTeamMembers').mockResolvedValue([
     { id: 'u1', name: 'Alice', email: 'a@test.com', role: 'MEMBER', department: 'Engineering', title: 'Dev', tokensBalance: 5 },
   ]);
+  vi.spyOn(calendarDataService, 'getInitialAppData').mockResolvedValue({
+    teamMembers: [{ id: 'u1', name: 'Alice', email: 'a@test.com', role: 'MEMBER', department: 'Engineering', title: 'Dev', tokensBalance: 5 }],
+    events: [],
+    capacitySettings: [],
+  });
+  vi.spyOn(calendarDataService, 'getLeaveDocuments').mockResolvedValue([]);
   vi.spyOn(calendarDataService, 'getCalendarEvents').mockResolvedValue([]);
   vi.spyOn(calendarDataService, 'getAllCapacitySettings').mockResolvedValue([]);
+  claimSpy = vi.spyOn(calendarDataService, 'claimShift');
+  leaveSpy = vi.spyOn(calendarDataService, 'requestLeave');
 });
 
 describe('CalendarController — loading state', () => {

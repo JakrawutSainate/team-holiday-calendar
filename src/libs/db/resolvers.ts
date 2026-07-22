@@ -1,17 +1,42 @@
 import { createHash } from 'crypto';
+import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
 
 export function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
+  return bcrypt.hashSync(password, 10);
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  if (hash.startsWith('$2a$') || hash.startsWith('$2b$')) {
+    return bcrypt.compare(password, hash);
+  }
+  // Legacy SHA-256 fallback check
+  const legacyHash = createHash('sha256').update(password).digest('hex');
+  return legacyHash === hash;
 }
 
 export async function loginUser(email: string, password: string) {
   const user = await prisma.teamMember.findUnique({
     where: { email: email.trim().toLowerCase() },
   });
-  if (!user || user.passwordHash !== hashPassword(password)) {
+  if (!user) {
     throw new Error('invalid email or password');
   }
+
+  const isValid = await verifyPassword(password, user.passwordHash);
+  if (!isValid) {
+    throw new Error('invalid email or password');
+  }
+
+  // Auto-migrate legacy SHA-256 hash to bcrypt on successful login
+  if (!user.passwordHash.startsWith('$2a$') && !user.passwordHash.startsWith('$2b$')) {
+    const newBcryptHash = hashPassword(password);
+    await prisma.teamMember.update({
+      where: { id: user.id },
+      data: { passwordHash: newBcryptHash },
+    }).catch(() => {}); // non-blocking update
+  }
+
   return user;
 }
 
