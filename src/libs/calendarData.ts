@@ -286,6 +286,13 @@ class CalendarDataService {
           reason
           signature
           status
+          writtenAt
+          recipientTitle
+          fromDate
+          toDate
+          totalDays
+          contactAddress
+          contactPhone
           createdAt
         }
       }

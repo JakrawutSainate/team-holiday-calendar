@@ -122,72 +122,121 @@ export default function LeaveRequestClient() {
 
         if (!existingDoc) return;
 
-        // Calculate stats at load time so they reflect DB state
+        // Calculate stats at load time
         const stats = controller.calculatePastLeaveDays(dateParam);
 
-        // Try to parse reason as full LeaveFormData JSON (new format)
+        // --- Determine leave type ---
+        const lt = (existingDoc.leaveType === 'SICK' || existingDoc.leaveType === 'PERSONAL' || existingDoc.leaveType === 'MATERNITY')
+          ? existingDoc.leaveType as 'SICK' | 'PERSONAL' | 'MATERNITY'
+          : 'SICK';
+
+        // --- Primary: use explicit DB columns (new format) ---
+        const hasExplicitFields = existingDoc.fromDate || existingDoc.toDate || existingDoc.contactAddress !== undefined;
+
+        if (hasExplicitFields) {
+          const td = existingDoc.totalDays || 1;
+          // Try to get stats from JSON reason if available
+          let savedSick = stats.SICK, savedPersonal = stats.PERSONAL, savedMat = stats.MATERNITY;
+          try {
+            const parsed = JSON.parse(existingDoc.reason || 'null');
+            if (parsed?.stats) {
+              if (parsed.stats.sick?.taken    !== undefined) savedSick     = Number(parsed.stats.sick.taken);
+              if (parsed.stats.personal?.taken !== undefined) savedPersonal = Number(parsed.stats.personal.taken);
+              if (parsed.stats.maternity?.taken !== undefined) savedMat    = Number(parsed.stats.maternity.taken);
+            }
+          } catch { /* no stats in JSON */ }
+
+          // Parse fullName/position/department/reasonText from JSON if available
+          let jsonFullName = '', jsonPosition = '', jsonDepartment = '', jsonReasonText = '';
+          try {
+            const parsed = JSON.parse(existingDoc.reason || 'null');
+            if (parsed && typeof parsed === 'object') {
+              jsonFullName    = parsed.fullName    || '';
+              jsonPosition    = parsed.position    || '';
+              jsonDepartment  = parsed.department  || '';
+              jsonReasonText  = parsed.reasonText  || '';
+            }
+          } catch { /* use DB fields instead */ }
+
+          setDocView({
+            writtenAt:       existingDoc.writtenAt      || 'กรุงเทพมหานคร',
+            recipientTitle:  existingDoc.recipientTitle || 'หัวหน้างาน',
+            fullName:        jsonFullName  || existingDoc.userName   || user.name       || '',
+            position:        jsonPosition  || existingDoc.title      || user.title      || '',
+            department:      jsonDepartment|| existingDoc.department || user.department || '',
+            leaveType:       lt,
+            reasonText:      jsonReasonText,
+            fromDate:        existingDoc.fromDate  || dateParam,
+            toDate:          existingDoc.toDate    || dateParam,
+            totalDays:       td,
+            contactAddress:  existingDoc.contactAddress || '',
+            contactPhone:    existingDoc.contactPhone   || '',
+            signature:       existingDoc.signature || savedSignature,
+            sickTaken:       savedSick,
+            personalTaken:   savedPersonal,
+            maternityTaken:  savedMat,
+            currentSick:     lt === 'SICK'     ? td : 0,
+            currentPersonal: lt === 'PERSONAL' ? td : 0,
+            currentMaternity:lt === 'MATERNITY'? td : 0,
+          });
+          return;
+        }
+
+        // --- Fallback: parse full JSON reason (submitted after abebf1d but before db push) ---
         try {
           const parsed = JSON.parse(existingDoc.reason || 'null');
           if (parsed && typeof parsed === 'object' && parsed.leaveType) {
-            // --- Full JSON format (submitted with new code) ---
-            const lt = (parsed.leaveType === 'SICK' || parsed.leaveType === 'PERSONAL' || parsed.leaveType === 'MATERNITY')
-              ? parsed.leaveType as 'SICK' | 'PERSONAL' | 'MATERNITY'
-              : 'SICK';
             const td = Number(parsed.totalDays) || 1;
-            const savedSick    = parsed.stats?.sick?.taken    !== undefined ? Number(parsed.stats.sick.taken)    : stats.SICK;
-            const savedPersonal= parsed.stats?.personal?.taken !== undefined ? Number(parsed.stats.personal.taken): stats.PERSONAL;
-            const savedMat     = parsed.stats?.maternity?.taken !== undefined ? Number(parsed.stats.maternity.taken): stats.MATERNITY;
+            const savedSick     = parsed.stats?.sick?.taken     !== undefined ? Number(parsed.stats.sick.taken)     : stats.SICK;
+            const savedPersonal = parsed.stats?.personal?.taken !== undefined ? Number(parsed.stats.personal.taken) : stats.PERSONAL;
+            const savedMat      = parsed.stats?.maternity?.taken !== undefined ? Number(parsed.stats.maternity.taken): stats.MATERNITY;
             setDocView({
-              writtenAt:      parsed.writtenAt      || 'กรุงเทพมหานคร',
-              recipientTitle: parsed.recipientTitle || 'หัวหน้างาน',
-              fullName:       parsed.fullName       || existingDoc.userName || user.name || '',
-              position:       parsed.position       || existingDoc.title    || user.title || '',
-              department:     parsed.department     || existingDoc.department || user.department || '',
-              leaveType:      lt,
-              reasonText:     parsed.reasonText     || '',
-              fromDate:       parsed.fromDate       || dateParam,
-              toDate:         parsed.toDate         || dateParam,
-              totalDays:      td,
-              contactAddress: parsed.contactAddress || '',
-              contactPhone:   parsed.contactPhone   || '',
-              signature:      existingDoc.signature || savedSignature,
-              sickTaken:      savedSick,
-              personalTaken:  savedPersonal,
-              maternityTaken: savedMat,
-              currentSick:    lt === 'SICK'     ? td : 0,
-              currentPersonal:lt === 'PERSONAL' ? td : 0,
-              currentMaternity: lt === 'MATERNITY' ? td : 0,
+              writtenAt:       parsed.writtenAt      || 'กรุงเทพมหานคร',
+              recipientTitle:  parsed.recipientTitle || 'หัวหน้างาน',
+              fullName:        parsed.fullName       || existingDoc.userName   || user.name       || '',
+              position:        parsed.position       || existingDoc.title      || user.title      || '',
+              department:      parsed.department     || existingDoc.department || user.department || '',
+              leaveType:       lt,
+              reasonText:      parsed.reasonText     || '',
+              fromDate:        parsed.fromDate       || dateParam,
+              toDate:          parsed.toDate         || dateParam,
+              totalDays:       td,
+              contactAddress:  parsed.contactAddress || '',
+              contactPhone:    parsed.contactPhone   || '',
+              signature:       existingDoc.signature || savedSignature,
+              sickTaken:       savedSick,
+              personalTaken:   savedPersonal,
+              maternityTaken:  savedMat,
+              currentSick:     lt === 'SICK'     ? td : 0,
+              currentPersonal: lt === 'PERSONAL' ? td : 0,
+              currentMaternity:lt === 'MATERNITY'? td : 0,
             });
-          } else {
-            throw new Error('not full JSON');
+            return;
           }
-        } catch {
-          // --- Fallback: plain text reason (submitted with old code) ---
-          const lt = (existingDoc.leaveType === 'SICK' || existingDoc.leaveType === 'PERSONAL' || existingDoc.leaveType === 'MATERNITY')
-            ? existingDoc.leaveType as 'SICK' | 'PERSONAL' | 'MATERNITY'
-            : 'SICK';
-          setDocView({
-            writtenAt:      'กรุงเทพมหานคร',
-            recipientTitle: 'หัวหน้างาน',
-            fullName:       existingDoc.userName   || user.name       || '',
-            position:       existingDoc.title      || user.title      || '',
-            department:     existingDoc.department || user.department || '',
-            leaveType:      lt,
-            reasonText:     existingDoc.reason || '',
-            fromDate:       dateParam,
-            toDate:         dateParam,
-            totalDays:      1,
-            contactAddress: '',
-            contactPhone:   '',
-            signature:      existingDoc.signature || savedSignature,
-            sickTaken:      stats.SICK,
-            personalTaken:  stats.PERSONAL,
-            maternityTaken: stats.MATERNITY,
-            currentSick:    lt === 'SICK'     ? 1 : 0,
-            currentPersonal:lt === 'PERSONAL' ? 1 : 0,
-            currentMaternity: lt === 'MATERNITY' ? 1 : 0,
-          });
-        }
+        } catch { /* fall through to plain text */ }
+
+        // --- Last resort: plain text reason (oldest records) ---
+        setDocView({
+          writtenAt:       'กรุงเทพมหานคร',
+          recipientTitle:  'หัวหน้างาน',
+          fullName:        existingDoc.userName   || user.name       || '',
+          position:        existingDoc.title      || user.title      || '',
+          department:      existingDoc.department || user.department || '',
+          leaveType:       lt,
+          reasonText:      existingDoc.reason || '',
+          fromDate:        dateParam,
+          toDate:          dateParam,
+          totalDays:       1,
+          contactAddress:  '',
+          contactPhone:    '',
+          signature:       existingDoc.signature || savedSignature,
+          sickTaken:       stats.SICK,
+          personalTaken:   stats.PERSONAL,
+          maternityTaken:  stats.MATERNITY,
+          currentSick:     lt === 'SICK'     ? 1 : 0,
+          currentPersonal: lt === 'PERSONAL' ? 1 : 0,
+          currentMaternity:lt === 'MATERNITY'? 1 : 0,
+        });
       });
     }
   }, [user?.id, dateParam, controller, savedSignature]);

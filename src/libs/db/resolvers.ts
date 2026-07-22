@@ -113,17 +113,32 @@ export async function resolveGraphQL(
     }
 
     let parsedLeaveType = 'COMPENSATORY';
-    // Store full JSON in reason so the leave request page can restore all form fields
+    // Store full JSON in reason AND in dedicated columns for reliable restoration
     let parsedReason = (variables.reason as string) || '';
     let parsedSignature = (variables.signatureImage as string) || freshUser.savedSignature || '';
     const attachmentImage = (variables.attachmentImage as string) || null;
+
+    // Explicit fields parsed from the JSON form data
+    let parsedWrittenAt: string | null = null;
+    let parsedRecipientTitle: string | null = null;
+    let parsedFromDate: string | null = null;
+    let parsedToDate: string | null = null;
+    let parsedTotalDays: number | null = null;
+    let parsedContactAddress: string | null = null;
+    let parsedContactPhone: string | null = null;
 
     try {
       if (variables.reason) {
         const data = JSON.parse(variables.reason as string);
         if (data && typeof data === 'object') {
-          if (data.leaveType) parsedLeaveType = data.leaveType;
-          // Keep parsedReason as the full JSON string so we can restore all fields later
+          if (data.leaveType)       parsedLeaveType      = data.leaveType;
+          if (data.writtenAt)       parsedWrittenAt      = data.writtenAt;
+          if (data.recipientTitle)  parsedRecipientTitle = data.recipientTitle;
+          if (data.fromDate)        parsedFromDate       = data.fromDate;
+          if (data.toDate)          parsedToDate         = data.toDate;
+          if (data.totalDays)       parsedTotalDays      = Number(data.totalDays);
+          if (data.contactAddress !== undefined) parsedContactAddress = data.contactAddress;
+          if (data.contactPhone   !== undefined) parsedContactPhone   = data.contactPhone;
         }
       }
     } catch (e) {
@@ -147,6 +162,13 @@ export async function resolveGraphQL(
         signature: parsedSignature,
         status: 'APPROVED',
         attachment: attachmentImage,
+        writtenAt: parsedWrittenAt,
+        recipientTitle: parsedRecipientTitle,
+        fromDate: parsedFromDate,
+        toDate: parsedToDate,
+        totalDays: parsedTotalDays,
+        contactAddress: parsedContactAddress,
+        contactPhone: parsedContactPhone,
       },
     });
 
