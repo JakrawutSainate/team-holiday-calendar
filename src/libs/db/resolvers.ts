@@ -113,6 +113,7 @@ export async function resolveGraphQL(
     }
 
     let parsedLeaveType = 'COMPENSATORY';
+    // Store full JSON in reason so the leave request page can restore all form fields
     let parsedReason = (variables.reason as string) || '';
     let parsedSignature = (variables.signatureImage as string) || freshUser.savedSignature || '';
     const attachmentImage = (variables.attachmentImage as string) || null;
@@ -122,11 +123,11 @@ export async function resolveGraphQL(
         const data = JSON.parse(variables.reason as string);
         if (data && typeof data === 'object') {
           if (data.leaveType) parsedLeaveType = data.leaveType;
-          if (data.reasonText) parsedReason = data.reasonText;
+          // Keep parsedReason as the full JSON string so we can restore all fields later
         }
       }
     } catch (e) {
-      // not JSON
+      // not JSON — parsedReason stays as plain string
     }
 
     const event = await prisma.calendarEvent.create({
