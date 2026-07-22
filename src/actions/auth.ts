@@ -178,8 +178,8 @@ export async function runGraphQLAction(query: string, variables: Record<string, 
   const session = await getSession();
   const queryClean = query.trim();
 
-  // 1. Bypass Go backend for new queries not defined in Go
-  const shouldBypassBFF = false;
+  // 1. Bypass Go backend for operations to ensure all dynamic fields write & read directly from Neon Prisma DB
+  const shouldBypassBFF = true;
 
   let result: any = null;
 
