@@ -42,19 +42,12 @@ export default function LeavesClient() {
   useRealtimeSync(() => { if (user?.id) controller.loadState(user.id); });
 
   const handleCancelLeave = async (leave: CalendarEvent) => {
-    const isShiftClaim = leave.status === 'WEEKEND_WORK' || leave.status === 'HOLIDAY_WORK';
     const tokensRefunded = 1;
     const ok = await confirm({
-      title: isShiftClaim
-        ? (language === 'th' ? 'ยกเลิกการเคลมเข้าเวร?' : 'Cancel Shift Claim?')
-        : (language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?'),
-      text: isShiftClaim
-        ? (language === 'th'
-            ? `ยกเลิกการเคลมเข้าเวรวันที่ ${leave.date} ใช่หรือไม่?`
-            : `Cancel shift claim on ${leave.date}?`)
-        : (language === 'th'
-            ? `ยกเลิกการลาวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
-            : `Cancel your leave on ${leave.date} and refund ${tokensRefunded} token?`),
+      title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',
+      text: language === 'th'
+        ? `ยกเลิกการลาวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
+        : `Cancel your leave on ${leave.date} and refund ${tokensRefunded} token?`,
       confirmText: language === 'th' ? 'ยืนยันยกเลิก' : 'Confirm Cancel',
       cancelText: t('cancel'),
       variant: 'danger',
@@ -67,10 +60,10 @@ export default function LeavesClient() {
         setCurrentPage(maxPagesAfterDelete);
       }
       toast.success(
-        language === 'th' ? 'ยกเลิกสำเร็จ' : 'Cancelled Successfully',
-        { description: isShiftClaim
-            ? (language === 'th' ? `ยกเลิกการเคลมวันที่ ${leave.date} เรียบร้อยแล้ว` : `Cancelled claim for ${leave.date}`)
-            : (language === 'th' ? `คืน ${tokensRefunded} โทเค็นสะสมสำหรับวันที่ ${leave.date} เรียบร้อยแล้ว` : `Refunded ${tokensRefunded} token for ${leave.date}!`) }
+        language === 'th' ? 'ยกเลิกสำเร็จ' : 'Leave Cancelled',
+        { description: language === 'th'
+            ? `คืน ${tokensRefunded} โทเค็นสะสมสำหรับวันที่ ${leave.date} เรียบร้อยแล้ว`
+            : `Refunded ${tokensRefunded} token for ${leave.date}!` }
       );
     }
   };
@@ -188,8 +181,6 @@ export default function LeavesClient() {
                               <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-100 rounded-lg text-xs font-semibold">
                                 {leave.status === 'COMPENSATORY_OFF'
                                   ? (language === 'th' ? 'วันหยุดชดเชย' : 'Compensatory Off')
-                                  : leave.status === 'WEEKEND_WORK' || leave.status === 'HOLIDAY_WORK'
-                                  ? (language === 'th' ? 'เคลมเข้าเวรวันหยุด' : 'Shift Claim')
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
@@ -231,9 +222,7 @@ export default function LeavesClient() {
                                 onClick={() => handleCancelLeave(leave)}
                                 className="px-4 py-2 border border-zinc-200 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
                               >
-                                {leave.status === 'WEEKEND_WORK' || leave.status === 'HOLIDAY_WORK'
-                                  ? (language === 'th' ? 'ยกเลิกการเคลม' : 'Cancel Claim')
-                                  : (language === 'th' ? 'คืนโทเค็นและยกเลิก' : 'Refund & Cancel')}
+                                {language === 'th' ? 'คืนโทเค็นและยกเลิก' : 'Refund & Cancel'}
                               </button>
                             </td>
                           </tr>

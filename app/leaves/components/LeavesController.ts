@@ -56,10 +56,7 @@ export class LeavesController {
       const userLeaves = combined.filter(
         (e: CalendarEvent) =>
           e.userId === effectiveUserId &&
-          (e.status === 'COMPENSATORY_OFF' ||
-           e.status === 'NORMAL' ||
-           e.status === 'WEEKEND_WORK' ||
-           e.status === 'HOLIDAY_WORK')
+          (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
       );
       userLeaves.sort((a: CalendarEvent, b: CalendarEvent) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
