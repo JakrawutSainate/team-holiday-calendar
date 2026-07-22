@@ -170,6 +170,10 @@ export async function resolveGraphQL(
     let parsedSignature = (variables.signatureImage as string) || freshUser.savedSignature || '';
     const attachmentImage = (variables.attachmentImage as string) || null;
 
+    let parsedFullName = authUser.name;
+    let parsedDepartment = authUser.department || '';
+    let parsedPosition = authUser.title || '';
+
     // Explicit fields parsed from the JSON form data
     let parsedWrittenAt: string | null = null;
     let parsedRecipientTitle: string | null = null;
@@ -183,6 +187,9 @@ export async function resolveGraphQL(
       if (variables.reason) {
         const data = JSON.parse(variables.reason as string);
         if (data && typeof data === 'object') {
+          if (data.fullName)        parsedFullName       = data.fullName;
+          if (data.department)      parsedDepartment     = data.department;
+          if (data.position)        parsedPosition       = data.position;
           if (data.leaveType)       parsedLeaveType      = data.leaveType;
           if (data.writtenAt)       parsedWrittenAt      = data.writtenAt;
           if (data.recipientTitle)  parsedRecipientTitle = data.recipientTitle;
@@ -200,12 +207,12 @@ export async function resolveGraphQL(
     }
 
     const signatureType = (variables.signatureType as string) || 'SAVED';
-    const signatureText = (variables.signatureText as string) || authUser.name;
+    const signatureText = (variables.signatureText as string) || parsedFullName || authUser.name;
 
     const event = await prisma.calendarEvent.create({
       data: {
         userId: authUser.id,
-        userName: authUser.name,
+        userName: parsedFullName || authUser.name,
         date,
         status: 'COMPENSATORY_OFF',
         leaveRequest: {
@@ -221,16 +228,16 @@ export async function resolveGraphQL(
       include: { leaveRequest: true },
     });
 
-    // Create LeaveDocument record in DB
+    // Create LeaveDocument record in DB with custom edited user info
     await prisma.leaveDocument.create({
       data: {
         userId: authUser.id,
-        userName: authUser.name,
-        department: authUser.department || '',
-        title: authUser.title || '',
+        userName: parsedFullName || authUser.name,
+        department: parsedDepartment || authUser.department || '',
+        title: parsedPosition || authUser.title || '',
         leaveDate: date,
         leaveType: parsedLeaveType,
-        reason: parsedReasonText || rawReason,
+        reason: rawReason,
         signature: parsedSignature,
         status: 'APPROVED',
         attachment: attachmentImage,
