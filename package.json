@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/patch-ts.mjs && prisma generate",
     "dev": "next dev",
     "dev:backend": "cd backend && go run api/index.go",
     "build": "next build",
