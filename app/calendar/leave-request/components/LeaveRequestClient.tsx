@@ -50,6 +50,7 @@ export default function LeaveRequestClient() {
   const [personalTakenOverride, setPersonalTakenOverride] = useState<number | null>(null);
   const [maternityTakenOverride, setMaternityTakenOverride] = useState<number | null>(null);
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
+  const [docSignature, setDocSignature] = useState<string | null>(null); // Signature stored in DB at time of submission
   const [loadingSignature, setLoadingSignature] = useState(true);
   const [viewOnly, setViewOnly] = useState(false);
 
@@ -98,8 +99,40 @@ export default function LeaveRequestClient() {
           if (existingEvent || existingDoc) {
             setViewOnly(true);
             if (existingDoc) {
-              setReasonText(existingDoc.reason || '');
-              if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
+              // Restore signature from DB
+              if (existingDoc.signature) setDocSignature(existingDoc.signature);
+              // Try to parse reason as full LeaveFormData JSON
+              try {
+                const parsed = JSON.parse(existingDoc.reason || '');
+                if (parsed && typeof parsed === 'object') {
+                  if (parsed.leaveType) setLeaveType(parsed.leaveType);
+                  if (parsed.reasonText !== undefined) setReasonText(parsed.reasonText);
+                  if (parsed.writtenAt) setWrittenAt(parsed.writtenAt);
+                  if (parsed.recipientTitle) setRecipientTitle(parsed.recipientTitle);
+                  if (parsed.fullName) setFullName(parsed.fullName);
+                  if (parsed.position) setPosition(parsed.position);
+                  if (parsed.department) setDepartment(parsed.department);
+                  if (parsed.fromDate) setFromDate(parsed.fromDate);
+                  if (parsed.toDate) setToDate(parsed.toDate);
+                  if (parsed.totalDays) setTotalDays(Number(parsed.totalDays));
+                  if (parsed.contactAddress !== undefined) setContactAddress(parsed.contactAddress);
+                  if (parsed.contactPhone !== undefined) setContactPhone(parsed.contactPhone);
+                  // Restore stats overrides if present
+                  if (parsed.stats) {
+                    if (parsed.stats.sick?.taken !== undefined) setSickTakenOverride(Number(parsed.stats.sick.taken));
+                    if (parsed.stats.personal?.taken !== undefined) setPersonalTakenOverride(Number(parsed.stats.personal.taken));
+                    if (parsed.stats.maternity?.taken !== undefined) setMaternityTakenOverride(Number(parsed.stats.maternity.taken));
+                  }
+                } else {
+                  // Fallback: plain text reason
+                  if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
+                  setReasonText(existingDoc.reason || '');
+                }
+              } catch {
+                // Fallback: plain text reason
+                if (existingDoc.leaveType) setLeaveType(existingDoc.leaveType);
+                setReasonText(existingDoc.reason || '');
+              }
             }
           }
         }
@@ -200,9 +233,9 @@ export default function LeaveRequestClient() {
   // Calculate past leave days based on fiscal year in DB
   const calculatedStats = controller.calculatePastLeaveDays(fromDate);
 
-  const sickTaken = calculatedStats.SICK;
-  const personalTaken = calculatedStats.PERSONAL;
-  const maternityTaken = calculatedStats.MATERNITY;
+  const sickTaken = sickTakenOverride !== null ? sickTakenOverride : calculatedStats.SICK;
+  const personalTaken = personalTakenOverride !== null ? personalTakenOverride : calculatedStats.PERSONAL;
+  const maternityTaken = maternityTakenOverride !== null ? maternityTakenOverride : calculatedStats.MATERNITY;
 
   const currentSick = leaveType === 'SICK' ? totalDays : 0;
   const currentPersonal = leaveType === 'PERSONAL' ? totalDays : 0;
@@ -778,10 +811,13 @@ export default function LeaveRequestClient() {
                       <div className="flex flex-col items-center space-y-1">
                         <span>ขอแสดงความนับถือ</span>
                         <div className="h-12 flex items-center justify-center py-1 min-w-[140px]">
-                          {savedSignature && savedSignature.startsWith('data:image') ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain" />
-                          ) : null}
+                          {(() => {
+                            const sigSrc = (viewOnly && docSignature) ? docSignature : savedSignature;
+                            return sigSrc && sigSrc.startsWith('data:image') ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={sigSrc} alt="Signature" className="max-h-full object-contain" />
+                            ) : null;
+                          })()}
                         </div>
                         <div className="flex items-end gap-1">
                           <span>(ลงชื่อ)</span>
