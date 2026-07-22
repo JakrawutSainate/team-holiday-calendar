@@ -145,8 +145,26 @@ export async function resolveGraphQL(
       // not JSON — parsedReason stays as plain string
     }
 
+    const signatureType = (variables.signatureType as string) || 'SAVED';
+    const signatureText = (variables.signatureText as string) || authUser.name;
+
     const event = await prisma.calendarEvent.create({
-      data: { userId: authUser.id, userName: authUser.name, date, status: 'COMPENSATORY_OFF' },
+      data: {
+        userId: authUser.id,
+        userName: authUser.name,
+        date,
+        status: 'COMPENSATORY_OFF',
+        leaveRequest: {
+          create: {
+            reason: parsedReason,
+            signatureType,
+            signatureText,
+            signatureImage: parsedSignature,
+            attachmentImage,
+          },
+        },
+      },
+      include: { leaveRequest: true },
     });
 
     // Create LeaveDocument record in DB
