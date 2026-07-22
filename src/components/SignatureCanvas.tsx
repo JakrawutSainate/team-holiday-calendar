@@ -29,7 +29,7 @@ export default function SignatureCanvas({
     if (!ctx) return;
 
     // Reset and config
-    ctx.strokeStyle = '#0f172a'; // slate-900
+    ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';

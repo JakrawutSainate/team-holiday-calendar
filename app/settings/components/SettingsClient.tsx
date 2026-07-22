@@ -156,7 +156,7 @@ export default function SettingsClient() {
                         <img
                           src={savedSignature}
                           alt="Saved Signature"
-                          className="max-h-full max-w-full object-contain filter invert"
+                          className="max-h-full max-w-full object-contain"
                         />
                       ) : (
                         <span className="text-sm text-zinc-400 font-medium">ยังไม่มีลายเซ็นที่บันทึก (No saved signature)</span>

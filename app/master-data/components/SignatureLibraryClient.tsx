@@ -50,7 +50,7 @@ export default function SignatureLibraryClient() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#1e3a5f';
+        ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
       }, 100);
@@ -65,7 +65,7 @@ export default function SignatureLibraryClient() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!signatureText.trim()) return;
-    ctx.fillStyle = '#1e3a5f';
+    ctx.fillStyle = '#000000';
     ctx.font = `52px 'Dancing Script', cursive`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -244,7 +244,7 @@ export default function SignatureLibraryClient() {
                             <img
                               src={m.savedSignature}
                               alt={`${m.name}'s Signature`}
-                              className="max-h-full max-w-full object-contain filter invert opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-200"
+                              className="max-h-full max-w-full object-contain opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-200"
                             />
                           ) : (
                             <span className="text-xs text-zinc-400 font-bold">
@@ -315,7 +315,7 @@ export default function SignatureLibraryClient() {
                       <img
                         src={currentUserMember.savedSignature}
                         alt="Your Saved Signature"
-                        className="max-h-full max-w-full object-contain filter invert opacity-95"
+                        className="max-h-full max-w-full object-contain opacity-95"
                       />
                     ) : (
                       <div className="text-center space-y-3">

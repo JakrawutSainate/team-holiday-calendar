@@ -140,7 +140,7 @@ export default function LeaveRequestClient() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#1e3a5f';
+        ctx.strokeStyle = '#000000';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
       }, 100);
@@ -780,7 +780,7 @@ export default function LeaveRequestClient() {
                         <div className="h-12 flex items-center justify-center py-1 min-w-[140px]">
                           {savedSignature && savedSignature.startsWith('data:image') ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain filter invert" />
+                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain" />
                           ) : null}
                         </div>
                         <div className="flex items-end gap-1">

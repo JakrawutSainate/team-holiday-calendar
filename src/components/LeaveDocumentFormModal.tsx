@@ -269,7 +269,7 @@ export default function LeaveDocumentFormModal({
                     <img
                       src={savedSignature}
                       alt="Saved Signature"
-                      className="max-h-full max-w-full object-contain filter invert"
+                      className="max-h-full max-w-full object-contain"
                     />
                   </div>
                 ) : (
