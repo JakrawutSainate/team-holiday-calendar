@@ -6,10 +6,12 @@ import { Pool } from '@neondatabase/serverless';
 const globalForPrisma = globalThis as unknown as { _prisma: PrismaClient | undefined };
 
 function makePrismaClient() {
-  const connStr = process.env.DATABASE_URL;
+  let connStr = process.env.DATABASE_URL;
   if (!connStr) {
     throw new Error('DATABASE_URL is not set. Cannot connect to database.');
   }
+  // Sanitize connection string for @neondatabase/serverless Pool
+  connStr = connStr.replace(/&channel_binding=[^&]*/g, '').replace(/\?channel_binding=[^&]*&?/g, '?');
   const neonPool = new Pool({ connectionString: connStr });
   const adapter = new PrismaNeon(neonPool as any);
   return new PrismaClient({ adapter });
