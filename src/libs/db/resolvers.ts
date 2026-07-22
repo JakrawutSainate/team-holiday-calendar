@@ -71,6 +71,57 @@ export async function resolveGraphQL(
     return { getTokenTransactions: txns };
   }
 
+  if (q.includes('getUserTokenQueue')) {
+    const authUser = await requireAuth();
+    const earnTxns = await prisma.tokenTransaction.findMany({
+      where: { userId: authUser.id, type: 'EARN' },
+      orderBy: { createdAt: 'asc' },
+    });
+    const spendTxns = await prisma.tokenTransaction.findMany({
+      where: { userId: authUser.id, type: 'SPEND' },
+    });
+    const totalSpent = spendTxns.reduce((acc, t) => acc + (t.amount || 1.0), 0);
+
+    const holidays = await prisma.holiday.findMany();
+    const holidayMap = new Map<string, string>();
+    holidays.forEach(h => holidayMap.set(h.date, h.nameTh));
+
+    let remainingSpent = totalSpent;
+    const queue: Array<{
+      id: string;
+      earnedDate: string;
+      description: string;
+      festivalName: string;
+      queueIndex: number;
+      totalAvailable: number;
+    }> = [];
+
+    let availableIndex = 0;
+    for (const earn of earnTxns) {
+      const earnAmount = earn.amount || 1.0;
+      if (remainingSpent >= earnAmount) {
+        remainingSpent -= earnAmount;
+      } else {
+        availableIndex++;
+        const earnedDate = earn.relatedDate || earn.createdAt.toISOString().split('T')[0];
+        const festivalName = holidayMap.get(earnedDate) || earn.description || 'วันทำงานค้ำประกันวันหยุด';
+        queue.push({
+          id: earn.id,
+          earnedDate,
+          description: earn.description,
+          festivalName,
+          queueIndex: availableIndex,
+          totalAvailable: 0,
+        });
+      }
+    }
+
+    const totalCount = queue.length;
+    const resultQueue = queue.map(item => ({ ...item, totalAvailable: totalCount }));
+
+    return { getUserTokenQueue: resultQueue };
+  }
+
   // ─── MUTATIONS ─────────────────────────────────────────────────────────────
 
   if (q.includes('claimShift')) {

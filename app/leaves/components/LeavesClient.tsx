@@ -184,9 +184,23 @@ export default function LeavesClient() {
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
-                            <td className="p-4 text-base text-zinc-500">
-                              {leave.details ||
-                                (language === 'th' ? 'ยื่นขอวันลาหยุดพักผ่อน' : 'Compensatory leave')}
+                            <td className="p-4 text-base text-zinc-600 font-medium">
+                              {(() => {
+                                let reasonText = leave.details || '';
+                                if (leave.leaveRequest?.reason) {
+                                  const raw = leave.leaveRequest.reason;
+                                  if (raw.trim().startsWith('{')) {
+                                    try {
+                                      const parsed = JSON.parse(raw);
+                                      if (parsed.reasonText) reasonText = parsed.reasonText;
+                                      else if (parsed.reason && !parsed.reason.trim().startsWith('{')) reasonText = parsed.reason;
+                                    } catch {}
+                                  } else {
+                                    reasonText = raw;
+                                  }
+                                }
+                                return reasonText || (language === 'th' ? 'ยื่นขอวันลาหยุดพักผ่อน' : 'Compensatory leave');
+                              })()}
                             </td>
                             <td className="p-4 text-base">
                               <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-lg text-xs font-semibold flex items-center gap-1 w-fit">

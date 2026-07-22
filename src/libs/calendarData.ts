@@ -76,6 +76,15 @@ export interface BOHoliday {
   nameTh: string;
 }
 
+export interface UserTokenQueueItem {
+  id: string;
+  earnedDate: string;
+  description: string;
+  festivalName: string;
+  queueIndex: number;
+  totalAvailable: number;
+}
+
 export const botHolidays2026: BOHoliday[] = [
   { date: '2026-01-01', nameEn: "New Year's Day", nameTh: 'วันขึ้นปีใหม่' },
   { date: '2026-01-02', nameEn: 'Additional special holiday', nameTh: 'วันหยุดพิเศษเพิ่มเติม' },
@@ -330,6 +339,13 @@ class CalendarDataService {
     return this.txnFlight;
   }
 
+  public async getUserTokenQueue(): Promise<UserTokenQueueItem[]> {
+    const data = await fetchGraphQL(`
+      query { getUserTokenQueue { id earnedDate description festivalName queueIndex totalAvailable } }
+    `);
+    return data?.getUserTokenQueue ?? [];
+  }
+
   // ─── Mutations (each busts the relevant cache slices) ─────────────────────
 
   public async claimShift(date: string, status: string, details: string): Promise<unknown> {
@@ -448,6 +464,9 @@ export const getAllCapacitySettings = (): Promise<CapacitySetting[]> =>
 
 export const getTokenTransactions = (): Promise<TokenTransaction[]> =>
   calendarDataService.getTokenTransactions();
+
+export const getUserTokenQueue = (): Promise<UserTokenQueueItem[]> =>
+  calendarDataService.getUserTokenQueue();
 
 
 

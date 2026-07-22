@@ -7,7 +7,7 @@ import { useAuth } from '@/src/components/AuthContext';
 import { useTranslation } from '@/src/components/LanguageContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { LeaveRequestController } from './LeaveRequestController';
-import { cancelLeaveMutation } from '@/src/libs/calendarData';
+import { cancelLeaveMutation, getUserTokenQueue, UserTokenQueueItem } from '@/src/libs/calendarData';
 import { LeaveRequestValidator } from '../schema';
 import { LeaveFormData, LeaveStats } from '@/src/types/leave';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
@@ -72,6 +72,13 @@ export default function LeaveRequestClient() {
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [loadingSignature, setLoadingSignature] = useState(true);
   const [viewOnly, setViewOnly] = useState(false);
+  const [tokenQueue, setTokenQueue] = useState<UserTokenQueueItem[]>([]);
+
+  useEffect(() => {
+    if (user?.id) {
+      getUserTokenQueue().then((q) => setTokenQueue(q)).catch(() => {});
+    }
+  }, [user]);
 
   const [controller] = useState<LeaveRequestController>(
     () => new LeaveRequestController(user?.id || '', () => setTick((tick) => tick + 1))
@@ -677,6 +684,35 @@ export default function LeaveRequestClient() {
                 )}
               </div>
             </div>
+
+            {/* Token Source FIFO Information Banner */}
+            {!viewOnly && tokenQueue.length > 0 && (
+              <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 shadow-xs space-y-2.5 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                    <span className="material-symbols-outlined text-amber-600 text-lg">confirmation_number</span>
+                    <span>{language === 'th' ? 'ข้อมูล Token ที่จะถูกนำมาใช้ (ตัดตามลำดับ FIFO - เก่าสุดก่อน)' : 'Consumed Token Origin (FIFO Queue)'}</span>
+                  </div>
+                  <span className="text-[11px] font-extrabold text-amber-800 bg-amber-100 border border-amber-200 px-3 py-0.5 rounded-full">
+                    {language === 'th' ? `Token คิวที่ 1 จาก ${tokenQueue[0].totalAvailable}` : `Queue 1 of ${tokenQueue[0].totalAvailable}`}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white p-3.5 rounded-xl border border-amber-100/80">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 font-bold block uppercase tracking-wider">
+                      {language === 'th' ? 'วันที่ทำงานค้ำประกันที่ได้ Token' : 'Token Earned Date'}
+                    </span>
+                    <span className="font-bold text-zinc-900 mt-0.5 block">{formatDateLabel(tokenQueue[0].earnedDate)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 font-bold block uppercase tracking-wider">
+                      {language === 'th' ? 'ชื่อวันหยุด / เทศกาลที่ทำงานค้ำประกัน' : 'Holiday / Festival Name'}
+                    </span>
+                    <span className="font-bold text-amber-800 mt-0.5 block">{tokenQueue[0].festivalName}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className={viewOnly ? "flex justify-center" : "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"}>
               
