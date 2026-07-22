@@ -414,51 +414,13 @@ export default function LeaveRequestClient() {
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {viewOnly ? (
-                  <>
-                    <button
-                      onClick={() => window.print()}
-                      className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-0"
-                    >
-                      <span className="material-symbols-outlined text-sm">print</span>
-                      <span>{language === 'th' ? 'พิมพ์ใบลา' : 'Print'}</span>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        const existingEvent = controller.getAllEvents().find(
-                          e => e.userId === user?.id && e.date === fromDate && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
-                        );
-                        if (!existingEvent) {
-                          toast.error(language === 'th' ? 'ไม่พบรายการวันลา' : 'Leave event not found');
-                          return;
-                        }
-                        if (confirm(language === 'th' ? 'คุณต้องการยกเลิกการลานี้ และรับคืน 1 โทเค็นหรือไม่?' : 'Are you sure you want to cancel this leave and regain 1 token?')) {
-                          try {
-                            await cancelLeaveMutation(existingEvent.id);
-                            toast.success(language === 'th' ? 'ยกเลิกวันลาสำเร็จ' : 'Leave Cancelled', {
-                              description: language === 'th' ? 'คืน +1 โทเค็นเข้าสู่บัญชีของคุณแล้ว' : 'Refunded +1 token to your account!'
-                            });
-                            setViewOnly(false);
-                            router.push('/calendar');
-                          } catch (err: any) {
-                            toast.error(err.message || 'Failed to cancel leave');
-                          }
-                        }
-                      }}
-                      className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                      <span>{language === 'th' ? 'ยกเลิกวันลา (คืน 1 โทเค็น)' : 'Cancel Leave (+1 Token)'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setViewOnly(false)}
-                      className="px-3.5 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-sm">add</span>
-                      <span>{language === 'th' ? 'ยื่นแบบใหม่' : 'Create New'}</span>
-                    </button>
-                  </>
+                  <button
+                    onClick={() => window.print()}
+                    className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-0"
+                  >
+                    <span className="material-symbols-outlined text-sm">print</span>
+                    <span>{language === 'th' ? 'พิมพ์ใบลา' : 'Print'}</span>
+                  </button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-[#fcf4e0] text-[#8b6914] px-4 py-2 rounded-xl border border-[#ebd8ad]">
                     <span className="material-symbols-outlined text-sm">toll</span>
@@ -816,9 +778,9 @@ export default function LeaveRequestClient() {
                       <div className="flex flex-col items-center space-y-1">
                         <span>ขอแสดงความนับถือ</span>
                         <div className="h-12 flex items-center justify-center py-1 min-w-[140px]">
-                          {savedSignature ? (
+                          {savedSignature && savedSignature.startsWith('data:image') ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain" />
+                            <img src={savedSignature} alt="Signature" className="max-h-full object-contain filter invert" />
                           ) : null}
                         </div>
                         <div className="flex items-end gap-1">
