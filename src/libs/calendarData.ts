@@ -182,12 +182,14 @@ class CalendarDataService {
   private capacityCache: CacheEntry<CapacitySetting[]> | null = null;
   private txnCache: CacheEntry<TokenTransaction[]> | null = null;
   private allEventsCache: CacheEntry<CalendarEvent[]> | null = null;
+  private holidaysCache: CacheEntry<Array<{ id: string; date: string; nameTh: string; nameEn: string }>> | null = null;
 
   // In-flight Promises — prevent duplicate concurrent requests
   private membersFlight: Promise<TeamMember[]> | null = null;
   private capacityFlight: Promise<CapacitySetting[]> | null = null;
   private txnFlight: Promise<TokenTransaction[]> | null = null;
   private allEventsFlight: Promise<CalendarEvent[]> | null = null;
+  private holidaysFlight: Promise<Array<{ id: string; date: string; nameTh: string; nameEn: string }>> | null = null;
   private initialFlight: Promise<any> | null = null;
 
   private constructor() {}
@@ -211,6 +213,7 @@ class CalendarDataService {
     this.capacityCache = null;
     this.txnCache = null;
     this.allEventsCache = null;
+    this.holidaysCache = null;
     if (typeof window !== 'undefined') {
       try { localStorage.removeItem('swr_app_data'); } catch {}
     }
@@ -315,16 +318,34 @@ class CalendarDataService {
     return this.membersFlight;
   }
 
+  public async getHolidays(): Promise<Array<{ id: string; date: string; nameTh: string; nameEn: string }>> {
+    if (this.isFresh(this.holidaysCache)) return this.holidaysCache.data;
+    if (this.holidaysFlight) return this.holidaysFlight;
+
+    this.holidaysFlight = fetchGraphQL(`
+      query { getHolidays { id date nameTh nameEn } }
+    `).then(data => {
+      const result = data?.getHolidays ?? [];
+      this.holidaysCache = { data: result, expiresAt: Date.now() + this.TTL };
+      return result;
+    }).finally(() => { this.holidaysFlight = null; });
+
+    return this.holidaysFlight;
+  }
+
   /**
-   * Returns events for the given month, synthesising public holidays client-side.
+   * Returns events for the given month, synthesising public holidays client-side from Master Data.
    * The raw DB fetch is shared across all concurrent callers and cached for TTL seconds.
    */
   public async getCalendarEvents(year: number, month: number): Promise<CalendarEvent[]> {
     const prefix = `${year}-${month.toString().padStart(2, '0')}`;
-    const allRaw = await this.fetchAllRawEvents();
+    const [allRaw, holidays] = await Promise.all([
+      this.fetchAllRawEvents(),
+      this.getHolidays(),
+    ]);
 
     const dbEvents = allRaw.filter(e => e.date.startsWith(prefix));
-    const holidayEvents: CalendarEvent[] = botHolidays2026
+    const holidayEvents: CalendarEvent[] = holidays
       .filter(h => h.date.startsWith(prefix))
       .map((h, i) => ({
         id: `holiday-${h.date}-${i}`,
@@ -332,7 +353,7 @@ class CalendarDataService {
         userName: 'Holiday',
         date: h.date,
         status: 'PUBLIC_HOLIDAY' as const,
-        details: JSON.stringify({ en: h.nameEn, th: h.nameTh }),
+        details: JSON.stringify({ en: h.nameEn, th: h.nameTh, name: h.nameTh }),
       }));
 
     return [...dbEvents, ...holidayEvents];
@@ -527,6 +548,9 @@ export const getUserTokenQueue = (): Promise<UserTokenQueueItem[]> =>
 
 export const getInitialAppData = () =>
   calendarDataService.getInitialAppData();
+
+export const getHolidays = () =>
+  calendarDataService.getHolidays();
 
 export function getSWRAppCache() {
   if (typeof window === 'undefined') return null;

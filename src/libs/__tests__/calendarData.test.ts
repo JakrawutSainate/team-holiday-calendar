@@ -105,12 +105,15 @@ describe('CalendarDataService — inflight deduplication', () => {
   });
 
   it('concurrent getCalendarEvents for the same month share one raw-events fetch', async () => {
-    mockRun.mockResolvedValue({
-      data: {
-        getEvents: [
-          { id: 'e1', userId: 'u1', userName: 'Alice', date: '2026-06-10', status: 'NORMAL', details: null },
-        ],
-      },
+    mockRun.mockImplementation(async (query: string) => {
+      if (query.includes('getHolidays')) return { data: { getHolidays: [] } };
+      return {
+        data: {
+          getEvents: [
+            { id: 'e1', userId: 'u1', userName: 'Alice', date: '2026-06-10', status: 'NORMAL', details: null },
+          ],
+        },
+      };
     });
 
     const [june, juneAgain] = await Promise.all([
@@ -119,17 +122,20 @@ describe('CalendarDataService — inflight deduplication', () => {
     ]);
 
     expect(june).toEqual(juneAgain);
-    expect(mockRun).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledTimes(2); // 1 getEvents + 1 getHolidays
   });
 
   it('getCalendarEvents for two different months share one raw-events fetch', async () => {
-    mockRun.mockResolvedValue({
-      data: {
-        getEvents: [
-          { id: 'e1', userId: 'u1', userName: 'Alice', date: '2026-05-20', status: 'NORMAL', details: null },
-          { id: 'e2', userId: 'u1', userName: 'Alice', date: '2026-06-10', status: 'NORMAL', details: null },
-        ],
-      },
+    mockRun.mockImplementation(async (query: string) => {
+      if (query.includes('getHolidays')) return { data: { getHolidays: [] } };
+      return {
+        data: {
+          getEvents: [
+            { id: 'e1', userId: 'u1', userName: 'Alice', date: '2026-05-20', status: 'NORMAL', details: null },
+            { id: 'e2', userId: 'u1', userName: 'Alice', date: '2026-06-10', status: 'NORMAL', details: null },
+          ],
+        },
+      };
     });
 
     const [may, june] = await Promise.all([
@@ -139,7 +145,7 @@ describe('CalendarDataService — inflight deduplication', () => {
 
     expect(may.some(e => e.date.startsWith('2026-05'))).toBe(true);
     expect(june.some(e => e.date.startsWith('2026-06'))).toBe(true);
-    expect(mockRun).toHaveBeenCalledTimes(1); // one shared fetch
+    expect(mockRun).toHaveBeenCalledTimes(2); // 1 getEvents + 1 getHolidays
   });
 });
 
