@@ -6,15 +6,29 @@ import { Pool } from '@neondatabase/serverless';
 const globalForPrisma = globalThis as unknown as { _prisma: PrismaClient | undefined };
 
 function makePrismaClient() {
-  let connStr = process.env.DATABASE_URL;
+  let connStr = process.env.DATABASE_URL || '';
+  // Clean surrounding quotes or whitespace if present
+  connStr = connStr.trim().replace(/^["']|["']$/g, '');
+
   if (!connStr) {
-    throw new Error('DATABASE_URL is not set. Cannot connect to database.');
+    console.warn('DATABASE_URL is missing in process.env.');
+    return new PrismaClient();
   }
-  // Sanitize connection string for @neondatabase/serverless Pool
-  connStr = connStr.replace(/&channel_binding=[^&]*/g, '').replace(/\?channel_binding=[^&]*&?/g, '?');
-  const neonPool = new Pool({ connectionString: connStr });
-  const adapter = new PrismaNeon(neonPool as any);
-  return new PrismaClient({ adapter });
+
+  // Remove channel_binding which can break Neon serverless Pool parsing
+  const sanitizedStr = connStr
+    .replace(/&channel_binding=[^&]*/g, '')
+    .replace(/\?channel_binding=[^&]*&?/g, '?')
+    .replace(/\?$/, '');
+
+  try {
+    const neonPool = new Pool({ connectionString: sanitizedStr });
+    const adapter = new PrismaNeon(neonPool as any);
+    return new PrismaClient({ adapter });
+  } catch (err) {
+    console.warn('Failed to initialize PrismaNeon adapter, using default PrismaClient:', err);
+    return new PrismaClient();
+  }
 }
 
 // Lazy singleton — only created on first access, never at module-load time.
