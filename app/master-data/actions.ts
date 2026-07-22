@@ -244,3 +244,84 @@ export async function deleteJobTitleAction(id: string): Promise<{ success: boole
     return { success: false, error: err.message || 'Failed to delete job title' };
   }
 }
+
+export interface HolidayItem {
+  id: string;
+  date: string;
+  nameTh: string;
+  nameEn: string;
+}
+
+export async function fetchHolidaysAction(): Promise<HolidayItem[]> {
+  try {
+    const res = await runGraphQLAction(`
+      query {
+        getHolidays {
+          id
+          date
+          nameTh
+          nameEn
+        }
+      }
+    `);
+    return res?.data?.getHolidays ?? [];
+  } catch (err) {
+    console.error('fetchHolidaysAction error:', err);
+    return [];
+  }
+}
+
+export async function createHolidayAction(date: string, nameTh: string, nameEn: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($date: String!, $nameTh: String!, $nameEn: String!) {
+        createHoliday(date: $date, nameTh: $nameTh, nameEn: $nameEn) {
+          id
+          date
+        }
+      }
+    `, { date, nameTh, nameEn });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to create holiday' };
+  }
+}
+
+export async function updateHolidayAction(id: string, date: string, nameTh: string, nameEn: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!, $date: String!, $nameTh: String!, $nameEn: String!) {
+        updateHoliday(id: $id, date: $date, nameTh: $nameTh, nameEn: $nameEn) {
+          id
+          date
+        }
+      }
+    `, { id, date, nameTh, nameEn });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to update holiday' };
+  }
+}
+
+export async function deleteHolidayAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await runGraphQLAction(`
+      mutation($id: String!) {
+        deleteHoliday(id: $id)
+      }
+    `, { id });
+    if (res?.errors && res.errors.length > 0) {
+      return { success: false, error: res.errors[0].message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to delete holiday' };
+  }
+}
+

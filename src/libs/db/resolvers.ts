@@ -491,6 +491,81 @@ export async function resolveGraphQL(
     return { deleteJobTitle: true };
   }
 
+  // ─── HOLIDAY CRUD RESOLVERS ──────────────────────────────────────────────────
+
+  if (q.includes('getHolidays')) {
+    let holidays = await prisma.holiday.findMany({ orderBy: { date: 'asc' } });
+    if (holidays.length === 0) {
+      const defaultHolidays = [
+        { date: '2026-01-01', nameEn: "New Year's Day", nameTh: 'วันขึ้นปีใหม่' },
+        { date: '2026-01-02', nameEn: 'Additional special holiday', nameTh: 'วันหยุดพิเศษเพิ่มเติม' },
+        { date: '2026-03-03', nameEn: 'Makha Bucha Day', nameTh: 'วันมาฆบูชา' },
+        { date: '2026-04-06', nameEn: 'Chakri Memorial Day', nameTh: 'วันพระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราชและวันที่ระลึกมหาจักรีบรมราชวงศ์' },
+        { date: '2026-04-13', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+        { date: '2026-04-14', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+        { date: '2026-04-15', nameEn: 'Songkran Festival', nameTh: 'วันสงกรานต์' },
+        { date: '2026-05-01', nameEn: 'National Labour Day', nameTh: 'วันแรงงานแห่งชาติ' },
+        { date: '2026-05-04', nameEn: 'Coronation Day', nameTh: 'วันฉัตรมงคล' },
+        { date: '2026-06-01', nameEn: 'Substitution for Visakha Bucha Day', nameTh: 'วันหยุดชดเชยวันวิสาขบูชา' },
+        { date: '2026-06-03', nameEn: "H.M. Queen Suthida Bajrasudhabimalalakshana's Birthday", nameTh: 'วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี' },
+        { date: '2026-07-28', nameEn: "H.M. King Maha Vajiralongkorn's Birthday", nameTh: 'วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว' },
+        { date: '2026-07-29', nameEn: 'Asarnha Bucha Day', nameTh: 'วันอาสาฬหบูชา' },
+        { date: '2026-08-12', nameEn: "H.M. Queen Sirikit The Queen Mother's Birthday / Mother's Day", nameTh: 'วันเฉลิมพระชนมพรรษาสมเด็จพระบรมราชชนนีพันปีหลวงและวันแม่แห่งชาติ' },
+        { date: '2026-10-13', nameEn: "H.M. King Bhumibol Adulyadej The Great Memorial Day", nameTh: 'วันคล้ายวันสวรรคตพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร' },
+        { date: '2026-10-16', nameEn: 'Additional special holiday (Bangkok only)', nameTh: 'วันหยุดพิเศษเพิ่มเติม (เฉพาะกรุงเทพมหานคร)' },
+        { date: '2026-10-23', nameEn: "H.M. King Chulalongkorn the Great Memorial Day", nameTh: 'วันปิยมหาราช' },
+        { date: '2026-12-07', nameEn: "Substitution for H.M. King Bhumibol Adulyadej's Birthday, National Day, and Father's Day", nameTh: 'วันหยุดชดเชยวันคล้ายวันพระบรมราชสมภพพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร วันชาติ และวันพ่อแห่งชาติ' },
+        { date: '2026-12-10', nameEn: 'Constitution Day', nameTh: 'วันรัฐธรรมนูญ' },
+        { date: '2026-12-31', nameEn: "New Year's Eve", nameTh: 'วันสิ้นปี' }
+      ];
+      for (const h of defaultHolidays) {
+        await prisma.holiday.upsert({
+          where: { date: h.date },
+          create: h,
+          update: {},
+        });
+      }
+      holidays = await prisma.holiday.findMany({ orderBy: { date: 'asc' } });
+    }
+    return { getHolidays: holidays };
+  }
+
+  if (q.includes('createHoliday')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const date = (variables.date as string)?.trim();
+    const nameTh = (variables.nameTh as string)?.trim();
+    const nameEn = (variables.nameEn as string)?.trim();
+    if (!date || !nameTh || !nameEn) throw new Error('date, nameTh, and nameEn are required');
+    const holiday = await prisma.holiday.create({
+      data: { date, nameTh, nameEn },
+    });
+    return { createHoliday: holiday };
+  }
+
+  if (q.includes('updateHoliday')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const id = variables.id as string;
+    const date = (variables.date as string)?.trim();
+    const nameTh = (variables.nameTh as string)?.trim();
+    const nameEn = (variables.nameEn as string)?.trim();
+    if (!id || !date || !nameTh || !nameEn) throw new Error('id, date, nameTh, and nameEn are required');
+    const updated = await prisma.holiday.update({
+      where: { id },
+      data: { date, nameTh, nameEn },
+    });
+    return { updateHoliday: updated };
+  }
+
+  if (q.includes('deleteHoliday')) {
+    const authUser = await requireAuth();
+    if (authUser.role !== 'ADMIN') throw new Error('unauthorized');
+    const id = variables.id as string;
+    await prisma.holiday.delete({ where: { id } });
+    return { deleteHoliday: true };
+  }
+
   // ─── LEAVE DOCUMENT CRUD RESOLVERS ──────────────────────────────────────────
 
   if (q.includes('getLeaveDocuments')) {
