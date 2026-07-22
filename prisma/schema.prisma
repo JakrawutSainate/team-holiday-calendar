@@ -6,6 +6,7 @@ datasource db {
   provider = "postgresql"
 }
 
+
 model TeamMember {
   id                 String   @id @default(uuid())
   name               String
