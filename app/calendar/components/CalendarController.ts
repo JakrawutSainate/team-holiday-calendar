@@ -105,7 +105,12 @@ export class CalendarController {
       }));
 
       const combinedMap = new Map<string, CalendarEvent>();
-      for (const e of [...swr.events, ...holidayEvents]) {
+      for (let i = 0; i < swr.events.length; i++) {
+        const e = swr.events[i];
+        if (e && e.id) combinedMap.set(e.id, e);
+      }
+      for (let i = 0; i < holidayEvents.length; i++) {
+        const e = holidayEvents[i];
         if (e && e.id) combinedMap.set(e.id, e);
       }
       this.events = Array.from(combinedMap.values());
@@ -150,7 +155,16 @@ export class CalendarController {
       }));
 
       const combinedMap = new Map<string, CalendarEvent>();
-      for (const e of [...events, ...monthEvents, ...holidayEvents]) {
+      for (let i = 0; i < events.length; i++) {
+        const e = events[i];
+        if (e && e.id) combinedMap.set(e.id, e);
+      }
+      for (let i = 0; i < monthEvents.length; i++) {
+        const e = monthEvents[i];
+        if (e && e.id) combinedMap.set(e.id, e);
+      }
+      for (let i = 0; i < holidayEvents.length; i++) {
+        const e = holidayEvents[i];
         if (e && e.id) combinedMap.set(e.id, e);
       }
 

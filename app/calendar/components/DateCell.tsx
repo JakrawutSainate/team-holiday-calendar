@@ -32,11 +32,50 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
   const dayOfWeek = dateObj.getDay();
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-  const approvedLeavesCount = events.filter(e => e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL').length;
+  // Pre-index approved leave documents into O(1) Map: O(D) time
+  const approvedDocMap = useMemo(() => {
+    const map = new Map<string, any>();
+    if (leaveDocuments) {
+      for (let i = 0; i < leaveDocuments.length; i++) {
+        const d = leaveDocuments[i];
+        if (d.status === 'APPROVED' && d.userId) {
+          map.set(d.userId, d);
+        }
+      }
+    }
+    return map;
+  }, [leaveDocuments]);
+
+  // Single-pass event classification: O(E) time
+  let holidayEvent: CalendarEvent | undefined;
+  let weekendWorkEvent: CalendarEvent | undefined;
+  let holidayWorkEvent: CalendarEvent | undefined;
+  let isUserOff = false;
+  let approvedLeavesCount = 0;
+  const leaveEvents: CalendarEvent[] = [];
+
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    if (e.status === 'PUBLIC_HOLIDAY') {
+      holidayEvent = e;
+    } else if (e.status === 'WEEKEND_WORK') {
+      weekendWorkEvent = e;
+    } else if (e.status === 'HOLIDAY_WORK') {
+      holidayWorkEvent = e;
+    } else {
+      leaveEvents.push(e);
+      if (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL') {
+        approvedLeavesCount++;
+        if (e.userId === user?.id) {
+          isUserOff = true;
+        }
+      }
+    }
+  }
+
   const maxAllowed = capacity.maxOffAllowed;
   const isFull = maxAllowed > 0 && approvedLeavesCount >= maxAllowed;
 
-  const holidayEvent = events.find(e => e.status === 'PUBLIC_HOLIDAY');
   let holidayName = '';
   if (holidayEvent && holidayEvent.details) {
     try {
@@ -47,11 +86,7 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
     }
   }
 
-  // Check if weekend or holiday work is claimed for this date
-  const weekendWorkEvent = events.find(e => e.status === 'WEEKEND_WORK');
-  const holidayWorkEvent = events.find(e => e.status === 'HOLIDAY_WORK');
   const claimedEvent = weekendWorkEvent || holidayWorkEvent;
-  const isUserOff = events.some(e => e.userId === user?.id && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL'));
 
   // Capacity label
   let capacityLabel = '';
@@ -176,12 +211,12 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
       )}
 
       <div className="flex flex-wrap gap-1.5 mt-auto">
-        {events.filter(e => e.status !== 'PUBLIC_HOLIDAY' && e.status !== 'WEEKEND_WORK' && e.status !== 'HOLIDAY_WORK').map((e) => {
+        {leaveEvents.map((e) => {
           const isOff = e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL';
           const theme = isOff ? 'amber' : 'green';
           
-          // Find corresponding leave document for this user on this date (APPROVED status)
-          const doc = leaveDocuments?.find(d => d.userId === e.userId && d.status === 'APPROVED');
+          // O(1) Instant Hash Map lookup instead of O(D) array scan
+          const doc = approvedDocMap.get(e.userId);
 
           return (
             <div
