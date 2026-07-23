@@ -15,8 +15,6 @@ import CalendarSkeleton from '@/src/components/skeletons/CalendarSkeleton';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
 import { useConfirm } from '@/src/components/ConfirmDialog';
 import dynamic from 'next/dynamic';
-import { ExcelExporter, PdfExporter } from '../utils/CalendarExporter';
-
 const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
 const ExportDialog = dynamic(() => import('@/src/components/ExportDialog').then((mod) => mod.ExportDialog), { ssr: false });
 
@@ -40,7 +38,8 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
     () => new CalendarController(year, month, user?.id ?? '', () => setTick((tick) => tick + 1), user?.name ?? '')
   );
 
-  const handleConfirmExport = (format: 'PDF' | 'EXCEL', selectedUserId: string) => {
+  const handleConfirmExport = async (format: 'PDF' | 'EXCEL', selectedUserId: string) => {
+    const { ExcelExporter, PdfExporter } = await import('../utils/CalendarExporter');
     if (format === 'EXCEL') {
       const exporter = new ExcelExporter(year, month, controller.getEvents(), controller.getMembers(), language, selectedUserId);
       exporter.export();

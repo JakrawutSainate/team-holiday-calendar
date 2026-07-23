@@ -146,6 +146,8 @@ async function fetchGraphQL(query: string, variables: Record<string, unknown> = 
   }
 }
 
+const botHolidaySet = new Set(botHolidays2026.map(h => h.date));
+
 // ─── PURE HELPERS ─────────────────────────────────────────────────────────────
 
 /**
@@ -154,8 +156,7 @@ async function fetchGraphQL(query: string, variables: Record<string, unknown> = 
  */
 export const resolveCapacity = (dateString: string, settings: CapacitySetting[]): CapacitySetting => {
   // BOT holiday → 0 off allowed
-  const isHoliday = botHolidays2026.some(h => h.date === dateString);
-  if (isHoliday) {
+  if (botHolidaySet.has(dateString)) {
     return { id: `holiday-capacity-${dateString}`, date: dateString, maxOffAllowed: 0, description: 'Bank of Thailand Holiday' };
   }
 

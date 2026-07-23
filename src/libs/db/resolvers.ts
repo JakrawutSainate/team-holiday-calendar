@@ -47,14 +47,20 @@ export async function resolveGraphQL(
 ): Promise<Record<string, unknown>> {
   const q = query.trim();
 
-  const requireAuth = async () => {
-    if (userId) {
-      const authUser = await prisma.teamMember.findUnique({ where: { id: userId } });
-      if (authUser) return authUser;
+  let authPromise: Promise<any> | null = null;
+  const requireAuth = () => {
+    if (!authPromise) {
+      authPromise = (async () => {
+        if (userId) {
+          const authUser = await prisma.teamMember.findUnique({ where: { id: userId } });
+          if (authUser) return authUser;
+        }
+        const fallbackUser = await prisma.teamMember.findFirst();
+        if (fallbackUser) return fallbackUser;
+        throw new Error('unauthorized: you must be logged in to perform this action');
+      })();
     }
-    const fallbackUser = await prisma.teamMember.findFirst();
-    if (fallbackUser) return fallbackUser;
-    throw new Error('unauthorized: you must be logged in to perform this action');
+    return authPromise;
   };
 
 async function autoBackfillUsedTokens() {
@@ -75,10 +81,19 @@ async function autoBackfillUsedTokens() {
     userLeavesMap.set(leave.userId, list);
   }
 
+  const updatePromises: Promise<any>[] = [];
+
   for (const [userId, userLeaves] of userLeavesMap.entries()) {
-    const earnTxns = await prisma.tokenTransaction.findMany({
-      where: { userId, type: 'EARN' },
-    });
+    const [earnTxns, assignedEvents] = await Promise.all([
+      prisma.tokenTransaction.findMany({
+        where: { userId, type: 'EARN' },
+      }),
+      prisma.calendarEvent.findMany({
+        where: { userId, usedTokenTxId: { not: null } },
+        select: { usedTokenTxId: true },
+      }),
+    ]);
+
     earnTxns.sort((a, b) => {
       const dateA = a.relatedDate || (a.createdAt ? a.createdAt.toISOString().split('T')[0] : '');
       const dateB = b.relatedDate || (b.createdAt ? b.createdAt.toISOString().split('T')[0] : '');
@@ -86,10 +101,6 @@ async function autoBackfillUsedTokens() {
       return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
     });
 
-    const assignedEvents = await prisma.calendarEvent.findMany({
-      where: { userId, usedTokenTxId: { not: null } },
-      select: { usedTokenTxId: true },
-    });
     const usedTokenIds = new Set(assignedEvents.map(e => e.usedTokenTxId).filter(Boolean));
 
     let earnIdx = 0;
@@ -100,13 +111,19 @@ async function autoBackfillUsedTokens() {
       if (earnIdx < earnTxns.length) {
         const assignedTx = earnTxns[earnIdx];
         usedTokenIds.add(assignedTx.id);
-        await prisma.calendarEvent.update({
-          where: { id: leave.id },
-          data: { usedTokenTxId: assignedTx.id },
-        });
+        updatePromises.push(
+          prisma.calendarEvent.update({
+            where: { id: leave.id },
+            data: { usedTokenTxId: assignedTx.id },
+          })
+        );
         earnIdx++;
       }
     }
+  }
+
+  if (updatePromises.length > 0) {
+    await Promise.all(updatePromises);
   }
 }
 
