@@ -75,6 +75,14 @@ export default function LeavesClient() {
     }
   };
 
+  const [activePopover, setActivePopover] = useState<{
+    id: string;
+    type: 'token' | 'reason';
+    title: string;
+    earnedDate?: string;
+    description?: string;
+  } | null>(null);
+
   const leaves = controller.getLeaves();
   const totalPages = Math.ceil(leaves.length / pageSize) || 1;
   const startIndex = (currentPage - 1) * pageSize;
@@ -87,6 +95,12 @@ export default function LeavesClient() {
   return (
     <ErrorBoundary>
     <div className="grow flex flex-col min-h-screen lg:ml-64 bg-background">
+      {activePopover && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent"
+          onClick={() => setActivePopover(null)}
+        />
+      )}
       <TopNavBar placeholder={t('searchPlaceholder')} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
@@ -184,31 +198,87 @@ export default function LeavesClient() {
                             key={leave.id}
                             className="border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50/40 transition-colors"
                           >
-                            <td className="p-4 pl-6 text-base font-bold text-zinc-900">
+                            <td className="p-4 pl-6 text-base font-bold text-zinc-900 whitespace-nowrap">
                               {displayDate}
                             </td>
-                            <td className="p-4 text-base font-semibold text-zinc-700">
+                            <td className="p-4 text-base font-semibold text-zinc-700 whitespace-nowrap">
                               <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-100 rounded-lg text-xs font-semibold">
                                 {leave.status === 'COMPENSATORY_OFF'
                                   ? (language === 'th' ? 'วันหยุดชดเชย' : 'Compensatory Off')
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
-                            <td className="p-4 text-base font-semibold text-zinc-700">
+                            <td className="p-4 text-base font-semibold text-zinc-700 max-w-[210px]">
                               {leave.usedTokenInfo ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100/80 rounded-xl text-xs font-semibold shadow-2xs">
-                                  <span className="material-symbols-outlined text-[15px] text-indigo-500">confirmation_number</span>
-                                  <span>{leave.usedTokenInfo.festivalName}</span>
-                                  <span className="text-indigo-400 font-mono text-[11px]">({leave.usedTokenInfo.earnedDate})</span>
-                                </span>
+                                <div className="relative inline-block max-w-full">
+                                  <button
+                                    type="button"
+                                    title={`${leave.usedTokenInfo.festivalName} (${leave.usedTokenInfo.earnedDate})`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActivePopover(
+                                        activePopover?.id === `token-${leave.id}`
+                                          ? null
+                                          : {
+                                              id: `token-${leave.id}`,
+                                              type: 'token',
+                                              title: leave.usedTokenInfo!.festivalName,
+                                              earnedDate: leave.usedTokenInfo!.earnedDate,
+                                              description: leave.usedTokenInfo!.description,
+                                            }
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100/80 rounded-xl text-xs font-semibold shadow-2xs max-w-full cursor-pointer hover:bg-indigo-100/70 transition-colors text-left"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px] text-indigo-500 shrink-0">confirmation_number</span>
+                                    <span className="truncate">{leave.usedTokenInfo.festivalName}</span>
+                                    <span className="text-indigo-400 font-mono text-[11px] shrink-0">({leave.usedTokenInfo.earnedDate})</span>
+                                  </button>
+
+                                  {activePopover?.id === `token-${leave.id}` && (
+                                    <div className="absolute top-full left-0 mt-2 z-50 w-72 p-4 bg-white border border-zinc-200 rounded-2xl shadow-xl animate-fade-in text-xs">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <span className="font-bold text-zinc-900 text-sm flex items-center gap-1.5">
+                                          <span className="material-symbols-outlined text-indigo-600 text-[18px]">confirmation_number</span>
+                                          {language === 'th' ? 'รายละเอียดโทเค็น' : 'Token Details'}
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActivePopover(null);
+                                          }}
+                                          className="text-zinc-400 hover:text-zinc-600 rounded-lg p-0.5 cursor-pointer"
+                                        >
+                                          <span className="material-symbols-outlined text-[16px]">close</span>
+                                        </button>
+                                      </div>
+                                      <div className="space-y-1.5 text-zinc-600">
+                                        <div>
+                                          <span className="font-semibold text-zinc-800">{language === 'th' ? 'เทศกาล/วันสำคัญ:' : 'Festival:'}</span>{' '}
+                                          {leave.usedTokenInfo.festivalName}
+                                        </div>
+                                        <div>
+                                          <span className="font-semibold text-zinc-800">{language === 'th' ? 'วันที่ได้รับ:' : 'Earned Date:'}</span>{' '}
+                                          <span className="font-mono text-indigo-600">{leave.usedTokenInfo.earnedDate}</span>
+                                        </div>
+                                        {leave.usedTokenInfo.description && (
+                                          <div>
+                                            <span className="font-semibold text-zinc-800">{language === 'th' ? 'รายละเอียด:' : 'Note:'}</span>{' '}
+                                            {leave.usedTokenInfo.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium whitespace-nowrap">
                                   <span className="material-symbols-outlined text-[14px]">help_outline</span>
                                   {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
                                 </span>
                               )}
                             </td>
-                            <td className="p-4 text-base text-zinc-600 font-medium">
+                            <td className="p-4 text-base text-zinc-600 font-medium max-w-[220px]">
                               {(() => {
                                 let reasonText = leave.details || '';
                                 if (leave.leaveRequest?.reason) {
@@ -223,7 +293,53 @@ export default function LeavesClient() {
                                     reasonText = raw;
                                   }
                                 }
-                                return reasonText || (language === 'th' ? 'ยื่นขอวันลาหยุดพักผ่อน' : 'Compensatory leave');
+                                const finalReason = reasonText || (language === 'th' ? 'ยื่นขอวันลาหยุดพักผ่อน' : 'Compensatory leave');
+
+                                return (
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      title={finalReason}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActivePopover(
+                                          activePopover?.id === `reason-${leave.id}`
+                                            ? null
+                                            : {
+                                                id: `reason-${leave.id}`,
+                                                type: 'reason',
+                                                title: language === 'th' ? 'เหตุผลการลา' : 'Leave Reason',
+                                                description: finalReason,
+                                              }
+                                        );
+                                      }}
+                                      className="block w-full text-left truncate hover:text-zinc-900 transition-colors cursor-pointer"
+                                    >
+                                      {finalReason}
+                                    </button>
+
+                                    {activePopover?.id === `reason-${leave.id}` && (
+                                      <div className="absolute top-full left-0 mt-2 z-50 w-72 p-4 bg-white border border-zinc-200 rounded-2xl shadow-xl animate-fade-in text-xs">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <span className="font-bold text-zinc-900 text-sm flex items-center gap-1.5">
+                                            <span className="material-symbols-outlined text-amber-600 text-[18px]">notes</span>
+                                            {language === 'th' ? 'รายละเอียดการลา' : 'Leave Details'}
+                                          </span>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActivePopover(null);
+                                            }}
+                                            className="text-zinc-400 hover:text-zinc-600 rounded-lg p-0.5 cursor-pointer"
+                                          >
+                                            <span className="material-symbols-outlined text-[16px]">close</span>
+                                          </button>
+                                        </div>
+                                        <p className="text-zinc-600 leading-relaxed whitespace-pre-wrap">{finalReason}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
                               })()}
                             </td>
                             <td className="p-4 text-base">
