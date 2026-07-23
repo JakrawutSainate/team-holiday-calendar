@@ -225,74 +225,22 @@ export default function LeavesClient() {
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
-                            <td className="p-4 text-base font-semibold text-zinc-700 min-w-[220px] max-w-[280px]">
+                            <td className="p-4 text-base text-zinc-800 min-w-[220px]">
                               {leave.usedTokenInfo ? (
-                                <div className="relative inline-block max-w-full">
-                                  <button
-                                    type="button"
-                                    title={`${leave.usedTokenInfo.festivalName} (${leave.usedTokenInfo.earnedDate})`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActivePopover(
-                                        activePopover?.id === `token-${leave.id}`
-                                          ? null
-                                          : {
-                                              id: `token-${leave.id}`,
-                                              type: 'token',
-                                              title: leave.usedTokenInfo!.festivalName,
-                                              earnedDate: leave.usedTokenInfo!.earnedDate,
-                                              description: leave.usedTokenInfo!.description,
-                                            }
-                                      );
-                                    }}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100/80 rounded-xl text-xs font-semibold shadow-2xs max-w-full cursor-pointer hover:bg-indigo-100/80 transition-colors text-left outline-none focus:outline-none"
-                                  >
-                                    <span className="material-symbols-outlined text-[15px] text-indigo-500 shrink-0">confirmation_number</span>
-                                    <span className="truncate max-w-[120px]">{leave.usedTokenInfo.festivalName}</span>
-                                    <span className="text-indigo-400 font-mono text-[11px] shrink-0">({leave.usedTokenInfo.earnedDate})</span>
-                                  </button>
-
-                                  {activePopover?.id === `token-${leave.id}` && (
-                                    <div className="absolute top-full left-0 mt-2 z-50 w-72 p-4 bg-white border border-zinc-200 rounded-2xl shadow-xl animate-fade-in text-xs">
-                                      <div className="flex justify-between items-start mb-2">
-                                        <span className="font-bold text-zinc-900 text-sm flex items-center gap-1.5">
-                                          <span className="material-symbols-outlined text-indigo-600 text-[18px]">confirmation_number</span>
-                                          {language === 'th' ? 'รายละเอียดโทเค็น' : 'Token Details'}
-                                        </span>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActivePopover(null);
-                                          }}
-                                          className="text-zinc-400 hover:text-zinc-600 rounded-lg p-0.5 cursor-pointer"
-                                        >
-                                          <span className="material-symbols-outlined text-[16px]">close</span>
-                                        </button>
-                                      </div>
-                                      <div className="space-y-1.5 text-zinc-600">
-                                        <div>
-                                          <span className="font-semibold text-zinc-800">{language === 'th' ? 'เทศกาล/วันสำคัญ:' : 'Festival:'}</span>{' '}
-                                          {leave.usedTokenInfo.festivalName}
-                                        </div>
-                                        <div>
-                                          <span className="font-semibold text-zinc-800">{language === 'th' ? 'วันที่ได้รับ:' : 'Earned Date:'}</span>{' '}
-                                          <span className="font-mono text-indigo-600">{leave.usedTokenInfo.earnedDate}</span>
-                                        </div>
-                                        {leave.usedTokenInfo.description && (
-                                          <div>
-                                            <span className="font-semibold text-zinc-800">{language === 'th' ? 'รายละเอียด:' : 'Note:'}</span>{' '}
-                                            {leave.usedTokenInfo.description}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                                <div className="flex flex-col text-left space-y-0.5">
+                                  <div className="font-semibold text-zinc-900 text-sm flex items-center gap-1.5 leading-snug">
+                                    <span className="material-symbols-outlined text-[16px] text-indigo-600 shrink-0">confirmation_number</span>
+                                    <span>{leave.usedTokenInfo.festivalName}</span>
+                                  </div>
+                                  <div className="text-xs text-indigo-600 font-mono pl-[21px]">
+                                    {language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {leave.usedTokenInfo.earnedDate}
+                                  </div>
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium whitespace-nowrap">
+                                <div className="flex items-center gap-1 text-xs text-zinc-500 font-medium">
                                   <span className="material-symbols-outlined text-[14px]">help_outline</span>
                                   {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
-                                </span>
+                                </div>
                               )}
                             </td>
                             <td className="p-4 text-base text-zinc-600 font-medium min-w-[200px] max-w-[260px]">
@@ -437,72 +385,20 @@ export default function LeavesClient() {
                               {language === 'th' ? 'โทเค็นที่ใช้:' : 'Token Used:'}
                             </span>
                             {leave.usedTokenInfo ? (
-                              <div className="relative inline-block max-w-full">
-                                <button
-                                  type="button"
-                                  title={`${leave.usedTokenInfo.festivalName} (${leave.usedTokenInfo.earnedDate})`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActivePopover(
-                                      activePopover?.id === `token-m-${leave.id}`
-                                        ? null
-                                        : {
-                                            id: `token-m-${leave.id}`,
-                                            type: 'token',
-                                            title: leave.usedTokenInfo!.festivalName,
-                                            earnedDate: leave.usedTokenInfo!.earnedDate,
-                                            description: leave.usedTokenInfo!.description,
-                                          }
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100/80 rounded-xl text-xs font-semibold shadow-2xs max-w-full cursor-pointer hover:bg-indigo-100/80 transition-colors text-left outline-none focus:outline-none"
-                                >
-                                  <span className="material-symbols-outlined text-[15px] text-indigo-500 shrink-0">confirmation_number</span>
-                                  <span className="truncate">{leave.usedTokenInfo.festivalName}</span>
-                                  <span className="text-indigo-400 font-mono text-[11px] shrink-0">({leave.usedTokenInfo.earnedDate})</span>
-                                </button>
-
-                                {activePopover?.id === `token-m-${leave.id}` && (
-                                  <div className="absolute top-full left-0 mt-2 z-50 w-72 p-4 bg-white border border-zinc-200 rounded-2xl shadow-xl animate-fade-in text-xs">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <span className="font-bold text-zinc-900 text-sm flex items-center gap-1.5">
-                                        <span className="material-symbols-outlined text-indigo-600 text-[18px]">confirmation_number</span>
-                                        {language === 'th' ? 'รายละเอียดโทเค็น' : 'Token Details'}
-                                      </span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setActivePopover(null);
-                                        }}
-                                        className="text-zinc-400 hover:text-zinc-600 rounded-lg p-0.5 cursor-pointer"
-                                      >
-                                        <span className="material-symbols-outlined text-[16px]">close</span>
-                                      </button>
-                                    </div>
-                                    <div className="space-y-1.5 text-zinc-600">
-                                      <div>
-                                        <span className="font-semibold text-zinc-800">{language === 'th' ? 'เทศกาล/วันสำคัญ:' : 'Festival:'}</span>{' '}
-                                        {leave.usedTokenInfo.festivalName}
-                                      </div>
-                                      <div>
-                                        <span className="font-semibold text-zinc-800">{language === 'th' ? 'วันที่ได้รับ:' : 'Earned Date:'}</span>{' '}
-                                        <span className="font-mono text-indigo-600">{leave.usedTokenInfo.earnedDate}</span>
-                                      </div>
-                                      {leave.usedTokenInfo.description && (
-                                        <div>
-                                          <span className="font-semibold text-zinc-800">{language === 'th' ? 'รายละเอียด:' : 'Note:'}</span>{' '}
-                                          {leave.usedTokenInfo.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
+                              <div className="flex flex-col text-left space-y-0.5">
+                                <div className="font-semibold text-zinc-900 text-sm flex items-center gap-1.5 leading-snug">
+                                  <span className="material-symbols-outlined text-[16px] text-indigo-600 shrink-0">confirmation_number</span>
+                                  <span>{leave.usedTokenInfo.festivalName}</span>
+                                </div>
+                                <div className="text-xs text-indigo-600 font-mono pl-[21px]">
+                                  {language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {leave.usedTokenInfo.earnedDate}
+                                </div>
                               </div>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium">
+                              <div className="flex items-center gap-1 text-xs text-zinc-500 font-medium">
                                 <span className="material-symbols-outlined text-[14px]">help_outline</span>
                                 {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
-                              </span>
+                              </div>
                             )}
                           </div>
 
