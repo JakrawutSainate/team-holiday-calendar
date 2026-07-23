@@ -400,10 +400,17 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
     const signatureType = (variables.signatureType as string) || 'SAVED';
     const signatureText = (variables.signatureText as string) || parsedFullName || authUser.name;
 
-    // Find next available EARN token in FIFO order for this user
-    const earnTxns = await prisma.tokenTransaction.findMany({
-      where: { userId: authUser.id, type: 'EARN' },
-    });
+    // Find next available EARN token in FIFO order for this user (parallel fetch)
+    const [earnTxns, usedEvents] = await Promise.all([
+      prisma.tokenTransaction.findMany({
+        where: { userId: authUser.id, type: 'EARN' },
+      }),
+      prisma.calendarEvent.findMany({
+        where: { userId: authUser.id, usedTokenTxId: { not: null } },
+        select: { usedTokenTxId: true },
+      }),
+    ]);
+
     earnTxns.sort((a, b) => {
       const dateA = a.relatedDate || (a.createdAt ? a.createdAt.toISOString().split('T')[0] : '');
       const dateB = b.relatedDate || (b.createdAt ? b.createdAt.toISOString().split('T')[0] : '');
@@ -411,12 +418,7 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
       return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
     });
 
-    const usedEvents = await prisma.calendarEvent.findMany({
-      where: { userId: authUser.id, usedTokenTxId: { not: null } },
-      select: { usedTokenTxId: true },
-    });
     const usedTokenIds = new Set(usedEvents.map(e => e.usedTokenTxId).filter(Boolean));
-
     const selectedEarnTx = earnTxns.find(tx => !usedTokenIds.has(tx.id));
     const usedTokenTxId = selectedEarnTx ? selectedEarnTx.id : null;
 
@@ -440,37 +442,37 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
       include: { leaveRequest: true },
     });
 
-    // Create LeaveDocument record in DB with custom edited user info
-    await prisma.leaveDocument.create({
-      data: {
-        userId: authUser.id,
-        userName: parsedFullName || authUser.name,
-        department: parsedDepartment || authUser.department || '',
-        title: parsedPosition || authUser.title || '',
-        leaveDate: date,
-        leaveType: parsedLeaveType,
-        reason: rawReason,
-        signature: parsedSignature,
-        status: 'APPROVED',
-        attachment: attachmentImage,
-        writtenAt: parsedWrittenAt,
-        recipientTitle: parsedRecipientTitle,
-        fromDate: parsedFromDate,
-        toDate: parsedToDate,
-        totalDays: parsedTotalDays,
-        contactAddress: parsedContactAddress,
-        contactPhone: parsedContactPhone,
-      },
-    });
-
-    await prisma.teamMember.update({
-      where: { id: authUser.id },
-      data: { tokensBalance: { decrement: 1.0 } },
-    });
-
-    await prisma.tokenTransaction.create({
-      data: { userId: authUser.id, type: 'SPEND', amount: 1.0, description: 'Compensatory Leave Request', relatedDate: date, usedTokenTxId },
-    });
+    // Parallelize document creation, balance decrement, and transaction logging
+    await Promise.all([
+      prisma.leaveDocument.create({
+        data: {
+          userId: authUser.id,
+          userName: parsedFullName || authUser.name,
+          department: parsedDepartment || authUser.department || '',
+          title: parsedPosition || authUser.title || '',
+          leaveDate: date,
+          leaveType: parsedLeaveType,
+          reason: rawReason,
+          signature: parsedSignature,
+          status: 'APPROVED',
+          attachment: attachmentImage,
+          writtenAt: parsedWrittenAt,
+          recipientTitle: parsedRecipientTitle,
+          fromDate: parsedFromDate,
+          toDate: parsedToDate,
+          totalDays: parsedTotalDays,
+          contactAddress: parsedContactAddress,
+          contactPhone: parsedContactPhone,
+        },
+      }),
+      prisma.teamMember.update({
+        where: { id: authUser.id },
+        data: { tokensBalance: { decrement: 1.0 } },
+      }),
+      prisma.tokenTransaction.create({
+        data: { userId: authUser.id, type: 'SPEND', amount: 1.0, description: 'Compensatory Leave Request', relatedDate: date, usedTokenTxId },
+      }),
+    ]);
 
     const enriched = await attachTokenInfoToEvents([event]);
     return { requestLeave: enriched[0] || event };
@@ -488,43 +490,49 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
       throw new Error("forbidden: you cannot cancel another member's leave");
     }
 
-    await prisma.calendarEvent.delete({ where: { id } });
-    await prisma.leaveDocument.deleteMany({
-      where: { userId: event.userId, leaveDate: event.date }
-    });
-
     const isLeave = event.status === 'COMPENSATORY_OFF' || event.status === 'NORMAL';
     const isShiftClaim = event.status === 'WEEKEND_WORK' || event.status === 'HOLIDAY_WORK';
 
-    if (isLeave) {
-      await prisma.teamMember.update({
-        where: { id: event.userId },
-        data: { tokensBalance: { increment: 1.0 } },
-      });
-      await prisma.tokenTransaction.create({
-        data: {
-          userId: event.userId,
-          type: 'EARN',
-          amount: 1.0,
-          description: 'Leave Cancellation Refund',
-          relatedDate: event.date,
-        },
-      });
-    } else if (isShiftClaim) {
-      await prisma.teamMember.update({
-        where: { id: event.userId },
-        data: { tokensBalance: { decrement: 1.0 } },
-      });
-      await prisma.tokenTransaction.create({
-        data: {
-          userId: event.userId,
-          type: 'REDEEM',
-          amount: 1.0,
-          description: 'Shift Claim Cancellation',
-          relatedDate: event.date,
-        },
-      });
-    }
+    // Parallelize deletion, balance update, and transaction recording
+    await Promise.all([
+      prisma.calendarEvent.delete({ where: { id } }),
+      prisma.leaveDocument.deleteMany({
+        where: { userId: event.userId, leaveDate: event.date }
+      }),
+      isLeave
+        ? Promise.all([
+            prisma.teamMember.update({
+              where: { id: event.userId },
+              data: { tokensBalance: { increment: 1.0 } },
+            }),
+            prisma.tokenTransaction.create({
+              data: {
+                userId: event.userId,
+                type: 'EARN',
+                amount: 1.0,
+                description: 'Leave Cancellation Refund',
+                relatedDate: event.date,
+              },
+            }),
+          ])
+        : isShiftClaim
+        ? Promise.all([
+            prisma.teamMember.update({
+              where: { id: event.userId },
+              data: { tokensBalance: { decrement: 1.0 } },
+            }),
+            prisma.tokenTransaction.create({
+              data: {
+                userId: event.userId,
+                type: 'REDEEM',
+                amount: 1.0,
+                description: 'Shift Claim Cancellation',
+                relatedDate: event.date,
+              },
+            }),
+          ])
+        : Promise.resolve(),
+    ]);
 
     return { cancelLeave: true };
   }
