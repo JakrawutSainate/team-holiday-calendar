@@ -17,6 +17,19 @@ import dynamic from 'next/dynamic';
 
 const LeaveDetailsDialog = dynamic(() => import('@/src/components/LeaveDetailsDialog').then((mod) => mod.LeaveDetailsDialog), { ssr: false });
 
+function formatEarnedDateWithDay(dateStr: string, lang: string) {
+  if (!dateStr) return '';
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y || !m || !d) return dateStr;
+    const dateObj = new Date(y, m - 1, d);
+    const weekday = dateObj.toLocaleDateString(lang === 'en' ? 'en-US' : 'th-TH', { weekday: 'long' });
+    return `${weekday} (${dateStr})`;
+  } catch (_) {
+    return dateStr;
+  }
+}
+
 export default function LeavesClient() {
   const router = useRouter();
   const { t, language } = useTranslation();
@@ -225,19 +238,20 @@ export default function LeavesClient() {
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
                             </td>
-                            <td className="p-4 text-base text-zinc-800 min-w-[220px]">
+                            <td className="p-4 text-base text-zinc-800 min-w-[240px]">
                               {leave.usedTokenInfo ? (
-                                <div className="flex flex-col text-left space-y-0.5">
-                                  <div className="font-semibold text-zinc-900 text-sm flex items-center gap-1.5 leading-snug">
+                                <div className="inline-flex flex-col text-left px-3.5 py-2 bg-indigo-50/70 text-indigo-950 border border-indigo-200/80 rounded-xl text-xs font-semibold shadow-2xs max-w-full">
+                                  <div className="flex items-center gap-1.5 font-bold text-indigo-950 text-xs leading-snug">
                                     <span className="material-symbols-outlined text-[16px] text-indigo-600 shrink-0">confirmation_number</span>
                                     <span>{leave.usedTokenInfo.festivalName}</span>
                                   </div>
-                                  <div className="text-xs text-indigo-600 font-mono pl-[21px]">
-                                    {language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {leave.usedTokenInfo.earnedDate}
+                                  <div className="text-[11px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[13px] text-indigo-400 shrink-0">calendar_today</span>
+                                    <span>{language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {formatEarnedDateWithDay(leave.usedTokenInfo.earnedDate, language)}</span>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1 text-xs text-zinc-500 font-medium">
+                                <div className="inline-flex items-center gap-1 px-3 py-1.5 bg-zinc-100 text-zinc-500 rounded-xl text-xs font-medium border border-zinc-200/60">
                                   <span className="material-symbols-outlined text-[14px]">help_outline</span>
                                   {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
                                 </div>
@@ -385,17 +399,18 @@ export default function LeavesClient() {
                               {language === 'th' ? 'โทเค็นที่ใช้:' : 'Token Used:'}
                             </span>
                             {leave.usedTokenInfo ? (
-                              <div className="flex flex-col text-left space-y-0.5">
-                                <div className="font-semibold text-zinc-900 text-sm flex items-center gap-1.5 leading-snug">
-                                  <span className="material-symbols-outlined text-[16px] text-indigo-600 shrink-0">confirmation_number</span>
+                              <div className="inline-flex flex-col text-left px-3 py-1.5 bg-indigo-50/70 text-indigo-950 border border-indigo-200/80 rounded-xl text-xs font-semibold shadow-2xs max-w-full">
+                                <div className="flex items-center gap-1.5 font-bold text-indigo-950 text-xs leading-snug">
+                                  <span className="material-symbols-outlined text-[15px] text-indigo-600 shrink-0">confirmation_number</span>
                                   <span>{leave.usedTokenInfo.festivalName}</span>
                                 </div>
-                                <div className="text-xs text-indigo-600 font-mono pl-[21px]">
-                                  {language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {leave.usedTokenInfo.earnedDate}
+                                <div className="text-[11px] text-indigo-600 font-medium mt-0.5 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px] text-indigo-400 shrink-0">calendar_today</span>
+                                  <span>{language === 'th' ? 'เคลมเมื่อ:' : 'Claimed:'} {formatEarnedDateWithDay(leave.usedTokenInfo.earnedDate, language)}</span>
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1 text-xs text-zinc-500 font-medium">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium border border-zinc-200/60">
                                 <span className="material-symbols-outlined text-[14px]">help_outline</span>
                                 {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
                               </div>
