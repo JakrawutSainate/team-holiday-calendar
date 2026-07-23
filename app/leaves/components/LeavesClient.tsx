@@ -43,11 +43,18 @@ export default function LeavesClient() {
 
   const handleCancelLeave = async (leave: CalendarEvent) => {
     const tokensRefunded = 1;
+    const tokenInfoStr = leave.usedTokenInfo
+      ? `${leave.usedTokenInfo.festivalName} (${leave.usedTokenInfo.earnedDate})`
+      : null;
     const ok = await confirm({
       title: language === 'th' ? 'ยกเลิกการลาหยุด?' : 'Cancel Leave?',
       text: language === 'th'
-        ? `ยกเลิกการลาวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
-        : `Cancel your leave on ${leave.date} and refund ${tokensRefunded} token?`,
+        ? tokenInfoStr
+          ? `ยกเลิกการลาวันที่ ${leave.date} และรับคืน Token [${tokenInfoStr}] หรือไม่?`
+          : `ยกเลิกการลาวันที่ ${leave.date} และรับคืน ${tokensRefunded} โทเค็นสะสมหรือไม่?`
+        : tokenInfoStr
+          ? `Cancel your leave on ${leave.date} and refund Token [${tokenInfoStr}]?`
+          : `Cancel your leave on ${leave.date} and refund ${tokensRefunded} token?`,
       confirmText: language === 'th' ? 'ยืนยันยกเลิก' : 'Confirm Cancel',
       cancelText: t('cancel'),
       variant: 'danger',
@@ -140,6 +147,9 @@ export default function LeavesClient() {
                         {language === 'th' ? 'ประเภท' : 'TYPE'}
                       </th>
                       <th className="p-4 text-sm font-bold text-zinc-500 uppercase tracking-wider">
+                        {language === 'th' ? 'โทเค็นที่ใช้' : 'TOKEN USED'}
+                      </th>
+                      <th className="p-4 text-sm font-bold text-zinc-500 uppercase tracking-wider">
                         {language === 'th' ? 'รายละเอียด' : 'DESCRIPTION'}
                       </th>
                       <th className="p-4 text-sm font-bold text-zinc-500 uppercase tracking-wider">
@@ -153,7 +163,7 @@ export default function LeavesClient() {
                   <tbody>
                     {paginatedLeaves.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-base text-zinc-500">
+                        <td colSpan={6} className="p-8 text-center text-base text-zinc-500">
                           {language === 'th' ? 'ยังไม่มีรายการประวัติการลาพัก' : 'No leaves requested yet.'}
                         </td>
                       </tr>
@@ -183,6 +193,20 @@ export default function LeavesClient() {
                                   ? (language === 'th' ? 'วันหยุดชดเชย' : 'Compensatory Off')
                                   : (language === 'th' ? 'ลาปกติ' : 'Normal Leave')}
                               </span>
+                            </td>
+                            <td className="p-4 text-base font-semibold text-zinc-700">
+                              {leave.usedTokenInfo ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100/80 rounded-xl text-xs font-semibold shadow-2xs">
+                                  <span className="material-symbols-outlined text-[15px] text-indigo-500">confirmation_number</span>
+                                  <span>{leave.usedTokenInfo.festivalName}</span>
+                                  <span className="text-indigo-400 font-mono text-[11px]">({leave.usedTokenInfo.earnedDate})</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-500 rounded-lg text-xs font-medium">
+                                  <span className="material-symbols-outlined text-[14px]">help_outline</span>
+                                  {language === 'th' ? 'โทเค็นสะสม' : 'General Token'}
+                                </span>
+                              )}
                             </td>
                             <td className="p-4 text-base text-zinc-600 font-medium">
                               {(() => {

@@ -23,6 +23,13 @@ export interface LeaveRequest {
   attachmentImage?: string; // Base64
 }
 
+export interface UsedTokenInfo {
+  id: string;
+  earnedDate: string;
+  festivalName: string;
+  description: string;
+}
+
 export interface CalendarEvent {
   id: string;
   userId: string;
@@ -30,6 +37,8 @@ export interface CalendarEvent {
   date: string; // YYYY-MM-DD format
   status: CalendarEventStatus;
   details?: string;
+  usedTokenTxId?: string;
+  usedTokenInfo?: UsedTokenInfo;
   leaveRequest?: LeaveRequest;
 }
 
@@ -238,7 +247,7 @@ class CalendarDataService {
       query {
         getInitialAppData {
           teamMembers { id name email role avatarUrl department title tokensBalance }
-          events { id userId userName date status details leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } }
+          events { id userId userName date status details usedTokenTxId usedTokenInfo { id earnedDate festivalName description } leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } }
           capacitySettings { id date dayOfWeek maxOffAllowed description }
           holidays { id date nameTh nameEn }
           departments { id name description icon }
@@ -287,7 +296,7 @@ class CalendarDataService {
     if (this.allEventsFlight) return this.allEventsFlight;
 
     this.allEventsFlight = fetchGraphQL(`
-      query { getEvents { id userId userName date status details leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } } }
+      query { getEvents { id userId userName date status details usedTokenTxId usedTokenInfo { id earnedDate festivalName description } leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } } }
     `).then(data => {
       const result: CalendarEvent[] = data?.getEvents ?? [];
       this.allEventsCache = { data: result, expiresAt: Date.now() + this.TTL };

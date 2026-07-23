@@ -23,13 +23,14 @@ model TeamMember {
 }
 
 model CalendarEvent {
-  id           String        @id @default(uuid())
-  userId       String
-  userName     String
-  date         String
-  status       String
-  details      String?
-  leaveRequest LeaveRequest?
+  id                  String        @id @default(uuid())
+  userId              String
+  userName            String
+  date                String
+  status              String
+  details             String?
+  usedTokenTxId       String?
+  leaveRequest        LeaveRequest?
 
   @@index([userId])
   @@index([date])
@@ -48,13 +49,14 @@ model LeaveRequest {
 }
 
 model TokenTransaction {
-  id          String   @id @default(uuid())
-  userId      String
-  type        String
-  amount      Float
-  description String
-  relatedDate String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  userId        String
+  type          String
+  amount        Float
+  description   String
+  relatedDate   String?
+  usedTokenTxId String?
+  createdAt     DateTime @default(now())
 
   @@index([userId])
   @@index([createdAt])

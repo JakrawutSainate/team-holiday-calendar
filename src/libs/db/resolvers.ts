@@ -57,10 +57,112 @@ export async function resolveGraphQL(
     throw new Error('unauthorized: you must be logged in to perform this action');
   };
 
+async function autoBackfillUsedTokens() {
+  const leaves = await prisma.calendarEvent.findMany({
+    where: {
+      status: { in: ['COMPENSATORY_OFF', 'NORMAL'] },
+      usedTokenTxId: null,
+    },
+    orderBy: { date: 'asc' },
+  });
+
+  if (leaves.length === 0) return;
+
+  const userLeavesMap = new Map<string, typeof leaves>();
+  for (const leave of leaves) {
+    const list = userLeavesMap.get(leave.userId) || [];
+    list.push(leave);
+    userLeavesMap.set(leave.userId, list);
+  }
+
+  for (const [userId, userLeaves] of userLeavesMap.entries()) {
+    const earnTxns = await prisma.tokenTransaction.findMany({
+      where: { userId, type: 'EARN' },
+    });
+    earnTxns.sort((a, b) => {
+      const dateA = a.relatedDate || (a.createdAt ? a.createdAt.toISOString().split('T')[0] : '');
+      const dateB = b.relatedDate || (b.createdAt ? b.createdAt.toISOString().split('T')[0] : '');
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
+    });
+
+    const assignedEvents = await prisma.calendarEvent.findMany({
+      where: { userId, usedTokenTxId: { not: null } },
+      select: { usedTokenTxId: true },
+    });
+    const usedTokenIds = new Set(assignedEvents.map(e => e.usedTokenTxId).filter(Boolean));
+
+    let earnIdx = 0;
+    for (const leave of userLeaves) {
+      while (earnIdx < earnTxns.length && usedTokenIds.has(earnTxns[earnIdx].id)) {
+        earnIdx++;
+      }
+      if (earnIdx < earnTxns.length) {
+        const assignedTx = earnTxns[earnIdx];
+        usedTokenIds.add(assignedTx.id);
+        await prisma.calendarEvent.update({
+          where: { id: leave.id },
+          data: { usedTokenTxId: assignedTx.id },
+        });
+        earnIdx++;
+      }
+    }
+  }
+}
+
+async function attachTokenInfoToEvents(rawEvents: any[]) {
+  const hasUnlinked = rawEvents.some(
+    e => (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL') && !e.usedTokenTxId
+  );
+  if (hasUnlinked) {
+    await autoBackfillUsedTokens();
+    rawEvents = await prisma.calendarEvent.findMany({
+      select: {
+        id: true, userId: true, userName: true, date: true, status: true, details: true, usedTokenTxId: true,
+        leaveRequest: { select: { id: true, eventId: true, reason: true, signatureType: true, signatureText: true, signatureImage: true, attachmentImage: true } }
+      },
+    });
+  }
+
+  const tokenTxIds = rawEvents.map(e => e.usedTokenTxId).filter(Boolean) as string[];
+  if (tokenTxIds.length === 0) {
+    return rawEvents.map(e => ({ ...e, usedTokenInfo: null }));
+  }
+
+  const [earnTxns, holidays] = await Promise.all([
+    prisma.tokenTransaction.findMany({
+      where: { id: { in: tokenTxIds } },
+    }),
+    prisma.holiday.findMany(),
+  ]);
+
+  const earnMap = new Map(earnTxns.map(t => [t.id, t]));
+  const holidayMap = new Map(holidays.map(h => [h.date, h.nameTh]));
+
+  return rawEvents.map(e => {
+    if (!e.usedTokenTxId) return { ...e, usedTokenInfo: null };
+    const earnTx = earnMap.get(e.usedTokenTxId);
+    if (!earnTx) return { ...e, usedTokenInfo: null };
+
+    const earnedDate = earnTx.relatedDate || (earnTx.createdAt ? earnTx.createdAt.toISOString().split('T')[0] : '');
+    const festivalName = holidayMap.get(earnedDate) || earnTx.description || 'วันทำงานค้ำประกันวันหยุด';
+
+    return {
+      ...e,
+      usedTokenInfo: {
+        id: earnTx.id,
+        earnedDate,
+        festivalName,
+        description: earnTx.description,
+      },
+    };
+  });
+}
+
   // ─── PUBLIC QUERIES ────────────────────────────────────────────────────────
 
   if (q.includes('getInitialAppData')) {
-    const [members, events, capacitySettings, holidays, departments] = await Promise.all([
+    const [members, rawEvents, capacitySettings, holidays, departments] = await Promise.all([
       prisma.teamMember.findMany({
         select: {
           id: true, name: true, email: true, role: true,
@@ -69,7 +171,10 @@ export async function resolveGraphQL(
         },
       }),
       prisma.calendarEvent.findMany({
-        select: { id: true, userId: true, userName: true, date: true, status: true, details: true },
+        select: {
+          id: true, userId: true, userName: true, date: true, status: true, details: true, usedTokenTxId: true,
+          leaveRequest: { select: { id: true, eventId: true, reason: true, signatureType: true, signatureText: true, signatureImage: true, attachmentImage: true } }
+        },
       }),
       prisma.capacitySetting.findMany({
         select: { id: true, date: true, dayOfWeek: true, maxOffAllowed: true, description: true },
@@ -77,6 +182,8 @@ export async function resolveGraphQL(
       prisma.holiday.findMany({ orderBy: { date: 'asc' } }),
       prisma.department.findMany({ orderBy: { name: 'asc' } }),
     ]);
+
+    const events = await attachTokenInfoToEvents(rawEvents);
 
     return {
       getInitialAppData: {
@@ -101,9 +208,13 @@ export async function resolveGraphQL(
   }
 
   if (q.includes('getEvents')) {
-    const events = await prisma.calendarEvent.findMany({
-      select: { id: true, userId: true, userName: true, date: true, status: true, details: true },
+    const rawEvents = await prisma.calendarEvent.findMany({
+      select: {
+        id: true, userId: true, userName: true, date: true, status: true, details: true, usedTokenTxId: true,
+        leaveRequest: { select: { id: true, eventId: true, reason: true, signatureType: true, signatureText: true, signatureImage: true, attachmentImage: true } }
+      },
     });
+    const events = await attachTokenInfoToEvents(rawEvents);
     return { getEvents: events };
   }
 
@@ -272,12 +383,33 @@ export async function resolveGraphQL(
     const signatureType = (variables.signatureType as string) || 'SAVED';
     const signatureText = (variables.signatureText as string) || parsedFullName || authUser.name;
 
+    // Find next available EARN token in FIFO order for this user
+    const earnTxns = await prisma.tokenTransaction.findMany({
+      where: { userId: authUser.id, type: 'EARN' },
+    });
+    earnTxns.sort((a, b) => {
+      const dateA = a.relatedDate || (a.createdAt ? a.createdAt.toISOString().split('T')[0] : '');
+      const dateB = b.relatedDate || (b.createdAt ? b.createdAt.toISOString().split('T')[0] : '');
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
+    });
+
+    const usedEvents = await prisma.calendarEvent.findMany({
+      where: { userId: authUser.id, usedTokenTxId: { not: null } },
+      select: { usedTokenTxId: true },
+    });
+    const usedTokenIds = new Set(usedEvents.map(e => e.usedTokenTxId).filter(Boolean));
+
+    const selectedEarnTx = earnTxns.find(tx => !usedTokenIds.has(tx.id));
+    const usedTokenTxId = selectedEarnTx ? selectedEarnTx.id : null;
+
     const event = await prisma.calendarEvent.create({
       data: {
         userId: authUser.id,
         userName: parsedFullName || authUser.name,
         date,
         status: 'COMPENSATORY_OFF',
+        usedTokenTxId,
         leaveRequest: {
           create: {
             reason: rawReason,
@@ -320,10 +452,11 @@ export async function resolveGraphQL(
     });
 
     await prisma.tokenTransaction.create({
-      data: { userId: authUser.id, type: 'SPEND', amount: 1.0, description: 'Compensatory Leave Request', relatedDate: date },
+      data: { userId: authUser.id, type: 'SPEND', amount: 1.0, description: 'Compensatory Leave Request', relatedDate: date, usedTokenTxId },
     });
 
-    return { requestLeave: event };
+    const enriched = await attachTokenInfoToEvents([event]);
+    return { requestLeave: enriched[0] || event };
   }
 
   if (q.includes('cancelLeave')) {
