@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/src/libs/session';
@@ -27,11 +28,11 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-export async function getSession() {
+export const getSession = cache(async () => {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   return session;
-}
+});
 
 const getInternalApiUrl = (): string => {
   let url = process.env.INTERNAL_API_URL || '';

@@ -256,12 +256,15 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
 
   if (q.includes('getUserTokenQueue')) {
     const authUser = await requireAuth();
-    const earnTxns = await prisma.tokenTransaction.findMany({
-      where: { userId: authUser.id, type: 'EARN' },
-    });
-    const spendTxns = await prisma.tokenTransaction.findMany({
-      where: { userId: authUser.id, type: { in: ['SPEND', 'REDEEM'] } },
-    });
+    const [earnTxns, spendTxns, holidays] = await Promise.all([
+      prisma.tokenTransaction.findMany({
+        where: { userId: authUser.id, type: 'EARN' },
+      }),
+      prisma.tokenTransaction.findMany({
+        where: { userId: authUser.id, type: { in: ['SPEND', 'REDEEM'] } },
+      }),
+      prisma.holiday.findMany(),
+    ]);
 
     // Sort earnTxns by actual earned work date (relatedDate) ascending
     earnTxns.sort((a, b) => {
@@ -273,7 +276,6 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
 
     const totalSpent = spendTxns.reduce((acc, t) => acc + (t.amount || 1.0), 0);
 
-    const holidays = await prisma.holiday.findMany();
     const holidayMap = new Map<string, string>();
     holidays.forEach(h => holidayMap.set(h.date, h.nameTh));
 
@@ -549,14 +551,15 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
       throw new Error(`insufficient tokens: you need at least ${amount.toFixed(1)} tokens to redeem`);
     }
 
-    await prisma.teamMember.update({
-      where: { id: authUser.id },
-      data: { tokensBalance: { decrement: amount } },
-    });
-
-    const txn = await prisma.tokenTransaction.create({
-      data: { userId: authUser.id, type: 'SPEND', amount, description },
-    });
+    const [, txn] = await prisma.$transaction([
+      prisma.teamMember.update({
+        where: { id: authUser.id },
+        data: { tokensBalance: { decrement: amount } },
+      }),
+      prisma.tokenTransaction.create({
+        data: { userId: authUser.id, type: 'SPEND', amount, description },
+      }),
+    ]);
 
     return { redeemTokens: txn };
   }

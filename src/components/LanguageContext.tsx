@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { Language, translations } from '../libs/i18n';
 
 interface LanguageContextProps {
@@ -12,28 +12,34 @@ interface LanguageContextProps {
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('hq-lang') as Language;
-    if (saved && saved !== language) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLanguageState(saved);
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hq-lang') as Language;
+      if (saved && (saved === 'en' || saved === 'th')) return saved;
     }
+    return 'en';
+  });
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hq-lang', lang);
+    }
+  }, []);
+
+  const t = useCallback((key: keyof typeof translations['en']): string => {
+    const translation = translations[language]?.[key];
+    return translation || translations['en'][key] || String(key);
   }, [language]);
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('hq-lang', lang);
-  };
-
-  const t = (key: keyof typeof translations['en']): string => {
-    const translation = translations[language][key];
-    return translation || translations['en'][key] || String(key);
-  };
+  const value = useMemo(() => ({
+    language,
+    setLanguage,
+    t
+  }), [language, setLanguage, t]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

@@ -8,10 +8,12 @@ import { useAuth } from '@/src/components/AuthContext';
 import TopNavBar from '@/src/components/TopNavBar';
 import { useConfirm } from '@/src/components/ConfirmDialog';
 import { ErrorBoundary } from '@/src/components/ErrorBoundary';
-import LeaveDocumentFormModal from '@/src/components/LeaveDocumentFormModal';
-import LeaveDocumentDetailModal from '@/src/components/LeaveDocumentDetailModal';
+import dynamic from 'next/dynamic';
 import { runGraphQLAction } from '@/src/actions/auth';
 import { useRealtimeSync } from '@/src/hooks/useRealtimeSync';
+
+const LeaveDocumentFormModal = dynamic(() => import('@/src/components/LeaveDocumentFormModal'), { ssr: false });
+const LeaveDocumentDetailModal = dynamic(() => import('@/src/components/LeaveDocumentDetailModal'), { ssr: false });
 
 interface LeaveDocument {
   id: string;

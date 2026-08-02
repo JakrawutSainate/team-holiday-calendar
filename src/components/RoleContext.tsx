@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 
 export type Role = 'ADMIN' | 'USER';
@@ -18,12 +18,14 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   // Resolve role dynamically: ADMIN/LEAD map to 'ADMIN', others/unauthenticated map to 'USER'
   const role: Role = user && (user.role === 'ADMIN' || user.role === 'LEAD') ? 'ADMIN' : 'USER';
 
-  const setRole = (_newRole: Role) => {
+  const setRole = useCallback((_newRole: Role) => {
     // No-op (role resolved dynamically from AuthContext)
-  };
+  }, []);
+
+  const value = useMemo(() => ({ role, setRole }), [role, setRole]);
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={value}>
       {children}
     </RoleContext.Provider>
   );

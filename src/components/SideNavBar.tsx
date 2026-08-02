@@ -7,7 +7,7 @@ import { useRole } from './RoleContext';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { useConfirm } from './ConfirmDialog';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function SideNavBar() {
   const pathname = usePathname();
@@ -27,7 +27,7 @@ export default function SideNavBar() {
     }
   }, [pathname]);
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { name: t('overview'), href: '/overview', icon: 'dashboard' },
     { name: t('calendar'), href: '/calendar', icon: 'calendar_month' },
     { name: t('myLeaves'), href: '/leaves', icon: 'event_busy' },
@@ -36,9 +36,9 @@ export default function SideNavBar() {
     { name: t('team'), href: '/team', icon: 'group' },
     { name: t('masterData'), href: '/master-data', icon: 'storage' },
     { name: t('settings'), href: '/settings', icon: 'settings' },
-  ];
+  ], [t, language]);
 
-  const masterDataSubItems = [
+  const masterDataSubItems = useMemo(() => [
     { name: language === 'th' ? 'คลังลายเซ็น' : 'Signature Library', href: '/master-data/signatures', icon: 'draw' },
     { name: language === 'th' ? 'ข้อมูลผู้ใช้งานและโควตา' : 'User Data & Quotas', href: '/master-data/users', icon: 'badge' },
     { name: language === 'th' ? 'วันหยุดนักขัตฤกษ์' : 'Public Holidays', href: '/master-data/holidays', icon: 'calendar_today' },
@@ -47,23 +47,21 @@ export default function SideNavBar() {
     { name: language === 'th' ? 'ประเภทการลา' : 'Leave Types', href: '/master-data/leave-types', icon: 'format_list_bulleted' },
     ...(role === 'ADMIN' ? [{ name: language === 'th' ? 'ประวัติระบบ' : 'Audit Logs', href: '/master-data/audit-logs', icon: 'history' }] : []),
     ...(role === 'ADMIN' ? [{ name: language === 'th' ? 'เคลม Token วันหยุด' : 'Bulk Token Claim', href: '/master-data/bulk-claim', icon: 'token' }] : []),
-  ];
+  ], [language, role]);
 
   // Filter items based on login status and role
-  const filteredItems = navItems.filter((item) => {
-    // If guest (not logged in): only show Calendar and Team
+  const filteredItems = useMemo(() => navItems.filter((item) => {
     if (!user) {
       return item.href === '/calendar' || item.href === '/team';
     }
-    // If not admin: hide settings page
     if (role !== 'ADMIN' && item.href === '/settings') {
       return false;
     }
     return true;
-  });
+  }), [navItems, user, role]);
 
   // Keep mobile bottom bar to exactly 5 key items to avoid overflow/crowding
-  const mobileFilteredItems = filteredItems.filter((item) => {
+  const mobileFilteredItems = useMemo(() => filteredItems.filter((item) => {
     if (!user) {
       return item.href === '/calendar' || item.href === '/team';
     }
@@ -74,7 +72,7 @@ export default function SideNavBar() {
       item.href === '/balance' ||
       item.href === '/master-data'
     );
-  });
+  }), [filteredItems, user]);
 
   const handleLogout = async () => {
     const ok = await confirm({

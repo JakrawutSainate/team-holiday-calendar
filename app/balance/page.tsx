@@ -1,14 +1,14 @@
 import BalanceClient from './components/BalanceClient';
 
-export default async function BalancePage() {
-  // Static placeholders; immediately populated with dynamic PostgreSQL values inside BalanceClient controller
-  const initialTransactions: any[] = [];
-  const initialTokens = 0;
+// Static placeholders hoisted to module scope to avoid re-allocation on every render
+const INITIAL_TRANSACTIONS: any[] = [];
+const INITIAL_TOKENS = 0;
 
+export default async function BalancePage() {
   return (
     <BalanceClient
-      initialTokens={initialTokens}
-      initialTransactions={initialTransactions}
+      initialTokens={INITIAL_TOKENS}
+      initialTransactions={INITIAL_TRANSACTIONS}
     />
   );
 }

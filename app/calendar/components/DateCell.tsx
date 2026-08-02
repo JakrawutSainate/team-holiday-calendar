@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarEvent, CapacitySetting } from '@/src/libs/calendarData';
 import { useTranslation } from '@/src/components/LanguageContext';
@@ -17,7 +17,7 @@ interface DateCellProps {
   onClick?: () => void;
 }
 
-export default function DateCell({ day, isMuted, dateString, events, leaveDocuments, capacity, onClick }: DateCellProps) {
+function DateCell({ day, isMuted, dateString, events, leaveDocuments, capacity, onClick }: DateCellProps) {
   const router = useRouter();
   const { language, t } = useTranslation();
   const { user } = useAuth();
@@ -307,4 +307,6 @@ export default function DateCell({ day, isMuted, dateString, events, leaveDocume
     </div>
   );
 }
+
+export default memo(DateCell);
 

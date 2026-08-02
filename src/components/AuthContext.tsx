@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { loginAction, logoutAction, getCurrentUserAction } from '@/src/actions/auth';
 
 export interface User {
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const openLogin = () => setIsLoginOpen(true);
-  const closeLogin = () => setIsLoginOpen(false);
+  const openLogin = useCallback(() => setIsLoginOpen(true), []);
+  const closeLogin = useCallback(() => setIsLoginOpen(false), []);
 
   // Restore session from BFF secure cookie on mount
   useEffect(() => {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await loginAction(email, password);
       if (res.success && res.user) {
@@ -67,18 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err: any) {
       return { success: false, error: err.message || 'Connection error' };
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await logoutAction();
       setUser(null);
     } catch (err) {
       console.error('Failed to logout', err);
     }
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const currentUser = await getCurrentUserAction();
       if (currentUser) {
@@ -87,12 +87,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Failed to refresh user data', err);
     }
-  };
+  }, []);
 
   const token = user ? 'session_active_masked' : null;
 
+  const value = useMemo(() => ({
+    user,
+    token,
+    login,
+    logout,
+    loading,
+    refreshUser,
+    isLoginOpen,
+    openLogin,
+    closeLogin
+  }), [user, token, login, logout, loading, refreshUser, isLoginOpen, openLogin, closeLogin]);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser, isLoginOpen, openLogin, closeLogin }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
