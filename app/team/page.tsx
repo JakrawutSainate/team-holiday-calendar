@@ -7,12 +7,12 @@ interface PageProps {
   searchParams: Promise<{ q?: string }>;
 }
 
+// Static placeholder hoisted to module scope to avoid re-allocation on every request
+const INITIAL_MEMBERS: any[] = [];
+
 export default async function TeamPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const q = resolvedParams.q || '';
-  
-  // Set initial empty state; instantly loads using async client controller getTeamMembers()
-  const initialMembers: any[] = [];
 
   return (
     <Suspense
@@ -24,7 +24,7 @@ export default async function TeamPage({ searchParams }: PageProps) {
         </div>
       }
     >
-      <TeamClient initialMembers={initialMembers} searchTerm={q} />
+      <TeamClient initialMembers={INITIAL_MEMBERS} searchTerm={q} />
     </Suspense>
   );
 }

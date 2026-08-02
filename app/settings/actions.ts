@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { SettingsValidator, ProfileSettingsInput, WorkspaceSettingsInput } from './schema';
 import { sanitize } from '@/src/libs/security';
 import { runGraphQLAction, getSession } from '@/src/actions/auth';
@@ -52,7 +53,7 @@ export async function saveSignatureAction(signature: string | null) {
   }
 }
 
-export async function getUserSavedSignatureAction(): Promise<string | null> {
+export const getUserSavedSignatureAction = cache(async (): Promise<string | null> => {
   try {
     const session = await getSession();
     if (!session.user) return null;
@@ -73,4 +74,4 @@ export async function getUserSavedSignatureAction(): Promise<string | null> {
     console.error('getUserSavedSignatureAction error:', err);
     return null;
   }
-}
+});
