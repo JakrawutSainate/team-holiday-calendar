@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { TeamMember } from '@/src/libs/calendarData';
 
@@ -11,7 +11,7 @@ interface ExportDialogProps {
   onConfirmExport: (format: 'PDF' | 'EXCEL', selectedUserId: string) => void;
 }
 
-export function ExportDialog({ open, onClose, members, onConfirmExport }: ExportDialogProps) {
+export const ExportDialog = memo(function ExportDialog({ open, onClose, members, onConfirmExport }: ExportDialogProps) {
   const { language } = useTranslation();
   const [selectedUserId, setSelectedUserId] = useState('all');
 
@@ -86,4 +86,4 @@ export function ExportDialog({ open, onClose, members, onConfirmExport }: Export
       </div>
     </div>
   );
-}
+});

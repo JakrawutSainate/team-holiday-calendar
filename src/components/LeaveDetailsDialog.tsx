@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import type { LeaveFormData } from '@/src/types/leave';
 
@@ -46,7 +46,7 @@ function fmtDate(d: string): string {
   return `${dt.getDate()} ${thM[dt.getMonth()]} ${dt.getFullYear() + 543}`;
 }
 
-export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRequest }: LeaveDetailsDialogProps) {
+export const LeaveDetailsDialog = memo(function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRequest }: LeaveDetailsDialogProps) {
   const { language } = useTranslation();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -423,4 +423,4 @@ export function LeaveDetailsDialog({ open, onClose, leaveDate, userName, leaveRe
       </div>
     </div>
   );
-}
+});
