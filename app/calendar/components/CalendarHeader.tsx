@@ -1,8 +1,10 @@
 'use client';
 
+import { memo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { useAuth } from '@/src/components/AuthContext';
+
 interface CalendarHeaderProps {
   year: number;
   month: number;
@@ -12,7 +14,18 @@ interface CalendarHeaderProps {
   onOpenExport?: () => void;
 }
 
-export default function CalendarHeader({
+// Month names hoisted outside component scope to avoid re-allocation on every render
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const MONTH_NAMES_TH = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+function CalendarHeader({
   year,
   month,
   role,
@@ -26,20 +39,8 @@ export default function CalendarHeader({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Month names in English
-  const monthNamesEn = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // Month names in Thai
-  const monthNamesTh = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-  ];
-
   const getMonthName = (mIndex: number) => {
-    return language === 'en' ? monthNamesEn[mIndex] : monthNamesTh[mIndex];
+    return language === 'en' ? MONTH_NAMES_EN[mIndex] : MONTH_NAMES_TH[mIndex];
   };
 
   const navigateToMonth = (newYear: number, newMonth: number) => {
@@ -124,3 +125,5 @@ export default function CalendarHeader({
     </section>
   );
 }
+
+export default memo(CalendarHeader);

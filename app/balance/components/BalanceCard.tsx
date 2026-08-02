@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 
 interface BalanceCardProps {
@@ -7,7 +8,7 @@ interface BalanceCardProps {
   onRedeem: () => void;
 }
 
-export default function BalanceCard({ tokens, onRedeem }: BalanceCardProps) {
+function BalanceCard({ tokens, onRedeem }: BalanceCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -30,3 +31,5 @@ export default function BalanceCard({ tokens, onRedeem }: BalanceCardProps) {
     </div>
   );
 }
+
+export default memo(BalanceCard);

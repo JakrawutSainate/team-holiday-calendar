@@ -1,8 +1,9 @@
 'use client';
 
+import { memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 
-export default function HowItWorksCard() {
+function HowItWorksCard() {
   const { t } = useTranslation();
 
   return (
@@ -20,3 +21,5 @@ export default function HowItWorksCard() {
     </div>
   );
 }
+
+export default memo(HowItWorksCard);
