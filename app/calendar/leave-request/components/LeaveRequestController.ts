@@ -78,14 +78,15 @@ export class LeaveRequestController {
     }
   }
 
-  // Calculate past leave days for the current fiscal year
-  public calculatePastLeaveDays(fromDateStr?: string): { SICK: number; PERSONAL: number; MATERNITY: number } {
+  // Calculate past leave days for the specified user in the current fiscal year (strictly prior to fromDateStr)
+  public calculatePastLeaveDays(fromDateStr?: string, targetUserId?: string): { SICK: number; PERSONAL: number; MATERNITY: number } {
     const stats = {
       SICK: 0,
       PERSONAL: 0,
       MATERNITY: 0
     };
 
+    const targetId = targetUserId || this.userId;
     const d = fromDateStr ? new Date(fromDateStr) : new Date();
     const year = d.getFullYear();
     const month = d.getMonth() + 1;
@@ -96,8 +97,10 @@ export class LeaveRequestController {
       endDate = `${year + 1}-09-30`;
     }
 
+    const cutoffDate = fromDateStr || `${year}-12-31`;
+
     const userEvents = this.allEvents.filter(
-      e => e.userId === this.userId && e.date >= startDate && e.date <= endDate
+      e => e.userId === targetId && e.date >= startDate && e.date < cutoffDate
     );
 
     const seenEventIds = new Set<string>();

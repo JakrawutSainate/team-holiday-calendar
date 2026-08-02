@@ -117,18 +117,23 @@ export default function LeaveRequestClient() {
       controller.loadState().then(() => {
         if (!dateParam) return;
 
-        const existingEvent = controller.getAllEvents().find(
-          e => e.userId === user.id && e.date === dateParam && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
-        );
+        const userIdParam = searchParams.get('userId') || '';
+        const targetUserId = userIdParam || user.id;
+
         const existingDoc = controller.getLeaveDocuments().find(
-          d => d.userId === user.id && d.leaveDate === dateParam
+          d => d.leaveDate === dateParam && (userIdParam ? d.userId === userIdParam : true)
+        );
+        const docOwnerId = existingDoc?.userId || targetUserId;
+
+        const existingEvent = controller.getAllEvents().find(
+          e => e.userId === docOwnerId && e.date === dateParam && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
         );
 
         if (!existingEvent && !existingDoc) return;
         setViewOnly(true);
 
-        // Calculate stats at load time for all branches
-        const stats = controller.calculatePastLeaveDays(dateParam);
+        // Calculate stats for the document owner strictly before dateParam
+        const stats = controller.calculatePastLeaveDays(dateParam, docOwnerId);
 
         if (!existingDoc) {
           // If event exists but LeaveDocument is missing, try extracting from event.leaveRequest
