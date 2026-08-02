@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useAuth } from './AuthContext';
 
 interface LeaveDocument {
@@ -28,7 +28,7 @@ interface LeaveDocumentDetailModalProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
-export default function LeaveDocumentDetailModal({
+function LeaveDocumentDetailModal({
   isOpen,
   onClose,
   document,
@@ -364,3 +364,5 @@ export default function LeaveDocumentDetailModal({
     </div>
   );
 }
+
+export default memo(LeaveDocumentDetailModal);

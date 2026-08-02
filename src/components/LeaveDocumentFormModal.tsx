@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useAuth } from './AuthContext';
 import SignatureCanvas from './SignatureCanvas';
 import { getUserSavedSignatureAction } from '@/app/settings/actions';
@@ -17,7 +17,7 @@ interface LeaveDocumentFormModalProps {
   }) => Promise<void>;
 }
 
-export default function LeaveDocumentFormModal({
+function LeaveDocumentFormModal({
   isOpen,
   onClose,
   onSubmit
@@ -312,3 +312,5 @@ export default function LeaveDocumentFormModal({
     </div>
   );
 }
+
+export default memo(LeaveDocumentFormModal);

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { Transaction } from '@/src/libs/calendarData';
 
@@ -7,7 +8,7 @@ interface TransactionHistoryTableProps {
   transactions: Transaction[];
 }
 
-export default function TransactionHistoryTable({ transactions }: TransactionHistoryTableProps) {
+function TransactionHistoryTable({ transactions }: TransactionHistoryTableProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,7 +29,7 @@ export default function TransactionHistoryTable({ transactions }: TransactionHis
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {transactions.map((tx, idx) => (
-              <tr key={idx} className="hover:bg-zinc-50/30 text-base text-zinc-800 transition-colors">
+              <tr key={`${tx.date}-${idx}`} className="hover:bg-zinc-50/30 text-base text-zinc-800 transition-colors">
                 <td className="px-8 py-4.5">{tx.date}</td>
                 <td className="px-8 py-4.5 font-semibold text-zinc-900">{tx.type}</td>
                 <td className="px-8 py-4.5 text-zinc-600">{tx.description}</td>
@@ -48,3 +49,5 @@ export default function TransactionHistoryTable({ transactions }: TransactionHis
     </div>
   );
 }
+
+export default memo(TransactionHistoryTable);
