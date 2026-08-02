@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useTranslation } from './LanguageContext';
 
@@ -8,13 +9,13 @@ interface TopNavBarProps {
   placeholder?: string;
 }
 
-export default function TopNavBar({ onSearch, placeholder }: TopNavBarProps) {
+function TopNavBar({ onSearch, placeholder }: TopNavBarProps) {
   const { language, setLanguage, t } = useTranslation();
   const { user } = useAuth();
 
-  const toggleLanguage = () => {
+  const toggleLanguage = useCallback(() => {
     setLanguage(language === 'en' ? 'th' : 'en');
-  };
+  }, [language, setLanguage]);
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between px-6 lg:px-12 w-full h-16 border-b border-zinc-100 bg-white/85 backdrop-blur-md transition-colors duration-200">
@@ -41,3 +42,5 @@ export default function TopNavBar({ onSearch, placeholder }: TopNavBarProps) {
     </header>
   );
 }
+
+export default memo(TopNavBar);
