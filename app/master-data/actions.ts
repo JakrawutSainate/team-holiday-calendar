@@ -1,9 +1,10 @@
 'use server';
 
+import { cache } from 'react';
 import { runGraphQLAction, getSession } from '@/src/actions/auth';
 import { Member, CapacitySetting, AuditLog } from './types';
 
-export async function fetchTeamMembersAction(): Promise<Member[]> {
+export const fetchTeamMembersAction = cache(async (): Promise<Member[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -26,9 +27,9 @@ export async function fetchTeamMembersAction(): Promise<Member[]> {
     console.error('fetchTeamMembersAction error:', err);
     return [];
   }
-}
+});
 
-export async function fetchCapacitySettingsAction(): Promise<CapacitySetting[]> {
+export const fetchCapacitySettingsAction = cache(async (): Promise<CapacitySetting[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -46,9 +47,9 @@ export async function fetchCapacitySettingsAction(): Promise<CapacitySetting[]> 
     console.error('fetchCapacitySettingsAction error:', err);
     return [];
   }
-}
+});
 
-export async function fetchAuditLogsAction(): Promise<AuditLog[]> {
+export const fetchAuditLogsAction = cache(async (): Promise<AuditLog[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -67,7 +68,7 @@ export async function fetchAuditLogsAction(): Promise<AuditLog[]> {
     console.error('fetchAuditLogsAction error:', err);
     return [];
   }
-}
+});
 
 export async function updateTeamMemberProfileAction(
   id: string,
@@ -119,7 +120,7 @@ export interface JobTitleItem {
   departmentName: string;
 }
 
-export async function fetchDepartmentsAction(): Promise<DepartmentItem[]> {
+export const fetchDepartmentsAction = cache(async (): Promise<DepartmentItem[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -136,7 +137,7 @@ export async function fetchDepartmentsAction(): Promise<DepartmentItem[]> {
     console.error('fetchDepartmentsAction error:', err);
     return [];
   }
-}
+});
 
 export async function createDepartmentAction(name: string, description?: string, icon?: string): Promise<{ success: boolean; error?: string }> {
   try {
@@ -192,7 +193,7 @@ export async function deleteDepartmentAction(id: string): Promise<{ success: boo
   }
 }
 
-export async function fetchJobTitlesAction(): Promise<JobTitleItem[]> {
+export const fetchJobTitlesAction = cache(async (): Promise<JobTitleItem[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -208,7 +209,7 @@ export async function fetchJobTitlesAction(): Promise<JobTitleItem[]> {
     console.error('fetchJobTitlesAction error:', err);
     return [];
   }
-}
+});
 
 export async function createJobTitleAction(name: string, departmentName: string): Promise<{ success: boolean; error?: string }> {
   try {
@@ -252,7 +253,7 @@ export interface HolidayItem {
   nameEn: string;
 }
 
-export async function fetchHolidaysAction(): Promise<HolidayItem[]> {
+export const fetchHolidaysAction = cache(async (): Promise<HolidayItem[]> => {
   try {
     const res = await runGraphQLAction(`
       query {
@@ -269,7 +270,7 @@ export async function fetchHolidaysAction(): Promise<HolidayItem[]> {
     console.error('fetchHolidaysAction error:', err);
     return [];
   }
-}
+});
 
 export async function createHolidayAction(date: string, nameTh: string, nameEn: string): Promise<{ success: boolean; error?: string }> {
   try {

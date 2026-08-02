@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, useMemo, ReactNode } from 'react';
 
 interface ConfirmOptions {
   title: string;
@@ -32,8 +32,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const handleConfirm = () => { setOpen(false); resolveRef.current(true); };
   const handleCancel = () => { setOpen(false); resolveRef.current(false); };
 
+  const value = useMemo(() => ({ confirm }), [confirm]);
+
   return (
-    <ConfirmContext.Provider value={{ confirm }}>
+    <ConfirmContext.Provider value={value}>
       {children}
       {open && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">

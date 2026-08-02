@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Member, CapacitySetting, AuditLog } from '../types';
 import { fetchTeamMembersAction, fetchCapacitySettingsAction, fetchAuditLogsAction } from '../actions';
 import { useRole } from '@/src/components/RoleContext';
@@ -54,17 +54,17 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
     refreshData();
   }, [refreshData]);
 
+  const value = useMemo(() => ({
+    members,
+    capacitySettings,
+    auditLogs,
+    isLoading,
+    error,
+    refreshData
+  }), [members, capacitySettings, auditLogs, isLoading, error, refreshData]);
+
   return (
-    <MasterDataContext.Provider
-      value={{
-        members,
-        capacitySettings,
-        auditLogs,
-        isLoading,
-        error,
-        refreshData
-      }}
-    >
+    <MasterDataContext.Provider value={value}>
       {children}
     </MasterDataContext.Provider>
   );
