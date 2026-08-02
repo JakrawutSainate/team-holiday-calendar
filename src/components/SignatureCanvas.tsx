@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 
 interface SignatureCanvasProps {
   onChange: (base64Data: string) => void;
@@ -10,7 +10,7 @@ interface SignatureCanvasProps {
   clearText?: string;
 }
 
-export default function SignatureCanvas({
+function SignatureCanvas({
   onChange,
   width = 500,
   height = 180,
@@ -143,3 +143,5 @@ export default function SignatureCanvas({
     </div>
   );
 }
+
+export default memo(SignatureCanvas);
