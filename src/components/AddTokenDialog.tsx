@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 
 interface AddTokenDialogProps {
@@ -10,7 +10,7 @@ interface AddTokenDialogProps {
   onConfirm: (amount: number, description: string) => void;
 }
 
-export function AddTokenDialog({ open, onClose, memberName, onConfirm }: AddTokenDialogProps) {
+export const AddTokenDialog = memo(function AddTokenDialog({ open, onClose, memberName, onConfirm }: AddTokenDialogProps) {
   const { language } = useTranslation();
   const [amount, setAmount] = useState<number>(1);
   const [description, setDescription] = useState('');
@@ -94,4 +94,4 @@ export function AddTokenDialog({ open, onClose, memberName, onConfirm }: AddToke
       </div>
     </div>
   );
-}
+});

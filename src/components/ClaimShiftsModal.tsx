@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useTranslation } from '@/src/components/LanguageContext';
 import { claimShiftMutation } from '@/src/libs/calendarData';
 
@@ -11,7 +11,7 @@ interface ClaimShiftsModalProps {
   onClaimSuccess: () => void;
 }
 
-export default function ClaimShiftsModal({
+function ClaimShiftsModal({
   isOpen,
   onClose,
   unclaimedShifts,
@@ -177,3 +177,5 @@ export default function ClaimShiftsModal({
     </div>
   );
 }
+
+export default memo(ClaimShiftsModal);
