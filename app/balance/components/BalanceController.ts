@@ -36,13 +36,16 @@ export class BalanceController {
         getTokenTransactions(),
       ]);
 
-      const currentUser = members.find(m => m.id === effectiveUserId);
+      const safeMembers = Array.isArray(members) ? members : [];
+      const safeTxns = Array.isArray(txns) ? txns : [];
+
+      const currentUser = safeMembers.find(m => m.id === effectiveUserId);
       if (currentUser) {
         this.tokens = currentUser.tokensBalance;
       }
 
       // Map real TokenTransaction records to the display Transaction type
-      this.transactions = txns.map((t: TokenTransaction): Transaction => {
+      this.transactions = safeTxns.map((t: TokenTransaction): Transaction => {
         let displayDate = '';
         if (t.relatedDate) {
           try {

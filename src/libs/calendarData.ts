@@ -255,12 +255,13 @@ class CalendarDataService {
         }
       }
     `).then(data => {
-      const init = data?.getInitialAppData ?? {
-        teamMembers: [],
-        events: [],
-        capacitySettings: [],
-        holidays: [],
-        departments: []
+      const rawInit = data?.getInitialAppData;
+      const init = {
+        teamMembers: Array.isArray(rawInit?.teamMembers) ? rawInit.teamMembers : [],
+        events: Array.isArray(rawInit?.events) ? rawInit.events : [],
+        capacitySettings: Array.isArray(rawInit?.capacitySettings) ? rawInit.capacitySettings : [],
+        holidays: Array.isArray(rawInit?.holidays) ? rawInit.holidays : [],
+        departments: Array.isArray(rawInit?.departments) ? rawInit.departments : []
       };
 
       const now = Date.now();
@@ -299,7 +300,8 @@ class CalendarDataService {
     this.allEventsFlight = fetchGraphQL(`
       query { getEvents { id userId userName date status details usedTokenTxId usedTokenInfo { id earnedDate festivalName description } leaveRequest { id eventId reason signatureType signatureText signatureImage attachmentImage } } }
     `).then(data => {
-      const result: CalendarEvent[] = data?.getEvents ?? [];
+      const raw = data?.getEvents;
+      const result: CalendarEvent[] = Array.isArray(raw) ? raw : [];
       this.allEventsCache = { data: result, expiresAt: Date.now() + this.TTL };
       return result;
     }).finally(() => { this.allEventsFlight = null; });
@@ -320,7 +322,8 @@ class CalendarDataService {
     this.membersFlight = fetchGraphQL(`
       query { getTeamMembers { id name email role avatarUrl department title tokensBalance } }
     `).then(data => {
-      const result: TeamMember[] = data?.getTeamMembers ?? [];
+      const raw = data?.getTeamMembers;
+      const result: TeamMember[] = Array.isArray(raw) ? raw : [];
       this.membersCache = { data: result, expiresAt: Date.now() + this.TTL };
       return result;
     }).finally(() => { this.membersFlight = null; });
@@ -335,7 +338,8 @@ class CalendarDataService {
     this.holidaysFlight = fetchGraphQL(`
       query { getHolidays { id date nameTh nameEn } }
     `).then(data => {
-      const result = data?.getHolidays ?? [];
+      const raw = data?.getHolidays;
+      const result = Array.isArray(raw) ? raw : [];
       this.holidaysCache = { data: result, expiresAt: Date.now() + this.TTL };
       return result;
     }).finally(() => { this.holidaysFlight = null; });
@@ -566,7 +570,17 @@ export function getSWRAppCache() {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem('swr_app_data');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        Array.isArray(parsed.teamMembers) &&
+        Array.isArray(parsed.events) &&
+        Array.isArray(parsed.capacitySettings)
+      ) {
+        return parsed;
+      }
+    }
   } catch {}
   return null;
 }

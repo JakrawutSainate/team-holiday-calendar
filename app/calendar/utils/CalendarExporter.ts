@@ -36,12 +36,14 @@ export abstract class CalendarExporter {
     this.language = language;
     this.selectedUserId = selectedUserId;
     
+    const safeMembers = Array.isArray(members) ? members : [];
+    const safeEvents = Array.isArray(events) ? events : [];
     if (selectedUserId && selectedUserId !== 'all') {
-      this.members = members.filter(m => m.id === selectedUserId);
-      this.events = events.filter(e => e.userId === selectedUserId || e.userId === 'system-holiday');
+      this.members = safeMembers.filter(m => m.id === selectedUserId);
+      this.events = safeEvents.filter(e => e.userId === selectedUserId || e.userId === 'system-holiday');
     } else {
-      this.members = members;
-      this.events = events;
+      this.members = safeMembers;
+      this.events = safeEvents;
     }
   }
 
@@ -192,7 +194,7 @@ export abstract class CalendarExporter {
 
       if (leavesOnDay.length > 0) {
         const names = leavesOnDay.map((e) => {
-          const member = this.members.find((m) => m.id === e.userId);
+          const member = Array.isArray(this.members) ? this.members.find((m) => m.id === e.userId) : undefined;
           return member ? `${member.name} (${member.title})` : e.userName;
         });
         summary.push({ day, names });

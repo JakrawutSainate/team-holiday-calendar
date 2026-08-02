@@ -60,11 +60,15 @@ export class LeaveRequestController {
         getLeaveDocuments(),
       ]);
 
-      this.members = members;
-      this.allEvents = events;
-      this.leaveDocuments = docs;
+      const safeMembers = Array.isArray(members) ? members : [];
+      const safeEvents = Array.isArray(events) ? events : [];
+      const safeDocs = Array.isArray(docs) ? docs : [];
 
-      const currentUser = members.find(m => m.id === this.userId);
+      this.members = safeMembers;
+      this.allEvents = safeEvents;
+      this.leaveDocuments = safeDocs;
+
+      const currentUser = safeMembers.find(m => m.id === this.userId);
       this.tokens = currentUser?.tokensBalance ?? 0;
     } catch (e) {
       console.error('LeaveRequestController.loadState failed:', e);

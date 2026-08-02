@@ -91,11 +91,16 @@ export class CalendarController {
 
     // Instant SWR Cache load (0ms)
     const swr = getSWRAppCache();
-    if (swr && swr.teamMembers && swr.events && swr.capacitySettings) {
+    if (
+      swr &&
+      Array.isArray(swr.teamMembers) &&
+      Array.isArray(swr.events) &&
+      Array.isArray(swr.capacitySettings)
+    ) {
       this.gridCells = this.buildGridCells();
       this.members = swr.teamMembers;
       
-      const holidayEvents: CalendarEvent[] = (swr.holidays || []).map((h: any, i: number) => ({
+      const holidayEvents: CalendarEvent[] = (Array.isArray(swr.holidays) ? swr.holidays : []).map((h: any, i: number) => ({
         id: `holiday-${h.date}-${i}`,
         userId: 'system-holiday',
         userName: 'Holiday',
@@ -115,7 +120,7 @@ export class CalendarController {
       }
       this.events = Array.from(combinedMap.values());
 
-      const currentUser = this.members.find((m: TeamMember) => m.id === this.userId);
+      const currentUser = Array.isArray(this.members) ? this.members.find((m: TeamMember) => m.id === this.userId) : undefined;
       if (currentUser) this.tokens = currentUser.tokensBalance;
       const resolved: Record<string, CapacitySetting> = {};
       for (const cell of this.gridCells) {
@@ -137,10 +142,11 @@ export class CalendarController {
         this.userId ? getLeaveDocuments() : Promise.resolve([]),
       ]);
 
-      const members: TeamMember[] = initData.teamMembers || [];
-      const events: CalendarEvent[] = initData.events || [];
-      const holidays: any[] = initData.holidays || [];
-      const allSettings: CapacitySetting[] = initData.capacitySettings || [];
+      const members: TeamMember[] = Array.isArray(initData?.teamMembers) ? initData.teamMembers : [];
+      const events: CalendarEvent[] = Array.isArray(initData?.events) ? initData.events : [];
+      const holidays: any[] = Array.isArray(initData?.holidays) ? initData.holidays : [];
+      const allSettings: CapacitySetting[] = Array.isArray(initData?.capacitySettings) ? initData.capacitySettings : [];
+      const fetchedMonthEvents: CalendarEvent[] = Array.isArray(monthEvents) ? monthEvents : [];
 
       // Re-build grid cells after fresh data fetch
       this.gridCells = this.buildGridCells();
@@ -159,8 +165,8 @@ export class CalendarController {
         const e = events[i];
         if (e && e.id) combinedMap.set(e.id, e);
       }
-      for (let i = 0; i < monthEvents.length; i++) {
-        const e = monthEvents[i];
+      for (let i = 0; i < fetchedMonthEvents.length; i++) {
+        const e = fetchedMonthEvents[i];
         if (e && e.id) combinedMap.set(e.id, e);
       }
       for (let i = 0; i < holidayEvents.length; i++) {
@@ -172,7 +178,7 @@ export class CalendarController {
       this.tokens = currentUser?.tokensBalance ?? 0;
       this.events = Array.from(combinedMap.values());
       this.members = members;
-      this.leaveDocuments = leaveDocs;
+      this.leaveDocuments = Array.isArray(leaveDocs) ? leaveDocs : [];
 
       const resolved: Record<string, CapacitySetting> = {};
       for (const cell of this.gridCells) {

@@ -210,20 +210,23 @@ export class OverviewController {
         getCalendarEvents(year, month),
       ]);
 
+      const safeMembers = Array.isArray(members) ? members : [];
+      const safeEvents = Array.isArray(allEvents) ? allEvents : [];
+
       // Use logged-in user's balance, fall back to first member
-      const currentUser = members.find(m => m.id === effectiveUserId) || members[0];
+      const currentUser = safeMembers.find(m => m.id === effectiveUserId) || safeMembers[0];
       this.tokens = currentUser?.tokensBalance ?? 0;
 
-      this.events = allEvents;
+      this.events = safeEvents;
 
       const tzOffset = now.getTimezoneOffset() * 60000;
       const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
-      const activeLeaves = allEvents.filter(
+      const activeLeaves = safeEvents.filter(
         (e: CalendarEvent) => e.date === todayStr && (e.status === 'COMPENSATORY_OFF' || e.status === 'NORMAL')
       );
 
       const absentCount = activeLeaves.length;
-      const totalMembers = members.length || 1;
+      const totalMembers = safeMembers.length || 1;
       this.stats = {
         presentCount: absentCount,
         availabilityPercent: totalMembers > 0 ? Math.round((absentCount / totalMembers) * 100) : 0

@@ -32,6 +32,7 @@ beforeEach(() => {
   vi.spyOn(calendarDataService, 'getCalendarEvents').mockImplementation(
     (year, month) => Promise.resolve(mockEventsByMonth(year, month))
   );
+  vi.spyOn(calendarDataService, 'getAllRawEvents').mockResolvedValue([mockLeave]);
   vi.spyOn(calendarDataService, 'cancelLeave').mockResolvedValue({});
 });
 

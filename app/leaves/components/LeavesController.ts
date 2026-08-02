@@ -41,14 +41,19 @@ export class LeavesController {
         getAllRawEvents(),
       ]);
 
-      const currentUser = members.find(m => m.id === effectiveUserId);
+      const safeMembers = Array.isArray(members) ? members : [];
+      const safeCurrentEvents = Array.isArray(currentEvents) ? currentEvents : [];
+      const safePrevEvents = Array.isArray(prevEvents) ? prevEvents : [];
+      const safeRawEvents = Array.isArray(rawEvents) ? rawEvents : [];
+
+      const currentUser = safeMembers.find(m => m.id === effectiveUserId);
       if (currentUser) {
         this.tokens = currentUser.tokensBalance;
       }
 
       // Merge month events and raw events, deduplicating by ID
       const eventMap = new Map<string, CalendarEvent>();
-      for (const e of [...(rawEvents || []), ...(currentEvents || []), ...(prevEvents || [])]) {
+      for (const e of [...safeRawEvents, ...safeCurrentEvents, ...safePrevEvents]) {
         if (e && e.id) eventMap.set(e.id, e);
       }
 
