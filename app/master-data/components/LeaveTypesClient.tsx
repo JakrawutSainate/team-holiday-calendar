@@ -16,7 +16,7 @@ export default function LeaveTypesClient() {
       <TopNavBar placeholder={language === 'th' ? 'ตรวจสอบกฎการลา...' : 'Check leave protocols...'} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+        <div className="w-full max-w-none space-y-8 animate-fade-in">
           {/* Header */}
           <div>
             <h2 className="text-4xl font-bold tracking-tight text-zinc-900">

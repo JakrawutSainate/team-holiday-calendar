@@ -90,7 +90,7 @@ export default function BalanceClient({ initialTokens, initialTransactions }: Ba
       <TopNavBar placeholder={t('searchTransactions')} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar animate-fade-in">
-        <div className="max-w-[1280px] mx-auto space-y-8">
+        <div className="w-full max-w-none space-y-8">
           {/* Header */}
           <BalanceHeader />
 

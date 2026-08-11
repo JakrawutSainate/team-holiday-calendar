@@ -43,7 +43,7 @@ export default function CapacitiesClient() {
       <TopNavBar placeholder={language === 'th' ? 'ตรวจสอบกฎคนลา...' : 'Check workload capacity rules...'} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+        <div className="w-full max-w-none space-y-8 animate-fade-in">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

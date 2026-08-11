@@ -151,7 +151,7 @@ export default function SignatureLibraryClient() {
       <TopNavBar placeholder={language === 'th' ? 'ค้นหาลายเซ็นพนักงาน...' : 'Search employee signatures...'} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+        <div className="w-full max-w-none space-y-8 animate-fade-in">
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>

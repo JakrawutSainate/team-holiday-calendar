@@ -146,7 +146,7 @@ export default function TeamClient({ initialMembers, searchTerm }: TeamClientPro
       <TopNavBar placeholder={t('searchTeamMembers')} onSearch={handleSearch} />
 
       <main className="flex-1 p-6 lg:p-12 pb-24 lg:pb-12 overflow-y-auto custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-12">
+        <div className="w-full max-w-none space-y-12">
           {/* Page Header Section */}
           <TeamHeader onAddMember={handleAddMember} />
 
