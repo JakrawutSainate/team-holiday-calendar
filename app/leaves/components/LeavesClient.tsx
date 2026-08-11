@@ -138,7 +138,7 @@ export default function LeavesClient() {
                   {t('availableTokens')}
                 </span>
                 <span className="text-2xl font-bold leading-none mt-1">
-                  {user ? Math.floor(user.tokensBalance) : controller.getTokens()} {t('tokens')}
+                  {user?.role === 'ADMIN' ? '---' : controller.getTokens()} {t('tokens')}
                 </span>
               </div>
               <span className="material-symbols-outlined text-[36px] text-zinc-300">

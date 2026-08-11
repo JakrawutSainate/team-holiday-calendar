@@ -56,7 +56,7 @@ export default function OverviewClient({
     return <OverviewSkeleton />;
   }
 
-  const displayTokens = user?.role === 'ADMIN' ? '---' : (user ? Math.floor(user.tokensBalance) : 0);
+  const displayTokens = user?.role === 'ADMIN' ? '---' : controller.getTokens();
 
   return (
     <ErrorBoundary>
