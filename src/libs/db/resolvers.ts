@@ -352,9 +352,6 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
 
     const freshUser = await prisma.teamMember.findUnique({ where: { id: authUser.id } });
     if (!freshUser) throw new Error('user not found');
-    if (freshUser.tokensBalance < 1.0) {
-      throw new Error('insufficient tokens: you need at least 1.0 tokens to request leave on this day');
-    }
 
     let parsedLeaveType = 'COMPENSATORY';
     // Store full JSON or plain text reason
@@ -402,6 +399,27 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
     const signatureType = (variables.signatureType as string) || 'SAVED';
     const signatureText = (variables.signatureText as string) || parsedFullName || authUser.name;
 
+    // Generate list of dates in range
+    const dates: string[] = [];
+    if (parsedFromDate && parsedToDate) {
+      const start = new Date(parsedFromDate);
+      const end = new Date(parsedToDate);
+      if (end >= start) {
+        let curr = new Date(start);
+        while (curr <= end) {
+          dates.push(curr.toISOString().split('T')[0]);
+          curr.setDate(curr.getDate() + 1);
+        }
+      }
+    }
+    if (dates.length === 0) {
+      dates.push(date);
+    }
+
+    if (freshUser.tokensBalance < dates.length) {
+      throw new Error(`insufficient tokens: you need at least ${dates.length.toFixed(1)} tokens to request leave for this range (${dates.length} days)`);
+    }
+
     // Find next available EARN token in FIFO order for this user (parallel fetch)
     const [earnTxns, usedEvents] = await Promise.all([
       prisma.tokenTransaction.findMany({
@@ -421,28 +439,33 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
     });
 
     const usedTokenIds = new Set(usedEvents.map(e => e.usedTokenTxId).filter(Boolean));
-    const selectedEarnTx = earnTxns.find(tx => !usedTokenIds.has(tx.id));
-    const usedTokenTxId = selectedEarnTx ? selectedEarnTx.id : null;
+    const unusedEarnTxns = earnTxns.filter(tx => !usedTokenIds.has(tx.id));
 
-    const event = await prisma.calendarEvent.create({
-      data: {
-        userId: authUser.id,
-        userName: parsedFullName || authUser.name,
-        date,
-        status: 'COMPENSATORY_OFF',
-        usedTokenTxId,
-        leaveRequest: {
-          create: {
-            reason: rawReason,
-            signatureType,
-            signatureText,
-            signatureImage: parsedSignature,
-            attachmentImage,
+    // Create CalendarEvents for all dates in range
+    const createdEvents = await Promise.all(
+      dates.map((dateStr, idx) => {
+        const usedTokenTxId = unusedEarnTxns[idx] ? unusedEarnTxns[idx].id : null;
+        return prisma.calendarEvent.create({
+          data: {
+            userId: authUser.id,
+            userName: parsedFullName || authUser.name,
+            date: dateStr,
+            status: 'COMPENSATORY_OFF',
+            usedTokenTxId,
+            leaveRequest: {
+              create: {
+                reason: rawReason,
+                signatureType,
+                signatureText,
+                signatureImage: parsedSignature,
+                attachmentImage,
+              },
+            },
           },
-        },
-      },
-      include: { leaveRequest: true },
-    });
+          include: { leaveRequest: true },
+        });
+      })
+    );
 
     // Parallelize document creation, balance decrement, and transaction logging
     await Promise.all([
@@ -469,15 +492,25 @@ async function attachTokenInfoToEvents(rawEvents: any[]) {
       }),
       prisma.teamMember.update({
         where: { id: authUser.id },
-        data: { tokensBalance: { decrement: 1.0 } },
+        data: { tokensBalance: { decrement: dates.length } },
       }),
-      prisma.tokenTransaction.create({
-        data: { userId: authUser.id, type: 'SPEND', amount: 1.0, description: 'Compensatory Leave Request', relatedDate: date, usedTokenTxId },
+      ...dates.map((dateStr, idx) => {
+        const usedTokenTxId = unusedEarnTxns[idx] ? unusedEarnTxns[idx].id : null;
+        return prisma.tokenTransaction.create({
+          data: {
+            userId: authUser.id,
+            type: 'SPEND',
+            amount: 1.0,
+            description: 'Compensatory Leave Request',
+            relatedDate: dateStr,
+            usedTokenTxId,
+          },
+        });
       }),
     ]);
 
-    const enriched = await attachTokenInfoToEvents([event]);
-    return { requestLeave: enriched[0] || event };
+    const enriched = await attachTokenInfoToEvents(createdEvents);
+    return { requestLeave: enriched[0] || createdEvents[0] };
   }
 
   if (q.includes('cancelLeave')) {
