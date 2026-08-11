@@ -213,16 +213,16 @@ export const LeaveDetailsDialog = memo(function LeaveDetailsDialog({ open, onClo
 
               <div className="flex flex-wrap items-center gap-y-2">
                 <span>ขอลา</span>
-                <span className="inline-flex items-center gap-1.5 ml-4">
-                  <input type="checkbox" checked={lt === 'SICK'} readOnly className="accent-black" />
+                <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                  <span className="text-base font-bold font-mono">{lt === 'SICK' ? '☑' : '☐'}</span>
                   <span>ป่วย</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 ml-4">
-                  <input type="checkbox" checked={lt === 'PERSONAL'} readOnly className="accent-black" />
+                <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                  <span className="text-base font-bold font-mono">{lt === 'PERSONAL' ? '☑' : '☐'}</span>
                   <span>กิจส่วนตัว</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 ml-4">
-                  <input type="checkbox" checked={lt === 'MATERNITY'} readOnly className="accent-black" />
+                <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                  <span className="text-base font-bold font-mono">{lt === 'MATERNITY' ? '☑' : '☐'}</span>
                   <span>คลอดบุตร</span>
                 </span>
               </div>

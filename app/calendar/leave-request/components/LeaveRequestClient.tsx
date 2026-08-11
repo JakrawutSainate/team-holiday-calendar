@@ -1028,16 +1028,16 @@ export default function LeaveRequestClient() {
 
                       <div className="flex flex-wrap items-center gap-y-2">
                         <span>ขอลา</span>
-                        <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={dv.leaveType === 'SICK'} readOnly className="accent-black" />
+                        <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                          <span className="text-base font-bold font-mono">{dv.leaveType === 'SICK' ? '☑' : '☐'}</span>
                           <span>ป่วย</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={dv.leaveType === 'PERSONAL'} readOnly className="accent-black" />
+                        <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                          <span className="text-base font-bold font-mono">{dv.leaveType === 'PERSONAL' ? '☑' : '☐'}</span>
                           <span>กิจส่วนตัว</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5 ml-4">
-                          <input type="checkbox" checked={dv.leaveType === 'MATERNITY'} readOnly className="accent-black" />
+                        <span className="inline-flex items-center gap-1.5 ml-4 font-semibold">
+                          <span className="text-base font-bold font-mono">{dv.leaveType === 'MATERNITY' ? '☑' : '☐'}</span>
                           <span>คลอดบุตร</span>
                         </span>
                       </div>
