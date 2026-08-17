@@ -88,7 +88,7 @@ export default function CalendarClient({ year, month }: CalendarClientProps) {
 
     if (isWeekend || isHoliday) {
       const isClaimed = controller.getEvents().some(
-        (e) => e.date === dateString && (e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK')
+        (e) => e.date === dateString && e.userId === user.id && (e.status === 'WEEKEND_WORK' || e.status === 'HOLIDAY_WORK')
       );
       if (isClaimed) return;
 

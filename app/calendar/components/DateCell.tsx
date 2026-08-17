@@ -86,7 +86,9 @@ function DateCell({ day, isMuted, dateString, events, leaveDocuments, capacity, 
     }
   }
 
-  const claimedEvent = weekendWorkEvent || holidayWorkEvent;
+  // Only show "claimed" badge for the currently logged-in user's own claims
+  const claimedEvent = (weekendWorkEvent?.userId === user?.id ? weekendWorkEvent : undefined)
+    || (holidayWorkEvent?.userId === user?.id ? holidayWorkEvent : undefined);
 
   // Capacity label
   let capacityLabel = '';
